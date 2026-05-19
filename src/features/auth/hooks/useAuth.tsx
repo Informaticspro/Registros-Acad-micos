@@ -1,5 +1,6 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 import { User } from '@supabase/supabase-js';
+import { isDemoMode } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/domain';
 
@@ -22,7 +23,8 @@ const demoProfile: UserProfile = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function loadProfile(user: User): Promise<UserProfile> {
-  if (!supabase) return demoProfile;
+  if (!supabase && isDemoMode()) return demoProfile;
+  if (!supabase) throw new Error('Supabase no esta configurado.');
 
   const { data: dbProfile, error } = await supabase
     .from('profiles')
@@ -50,7 +52,7 @@ async function loadProfile(user: User): Promise<UserProfile> {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [profile, setProfile] = useState<UserProfile | null>(demoProfile);
+  const [profile, setProfile] = useState<UserProfile | null>(isDemoMode() ? demoProfile : null);
   const [isLoading, setIsLoading] = useState(Boolean(supabase));
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoading,
       async signIn(email, password) {
         if (!supabase) {
+          if (!isDemoMode()) throw new Error('Supabase no esta configurado en este despliegue.');
           setProfile({ ...demoProfile, email });
           return;
         }

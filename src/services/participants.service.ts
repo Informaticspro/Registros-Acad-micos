@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { isDemoMode } from '@/lib/env';
 import { mockParticipants, mockRegistrations } from '@/data/mockData';
 import { Participant, Registration } from '@/types/domain';
 
@@ -31,7 +32,8 @@ const mapParticipant = (row: {
 });
 
 export async function listParticipants(): Promise<Participant[]> {
-  if (!supabase) return mockParticipants;
+  if (!supabase && isDemoMode()) return mockParticipants;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from('participants')
@@ -43,7 +45,8 @@ export async function listParticipants(): Promise<Participant[]> {
 }
 
 export async function listRegistrations(): Promise<Registration[]> {
-  if (!supabase) return mockRegistrations;
+  if (!supabase && isDemoMode()) return mockRegistrations;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from('registrations')

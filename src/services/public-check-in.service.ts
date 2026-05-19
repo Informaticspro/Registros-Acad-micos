@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isDemoMode } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
 
 export const publicCheckInSchema = z.object({
@@ -22,7 +23,7 @@ export type PublicCheckInResult = {
 export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<PublicCheckInResult> {
   const parsed = publicCheckInSchema.parse(input);
 
-  if (!supabase) {
+  if (!supabase && isDemoMode()) {
     return {
       participantId: crypto.randomUUID(),
       registrationId: crypto.randomUUID(),
@@ -31,6 +32,7 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
       alreadyCheckedIn: false,
     };
   }
+  if (!supabase) throw new Error('Supabase no esta configurado en este despliegue.');
 
   const { data, error } = await supabase.rpc('public_event_check_in', {
     p_event_id: parsed.eventId,

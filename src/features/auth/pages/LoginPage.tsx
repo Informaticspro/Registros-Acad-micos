@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { hasSupabaseConfig } from '@/lib/env';
+import { hasSupabaseConfig, isDemoMode } from '@/lib/env';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -53,8 +53,11 @@ export function LoginPage() {
           />
         </label>
         {error ? <p className="form-error">{error}</p> : null}
-        {!hasSupabaseConfig() ? (
+        {isDemoMode() ? (
           <p className="form-hint">Modo demo activo hasta configurar Supabase en `.env`.</p>
+        ) : null}
+        {!hasSupabaseConfig() && !isDemoMode() ? (
+          <p className="form-error">Supabase no esta configurado en este despliegue.</p>
         ) : null}
         <button className="primary-button" type="submit">
           Entrar

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { isDemoMode } from '@/lib/env';
 import { mockEvents } from '@/data/mockData';
 import { AcademicEvent } from '@/types/domain';
 
@@ -40,7 +41,8 @@ const mapEvent = (row: {
 });
 
 export async function listEvents(): Promise<AcademicEvent[]> {
-  if (!supabase) return mockEvents;
+  if (!supabase && isDemoMode()) return mockEvents;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from('events')
@@ -52,7 +54,8 @@ export async function listEvents(): Promise<AcademicEvent[]> {
 }
 
 export async function getEvent(eventId: string): Promise<AcademicEvent | null> {
-  if (!supabase) return mockEvents.find((event) => event.id === eventId) ?? null;
+  if (!supabase && isDemoMode()) return mockEvents.find((event) => event.id === eventId) ?? null;
+  if (!supabase) return null;
 
   const { data, error } = await supabase
     .from('events')
@@ -66,6 +69,7 @@ export async function getEvent(eventId: string): Promise<AcademicEvent | null> {
 
 export async function createEvent(input: SaveEventInput): Promise<AcademicEvent> {
   if (!supabase) {
+    if (!isDemoMode()) throw new Error('Supabase no esta configurado en este despliegue.');
     return {
       id: crypto.randomUUID(),
       title: input.title,

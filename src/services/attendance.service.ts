@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { isDemoMode } from '@/lib/env';
 import { mockAttendance, mockRegistrations } from '@/data/mockData';
 import { AttendanceRecord } from '@/types/domain';
 
@@ -22,10 +23,11 @@ type AttendanceRow = {
 };
 
 export async function verifyQrToken(qrToken: string) {
-  if (!supabase) {
+  if (!supabase && isDemoMode()) {
     const registration = mockRegistrations.find((item) => item.qrToken === qrToken);
     return registration ? { valid: true, registration } : { valid: false, registration: null };
   }
+  if (!supabase) return { valid: false, registration: null };
 
   const { data, error } = await supabase
     .from('registrations')
@@ -50,7 +52,8 @@ export async function verifyQrToken(qrToken: string) {
 }
 
 export async function listAttendance(): Promise<AttendanceRecord[]> {
-  if (!supabase) return mockAttendance;
+  if (!supabase && isDemoMode()) return mockAttendance;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from('attendance_records')
