@@ -985,7 +985,10 @@ textarea {
   .topbar {
     position: sticky;
     top: 0;
-    height: auto;
+    height: 66px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
     padding: 12px 14px;
     gap: 10px;
     z-index: 30;
@@ -993,6 +996,7 @@ textarea {
 
   .search-box {
     width: 100%;
+    min-width: 0;
     min-height: 44px;
   }
 
@@ -1001,18 +1005,31 @@ textarea {
   }
 
   .topbar-actions {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 8px;
   }
 
   .user-chip {
+    width: 54px;
+    min-height: 44px;
     min-width: 0;
-    flex: 1;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 6px 8px;
   }
 
   .user-chip span {
+    max-width: 38px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 0.72rem;
+  }
+
+  .user-chip strong {
+    font-size: 0.62rem;
   }
 
   .sidebar {
