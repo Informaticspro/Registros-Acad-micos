@@ -1,4 +1,6 @@
-create or replace function public.public_event_check_in(
+drop function if exists public.public_event_check_in(uuid, text, text, text, text);
+
+create function public.public_event_check_in(
   p_event_id uuid,
   p_first_name text,
   p_last_name text,
@@ -6,11 +8,11 @@ create or replace function public.public_event_check_in(
   p_email text
 )
 returns table (
-  participant_id uuid,
-  registration_id uuid,
-  attendance_id uuid,
-  certificate_code text,
-  already_checked_in boolean
+  result_participant_id uuid,
+  result_registration_id uuid,
+  result_attendance_id uuid,
+  result_certificate_code text,
+  result_already_checked_in boolean
 )
 language plpgsql
 security definer

@@ -50,10 +50,10 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
   }
 
   return {
-    participantId: result.participant_id,
-    registrationId: result.registration_id,
-    attendanceId: result.attendance_id,
-    certificateCode: result.certificate_code,
-    alreadyCheckedIn: result.already_checked_in,
+    participantId: result.result_participant_id,
+    registrationId: result.result_registration_id,
+    attendanceId: result.result_attendance_id,
+    certificateCode: result.result_certificate_code,
+    alreadyCheckedIn: result.result_already_checked_in,
   };
 }

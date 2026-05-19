@@ -100,11 +100,11 @@ export type Database = {
           p_email: string;
         };
         Returns: {
-          participant_id: string;
-          registration_id: string;
-          attendance_id: string;
-          certificate_code: string;
-          already_checked_in: boolean;
+          result_participant_id: string;
+          result_registration_id: string;
+          result_attendance_id: string;
+          result_certificate_code: string;
+          result_already_checked_in: boolean;
         }[];
       };
     };
