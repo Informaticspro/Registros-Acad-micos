@@ -22,7 +22,8 @@ export function RegisterParticipantPage() {
     formEvent.preventDefault();
     if (!eventId) return;
 
-    const form = new FormData(formEvent.currentTarget);
+    const formElement = formEvent.currentTarget;
+    const form = new FormData(formElement);
     setError(null);
     setIsSubmitting(true);
 
@@ -35,7 +36,7 @@ export function RegisterParticipantPage() {
         email: String(form.get('email') ?? ''),
       });
       setResult(response);
-      formEvent.currentTarget.reset();
+      formElement.reset();
     } catch (err) {
       setError(getErrorMessage(err, 'No se pudo registrar la asistencia'));
     } finally {

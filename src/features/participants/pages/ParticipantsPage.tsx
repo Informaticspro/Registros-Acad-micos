@@ -1,14 +1,29 @@
 import { useEffect, useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { RefreshCw, UserPlus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { listParticipants } from '@/services/participants.service';
 import { Participant } from '@/types/domain';
+import { getErrorMessage } from '@/utils/errors';
 
 export function ParticipantsPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  async function loadParticipants() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      setParticipants(await listParticipants());
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudieron cargar los participantes'));
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    void listParticipants().then(setParticipants);
+    void loadParticipants();
   }, []);
 
   return (
@@ -18,13 +33,24 @@ export function ParticipantsPage() {
         title="Participantes"
         description="Base central para asistentes, expositores, estudiantes, docentes e invitados."
         actions={
-          <button className="primary-button" type="button">
-            <UserPlus size={18} />
-            Nuevo participante
-          </button>
+          <>
+            <button className="secondary-button" type="button" onClick={() => void loadParticipants()}>
+              <RefreshCw size={18} />
+              Actualizar
+            </button>
+            <button className="primary-button" type="button">
+              <UserPlus size={18} />
+              Nuevo participante
+            </button>
+          </>
         }
       />
       <section className="panel">
+        {error ? <p className="form-error">{error}</p> : null}
+        {isLoading ? <p className="form-hint">Cargando participantes...</p> : null}
+        {!isLoading && !error && participants.length === 0 ? (
+          <p className="form-hint">Todavia no hay participantes registrados.</p>
+        ) : null}
         <div className="data-table">
           <div className="data-table-head">
             <span>Nombre</span>
