@@ -23,7 +23,7 @@ export function LayoutAplicacion() {
       />
       {!isSidebarCollapsed ? (
         <button
-          className="sidebar-overlay"
+          className="sidebar-overlay mobile-only"
           type="button"
           aria-label="Cerrar menu"
           onClick={() => setIsSidebarCollapsed(true)}

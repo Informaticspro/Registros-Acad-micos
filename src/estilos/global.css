@@ -47,7 +47,7 @@ textarea {
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: 78px 1fr;
+  grid-template-columns: 72px 1fr;
 }
 
 .sidebar {
@@ -58,6 +58,10 @@ textarea {
   top: 0;
   height: 100vh;
   overflow: hidden;
+}
+
+.mobile-only {
+  display: none;
 }
 
 .brand {
@@ -143,7 +147,7 @@ textarea {
 }
 
 .app-shell.sidebar-collapsed .sidebar {
-  padding-inline: 18px;
+  padding-inline: 10px;
 }
 
 .app-shell.sidebar-collapsed .brand {
@@ -157,6 +161,9 @@ textarea {
 .app-shell.sidebar-collapsed .nav-link {
   justify-content: center;
   padding-inline: 0;
+  width: 52px;
+  height: 44px;
+  margin-inline: auto;
 }
 
 .nav-link.active,
@@ -1050,6 +1057,7 @@ textarea {
   }
 
   .sidebar-overlay {
+    display: block;
     position: fixed;
     inset: 0;
     z-index: 45;
@@ -1068,6 +1076,9 @@ textarea {
 
   .nav-link {
     min-width: 0;
+    width: auto;
+    height: auto;
+    margin-inline: 0;
     min-height: 46px;
     flex-direction: row;
     justify-content: flex-start;
