@@ -1,6 +1,8 @@
-﻿import {
+import {
   BarChart3,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   FileArchive,
   FileSpreadsheet,
@@ -10,8 +12,14 @@
   Users,
   UserCog,
 } from 'lucide-react';
-import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { NavLink } from 'react-router-dom';
+import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
+
+type BarraLateralProps = {
+  isCollapsed: boolean;
+  onNavigate: () => void;
+  onToggle: () => void;
+};
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,25 +34,39 @@ const navItems = [
 
 const adminNavItem = { to: '/usuarios', label: 'Usuarios', icon: UserCog };
 
-export function BarraLateral() {
+export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateralProps) {
   const { profile } = useAutenticacion();
   const items =
     profile?.role === 'admin' ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)] : navItems;
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Menu principal">
       <div className="brand">
         <div className="brand-mark">
           <GraduationCap size={22} />
         </div>
-        <div>
+        <div className="brand-copy">
           <strong>AcadEvents</strong>
           <span>Control academico</span>
         </div>
       </div>
+      <button
+        className="sidebar-toggle"
+        type="button"
+        aria-label={isCollapsed ? 'Mostrar menu' : 'Ocultar menu'}
+        onClick={onToggle}
+      >
+        {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+      </button>
       <nav className="nav-list" aria-label="Navegacion principal">
         {items.map((item) => (
-          <NavLink key={`${item.to}-${item.label}`} to={item.to} className="nav-link">
+          <NavLink
+            key={`${item.to}-${item.label}`}
+            to={item.to}
+            className="nav-link"
+            title={item.label}
+            onClick={onNavigate}
+          >
             <item.icon size={18} />
             <span>{item.label}</span>
           </NavLink>
@@ -53,4 +75,3 @@ export function BarraLateral() {
     </aside>
   );
 }
-

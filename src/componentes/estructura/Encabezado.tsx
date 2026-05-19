@@ -1,11 +1,18 @@
-﻿import { Bell, Search } from 'lucide-react';
+import { Bell, Menu, Search } from 'lucide-react';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 
-export function Encabezado() {
+type EncabezadoProps = {
+  onToggleMenu: () => void;
+};
+
+export function Encabezado({ onToggleMenu }: EncabezadoProps) {
   const { profile } = useAutenticacion();
 
   return (
     <header className="topbar">
+      <button className="icon-button menu-button" type="button" aria-label="Mostrar u ocultar menu" onClick={onToggleMenu}>
+        <Menu size={19} />
+      </button>
       <div className="search-box">
         <Search size={18} />
         <input aria-label="Buscar" placeholder="Buscar evento, participante o asistencia" />
@@ -22,4 +29,3 @@ export function Encabezado() {
     </header>
   );
 }
-
