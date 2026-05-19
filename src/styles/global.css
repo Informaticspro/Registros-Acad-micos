@@ -541,6 +541,50 @@ textarea {
   gap: 22px;
 }
 
+.users-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.user-row,
+.user-edit-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 180px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #0b0e15;
+}
+
+.user-edit-row {
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) minmax(180px, 0.7fr) 170px 40px 40px;
+}
+
+.user-row strong,
+.user-row span {
+  display: block;
+}
+
+.role-pill {
+  width: fit-content;
+  padding: 8px 10px;
+  border: 1px solid rgba(55, 213, 167, 0.35);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .screen-loader {
   min-height: 240px;
   display: grid;
@@ -709,6 +753,15 @@ textarea {
   .public-register,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .user-row,
+  .user-edit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
   }
 
   .page-actions {
