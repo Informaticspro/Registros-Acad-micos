@@ -34,6 +34,7 @@ export type Participant = {
   documentId: string;
   institution: string;
   phone?: string;
+  metadata?: Record<string, string>;
 };
 
 export type Registration = {

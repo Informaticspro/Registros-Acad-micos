@@ -54,6 +54,7 @@ export type Database = {
           document_id: string;
           institution: string;
           phone: string | null;
+          metadata: Json;
           created_at: string;
         };
         Insert: Record<string, unknown>;
@@ -98,6 +99,7 @@ export type Database = {
           p_last_name: string;
           p_document_id: string;
           p_email: string;
+          p_metadata: Json;
         };
         Returns: {
           result_participant_id: string;

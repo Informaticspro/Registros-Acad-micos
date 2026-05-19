@@ -13,7 +13,7 @@ type RegistrationRow = {
   created_at: string;
 };
 
-const mapParticipant = (row: {
+type ParticipantRow = {
   id: string;
   first_name: string;
   last_name: string;
@@ -21,7 +21,10 @@ const mapParticipant = (row: {
   document_id: string;
   institution: string;
   phone: string | null;
-}): Participant => ({
+  metadata: Record<string, string> | null;
+};
+
+const mapParticipant = (row: ParticipantRow): Participant => ({
   id: row.id,
   firstName: row.first_name,
   lastName: row.last_name,
@@ -29,6 +32,7 @@ const mapParticipant = (row: {
   documentId: row.document_id,
   institution: row.institution,
   phone: row.phone ?? undefined,
+  metadata: row.metadata ?? undefined,
 });
 
 export async function listParticipants(): Promise<Participant[]> {
@@ -37,8 +41,9 @@ export async function listParticipants(): Promise<Participant[]> {
 
   const { data, error } = await supabase
     .from('participants')
-    .select('id,first_name,last_name,email,document_id,institution,phone')
-    .order('created_at', { ascending: false });
+    .select('id,first_name,last_name,email,document_id,institution,phone,metadata')
+    .order('created_at', { ascending: false })
+    .returns<ParticipantRow[]>();
 
   if (error) throw error;
   return data.map(mapParticipant);

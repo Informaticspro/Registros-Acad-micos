@@ -7,6 +7,24 @@ import { AcademicEvent } from '@/types/domain';
 import { getErrorMessage } from '@/utils/errors';
 import { formatDateTime } from '@/utils/format';
 
+function getValue(form: FormData, field: string) {
+  return String(form.get(field) ?? '').trim();
+}
+
+function collectMetadata(form: FormData, eventType: AcademicEvent['eventType'] | undefined): Record<string, string> {
+  if (eventType !== 'congreso') return {};
+
+  return {
+    sex: getValue(form, 'sex'),
+    category: getValue(form, 'category'),
+    personalEmail: getValue(form, 'personalEmail'),
+    nationality: getValue(form, 'nationality'),
+    otherNationality: getValue(form, 'otherNationality'),
+    modality: getValue(form, 'modality'),
+    participationType: getValue(form, 'participationType'),
+  };
+}
+
 export function RegisterParticipantPage() {
   const { eventId } = useParams();
   const [event, setEvent] = useState<AcademicEvent | null>(null);
@@ -30,10 +48,11 @@ export function RegisterParticipantPage() {
     try {
       const response = await registerPublicCheckIn({
         eventId,
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        documentId: String(form.get('documentId') ?? ''),
-        email: String(form.get('email') ?? ''),
+        firstName: getValue(form, 'firstName'),
+        lastName: getValue(form, 'lastName'),
+        documentId: getValue(form, 'documentId'),
+        email: getValue(form, 'email'),
+        metadata: collectMetadata(form, event?.eventType),
       });
       setResult(response);
       formElement.reset();
@@ -63,22 +82,76 @@ export function RegisterParticipantPage() {
         ) : null}
       </div>
       <form className="panel stack-form" onSubmit={handleSubmit}>
+        {event?.eventType === 'congreso' ? (
+          <span className="form-hint">Formulario de congreso</span>
+        ) : (
+          <span className="form-hint">Formulario simple para taller o evento general</span>
+        )}
         <label>
           Nombre
-          <input name="firstName" required placeholder="Ej. María" autoComplete="given-name" />
+          <input name="firstName" required placeholder="Ej. Maria" autoComplete="given-name" />
         </label>
         <label>
           Apellido
-          <input name="lastName" required placeholder="Ej. González" autoComplete="family-name" />
+          <input name="lastName" required placeholder="Ej. Gonzalez" autoComplete="family-name" />
         </label>
         <label>
-          Cédula
+          Cedula
           <input name="documentId" required placeholder="Ej. 8-888-111" autoComplete="off" />
         </label>
         <label>
-          Correo
+          {event?.eventType === 'congreso' ? 'Correo institucional' : 'Correo institucional'}
           <input name="email" required type="email" placeholder="correo@institucion.edu" autoComplete="email" />
         </label>
+        {event?.eventType === 'congreso' ? (
+          <>
+            <label>
+              Sexo
+              <select name="sex" required defaultValue="">
+                <option value="" disabled>Seleccione</option>
+                <option value="femenino">Femenino</option>
+                <option value="masculino">Masculino</option>
+                <option value="otro">Otro</option>
+                <option value="prefiere_no_decir">Prefiere no decir</option>
+              </select>
+            </label>
+            <label>
+              Categoria
+              <input name="category" required placeholder="Ej. Estudiante, docente, investigador" />
+            </label>
+            <label>
+              Correo P.
+              <input name="personalEmail" required type="email" placeholder="correo.personal@gmail.com" />
+            </label>
+            <label>
+              Nacionalidad
+              <input name="nationality" required placeholder="Ej. Panamena" />
+            </label>
+            <label>
+              Otra Nacionalidad
+              <input name="otherNationality" placeholder="Opcional" />
+            </label>
+            <label>
+              Modalidad
+              <select name="modality" required defaultValue="">
+                <option value="" disabled>Seleccione</option>
+                <option value="presencial">Presencial</option>
+                <option value="virtual">Virtual</option>
+                <option value="hibrida">Hibrida</option>
+              </select>
+            </label>
+            <label>
+              Tipo Participacion
+              <select name="participationType" required defaultValue="">
+                <option value="" disabled>Seleccione</option>
+                <option value="asistente">Asistente</option>
+                <option value="ponente">Ponente</option>
+                <option value="organizador">Organizador</option>
+                <option value="invitado">Invitado</option>
+              </select>
+            </label>
+          </>
+        ) : null}
         {error ? <p className="form-error">{error}</p> : null}
         <button className="primary-button" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Registrando...' : 'Registrar asistencia'}

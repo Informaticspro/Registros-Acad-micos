@@ -1,11 +1,13 @@
 drop function if exists public.public_event_check_in(uuid, text, text, text, text);
+drop function if exists public.public_event_check_in(uuid, text, text, text, text, jsonb);
 
 create function public.public_event_check_in(
   p_event_id uuid,
   p_first_name text,
   p_last_name text,
   p_document_id text,
-  p_email text
+  p_email text,
+  p_metadata jsonb default '{}'::jsonb
 )
 returns table (
   result_participant_id uuid,
@@ -41,7 +43,8 @@ begin
     last_name,
     email,
     document_id,
-    institution
+    institution,
+    metadata
   )
   values (
     v_event.organization_id,
@@ -49,13 +52,16 @@ begin
     trim(p_last_name),
     lower(trim(p_email)),
     trim(p_document_id),
-    ''
+    coalesce(nullif(p_metadata->>'institution', ''), ''),
+    coalesce(p_metadata, '{}'::jsonb)
   )
   on conflict (organization_id, document_id)
   do update set
     first_name = excluded.first_name,
     last_name = excluded.last_name,
-    email = excluded.email
+    email = excluded.email,
+    institution = coalesce(nullif(excluded.institution, ''), public.participants.institution),
+    metadata = public.participants.metadata || excluded.metadata
   returning id into v_participant_id;
 
   insert into public.registrations (
@@ -107,4 +113,4 @@ begin
 end;
 $$;
 
-grant execute on function public.public_event_check_in(uuid, text, text, text, text) to anon, authenticated;
+grant execute on function public.public_event_check_in(uuid, text, text, text, text, jsonb) to anon, authenticated;

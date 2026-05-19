@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Edit, ExternalLink } from 'lucide-react';
+import { Edit, ExternalLink, UserPlus } from 'lucide-react';
 import QRCode from 'qrcode';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { getEvent } from '@/services/events.service';
@@ -39,7 +39,7 @@ export function EventDetailPage() {
           <>
             <Link className="secondary-button" to={`/eventos/${event.id}/registro`}>
               <ExternalLink size={18} />
-              Registro público
+              Registro publico
             </Link>
             <Link className="primary-button" to={`/eventos/${event.id}/editar`}>
               <Edit size={18} />
@@ -72,6 +72,10 @@ export function EventDetailPage() {
           <h2>QR para estudiantes</h2>
           <p>Proyecta o imprime este código en el salón. Cada estudiante lo escanea y registra su asistencia.</p>
           {qrDataUrl ? <img src={qrDataUrl} alt="QR de registro del evento" /> : null}
+          <Link className="primary-button" to={`/eventos/${event.id}/registro`}>
+            <UserPlus size={18} />
+            Registrar participante
+          </Link>
           <code>{registrationUrl}</code>
         </article>
       </section>

@@ -22,6 +22,20 @@ export function ParticipantsPage() {
     }
   }
 
+  function getExtraData(participant: Participant) {
+    const metadata = participant.metadata ?? {};
+    const values = [
+      metadata.sex ? `Sexo: ${metadata.sex}` : null,
+      metadata.category ? `Categoria: ${metadata.category}` : null,
+      metadata.personalEmail ? `Correo P.: ${metadata.personalEmail}` : null,
+      metadata.nationality ? `Nacionalidad: ${metadata.nationality}` : null,
+      metadata.modality ? `Modalidad: ${metadata.modality}` : null,
+      metadata.participationType ? `Participacion: ${metadata.participationType}` : null,
+    ].filter(Boolean);
+
+    return values.length > 0 ? values.join(' | ') : 'Registro simple';
+  }
+
   useEffect(() => {
     void loadParticipants();
   }, []);
@@ -55,15 +69,17 @@ export function ParticipantsPage() {
           <div className="data-table-head">
             <span>Nombre</span>
             <span>Documento</span>
-            <span>Institución</span>
             <span>Correo</span>
+            <span>Datos del registro</span>
           </div>
           {participants.map((participant) => (
             <div className="data-table-row" key={participant.id}>
-              <strong>{participant.firstName} {participant.lastName}</strong>
+              <strong>
+                {participant.firstName} {participant.lastName}
+              </strong>
               <span>{participant.documentId}</span>
-              <span>{participant.institution}</span>
               <span>{participant.email}</span>
+              <span>{getExtraData(participant)}</span>
             </div>
           ))}
         </div>

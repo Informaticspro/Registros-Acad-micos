@@ -6,8 +6,9 @@ export const publicCheckInSchema = z.object({
   eventId: z.string().min(1, 'Evento requerido'),
   firstName: z.string().min(2, 'Nombre requerido'),
   lastName: z.string().min(2, 'Apellido requerido'),
-  documentId: z.string().min(4, 'Cédula requerida'),
-  email: z.string().email('Correo inválido'),
+  documentId: z.string().min(4, 'Cedula requerida'),
+  email: z.string().email('Correo invalido'),
+  metadata: z.record(z.string()).optional(),
 });
 
 export type PublicCheckInInput = z.infer<typeof publicCheckInSchema>;
@@ -40,6 +41,7 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     p_last_name: parsed.lastName,
     p_document_id: parsed.documentId,
     p_email: parsed.email,
+    p_metadata: parsed.metadata ?? {},
   });
 
   if (error) throw error;
