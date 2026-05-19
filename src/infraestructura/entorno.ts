@@ -2,6 +2,7 @@
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL as string | undefined,
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined,
   appName: (import.meta.env.VITE_APP_NAME as string | undefined) ?? 'Registro de Eventos Academicos',
+  publicAppUrl: (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.replace(/\/$/, ''),
   isDev: import.meta.env.DEV,
 };
 

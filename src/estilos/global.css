@@ -848,12 +848,67 @@ textarea {
 
 .qr-event-panel {
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 
-.qr-event-panel .primary-button,
-.qr-event-panel .secondary-button {
-  justify-self: start;
+.qr-event-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.qr-event-header h2 {
+  margin-bottom: 8px;
+}
+
+.qr-event-content {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.qr-event-preview {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+
+.qr-event-preview img {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+
+.qr-event-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.qr-event-actions .primary-button,
+.qr-event-actions .secondary-button,
+.qr-lookup-link {
+  width: 100%;
+}
+
+.qr-public-url {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #0b0e15;
+}
+
+.qr-public-url span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .register-in-app {
@@ -919,15 +974,8 @@ textarea {
   color: var(--accent);
 }
 
-.qr-event-panel img {
-  width: 220px;
-  height: 220px;
-  padding: 12px;
-  border-radius: var(--radius);
-  background: #ffffff;
-}
-
-.qr-event-panel code {
+.qr-event-panel code,
+.qr-public-url code {
   overflow-wrap: anywhere;
   color: var(--muted);
 }
@@ -1218,6 +1266,19 @@ textarea {
   .event-card-meta {
     display: grid;
     gap: 8px;
+  }
+
+  .qr-event-header {
+    flex-direction: column;
+  }
+
+  .qr-event-content {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-event-preview {
+    width: min(260px, 100%);
+    justify-self: center;
   }
 
   .participants-mini-table {
