@@ -3,6 +3,7 @@ import { LayoutAplicacion } from '@/componentes/estructura/LayoutAplicacion';
 import { LayoutAutenticacion } from '@/componentes/estructura/LayoutAutenticacion';
 import { RutaProtegida } from '@/rutas/RutaProtegida';
 import { GuardaRol } from '@/rutas/GuardaRol';
+import { RedireccionRegistroEvento } from '@/rutas/RedireccionRegistroEvento';
 import { PaginaPanel } from '@/modulos/panel/paginas/PaginaPanel';
 import { PaginaDetalleEvento } from '@/modulos/eventos/paginas/PaginaDetalleEvento';
 import { PaginaFormularioEvento } from '@/modulos/eventos/paginas/PaginaFormularioEvento';
@@ -23,6 +24,8 @@ export const enrutador = createBrowserRouter([
     element: <LayoutAutenticacion />,
     children: [
       { path: '/login', element: <PaginaLogin /> },
+      { path: '/eventos/:eventId/registr', element: <RedireccionRegistroEvento /> },
+      { path: '/eventos/:eventId/register', element: <RedireccionRegistroEvento /> },
       { path: '/eventos/:eventId/registro', element: <PaginaRegistroParticipante /> },
       { path: '/mi-codigo', element: <PaginaConsultaQrParticipante /> },
       { path: '/eventos/:eventId/mi-codigo', element: <PaginaConsultaQrParticipante /> },
