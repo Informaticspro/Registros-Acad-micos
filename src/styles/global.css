@@ -175,6 +175,16 @@ textarea {
   font-weight: 800;
 }
 
+a.primary-button,
+a.secondary-button {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.primary-button {
+  color: #04100c;
+}
+
 .secondary-button {
   padding: 0 16px;
   border: 1px solid var(--line);
@@ -559,6 +569,74 @@ textarea {
 .qr-event-panel {
   display: grid;
   gap: 14px;
+}
+
+.qr-event-panel .primary-button,
+.qr-event-panel .secondary-button {
+  justify-self: start;
+}
+
+.register-in-app {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.register-back-link {
+  justify-self: start;
+  margin-bottom: 8px;
+}
+
+.register-success-panel {
+  width: min(520px, 100%);
+}
+
+.register-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.public-register .participant-qr-card {
+  width: min(420px, 100%);
+}
+
+.participant-qr-card {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+
+.participant-qr-card .primary-button {
+  justify-self: center;
+}
+
+.participant-qr-image {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+
+.definition-list.compact {
+  gap: 10px;
+  text-align: left;
+}
+
+.scanner-video {
+  width: 100%;
+  max-height: 360px;
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.scan-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--accent);
 }
 
 .qr-event-panel img {

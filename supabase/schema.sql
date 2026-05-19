@@ -240,6 +240,7 @@ returns table (
   result_registration_id uuid,
   result_attendance_id uuid,
   result_certificate_code text,
+  result_qr_token text,
   result_already_checked_in boolean
 )
 language plpgsql
@@ -252,14 +253,28 @@ declare
   v_registration public.registrations%rowtype;
   v_attendance_id uuid;
   v_already_checked_in boolean := false;
+  v_staff_bypass boolean := false;
 begin
   select *
   into v_event
   from public.events
-  where id = p_event_id
-    and status in ('published', 'active');
+  where id = p_event_id;
 
   if not found then
+    raise exception 'Evento no encontrado';
+  end if;
+
+  if v_event.status in ('published', 'active') then
+    null;
+  elsif auth.uid() is not null and exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and p.organization_id = v_event.organization_id
+      and p.role in ('admin', 'organizador')
+  ) then
+    v_staff_bypass := true;
+  else
     raise exception 'Evento no disponible para registro';
   end if;
 
@@ -324,7 +339,10 @@ begin
     v_event.organizer_id,
     'present',
     coalesce(v_registration.checked_in_at, now()),
-    jsonb_build_object('source', 'public_qr_form')
+    jsonb_build_object(
+      'source',
+      case when v_staff_bypass then 'staff_manual_form' else 'public_qr_form' end
+    )
   )
   on conflict (registration_id)
   do update set checked_in_at = public.attendance_records.checked_in_at
@@ -335,6 +353,7 @@ begin
     v_registration.id,
     v_attendance_id,
     v_registration.certificate_code,
+    v_registration.qr_token,
     v_already_checked_in;
 end;
 $$;

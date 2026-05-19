@@ -1,15 +1,44 @@
 import { z } from 'zod';
+import { getRegistrationFormKind } from '@/features/registration/registration-config';
 import { isDemoMode } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
+import { AcademicEvent } from '@/types/domain';
 
-export const publicCheckInSchema = z.object({
-  eventId: z.string().min(1, 'Evento requerido'),
-  firstName: z.string().min(2, 'Nombre requerido'),
-  lastName: z.string().min(2, 'Apellido requerido'),
-  documentId: z.string().min(4, 'Cedula requerida'),
-  email: z.string().email('Correo invalido'),
-  metadata: z.record(z.string()).optional(),
+const congresoMetadataSchema = z.object({
+  sex: z.string().min(1, 'Sexo requerido'),
+  category: z.string().min(1, 'Categoria requerida'),
+  personalEmail: z.string().email('Correo personal invalido'),
+  nationality: z.string().min(1, 'Nacionalidad requerida'),
+  otherNationality: z.string().optional(),
+  modality: z.string().min(1, 'Modalidad requerida'),
+  participationType: z.string().min(1, 'Tipo de participacion requerido'),
 });
+
+export const publicCheckInSchema = z
+  .object({
+    eventId: z.string().min(1, 'Evento requerido'),
+    firstName: z.string().min(2, 'Nombre requerido'),
+    lastName: z.string().min(2, 'Apellido requerido'),
+    documentId: z.string().min(4, 'Cedula requerida'),
+    email: z.string().email('Correo invalido'),
+    eventType: z.enum(['seminario', 'congreso', 'taller', 'capacitacion', 'universitario']).optional(),
+    metadata: z.record(z.string()).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const kind = getRegistrationFormKind(data.eventType);
+    if (kind !== 'congreso') return;
+
+    const parsed = congresoMetadataSchema.safeParse(data.metadata ?? {});
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: issue.message,
+          path: ['metadata', ...(issue.path as (string | number)[])],
+        });
+      }
+    }
+  });
 
 export type PublicCheckInInput = z.infer<typeof publicCheckInSchema>;
 
@@ -18,18 +47,33 @@ export type PublicCheckInResult = {
   registrationId: string;
   attendanceId: string;
   certificateCode: string;
+  qrToken: string;
+  documentId: string;
+  firstName: string;
+  lastName: string;
   alreadyCheckedIn: boolean;
 };
 
 export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<PublicCheckInResult> {
   const parsed = publicCheckInSchema.parse(input);
+  const metadata =
+    getRegistrationFormKind(parsed.eventType as AcademicEvent['eventType'] | undefined) === 'congreso'
+      ? Object.fromEntries(
+          Object.entries(parsed.metadata ?? {}).filter(([, value]) => value.trim().length > 0),
+        )
+      : {};
 
   if (!supabase && isDemoMode()) {
+    const demoToken = `DEMO-${parsed.eventId.slice(0, 4)}-${parsed.documentId.replace(/\W/g, '')}`;
     return {
       participantId: crypto.randomUUID(),
       registrationId: crypto.randomUUID(),
       attendanceId: crypto.randomUUID(),
       certificateCode: `CERT-DEMO-${parsed.documentId.replace(/\W/g, '').slice(-4)}`,
+      qrToken: demoToken,
+      documentId: parsed.documentId,
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
       alreadyCheckedIn: false,
     };
   }
@@ -41,7 +85,7 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     p_last_name: parsed.lastName,
     p_document_id: parsed.documentId,
     p_email: parsed.email,
-    p_metadata: parsed.metadata ?? {},
+    p_metadata: metadata,
   });
 
   if (error) throw error;
@@ -56,6 +100,10 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     registrationId: result.result_registration_id,
     attendanceId: result.result_attendance_id,
     certificateCode: result.result_certificate_code,
+    qrToken: result.result_qr_token,
+    documentId: parsed.documentId,
+    firstName: parsed.firstName,
+    lastName: parsed.lastName,
     alreadyCheckedIn: result.result_already_checked_in,
   };
 }

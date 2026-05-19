@@ -34,8 +34,8 @@ export type Database = {
           event_type: string;
           description: string;
           location: string;
-          starts_at: string;
-          ends_at: string;
+          starts_at: string | null;
+          ends_at: string | null;
           capacity: number;
           status: string;
           organizer_id: string;
@@ -106,8 +106,45 @@ export type Database = {
           result_registration_id: string;
           result_attendance_id: string;
           result_certificate_code: string;
+          result_qr_token: string;
           result_already_checked_in: boolean;
         }[];
+      };
+      record_daily_attendance: {
+        Args: {
+          p_event_id: string;
+          p_lookup: string;
+        };
+        Returns: {
+          result_participant_name: string;
+          result_document_id: string;
+          result_certificate_code: string;
+          result_checked_in_at: string;
+          result_already_logged_today: boolean;
+        }[];
+      };
+      lookup_participant_registration: {
+        Args: {
+          p_event_id: string;
+          p_document_id: string;
+        };
+        Returns: {
+          result_first_name: string;
+          result_last_name: string;
+          result_document_id: string;
+          result_email: string;
+          result_qr_token: string;
+          result_certificate_code: string;
+        }[];
+      };
+      admin_assign_staff_profile: {
+        Args: {
+          p_user_id: string;
+          p_full_name: string;
+          p_email: string;
+          p_role: 'admin' | 'organizador' | 'scanner';
+        };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

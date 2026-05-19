@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/env';
-import { mockAttendance, mockRegistrations } from '@/data/mockData';
+import { mockAttendance, mockParticipants, mockRegistrations } from '@/data/mockData';
 import { AttendanceRecord } from '@/types/domain';
+import { extractQrLookupValue } from '@/utils/qr';
 
 type RegistrationRow = {
   id: string;
@@ -22,9 +23,18 @@ type AttendanceRow = {
   checked_in_at: string;
 };
 
+export type DailyAttendanceResult = {
+  participantName: string;
+  documentId: string;
+  checkedInAt: string;
+  certificateCode: string;
+  alreadyLoggedToday: boolean;
+};
+
 export async function verifyQrToken(qrToken: string) {
+  const lookup = extractQrLookupValue(qrToken);
   if (!supabase && isDemoMode()) {
-    const registration = mockRegistrations.find((item) => item.qrToken === qrToken);
+    const registration = mockRegistrations.find((item) => item.qrToken === lookup);
     return registration ? { valid: true, registration } : { valid: false, registration: null };
   }
   if (!supabase) return { valid: false, registration: null };
@@ -32,7 +42,7 @@ export async function verifyQrToken(qrToken: string) {
   const { data, error } = await supabase
     .from('registrations')
     .select('id,event_id,participant_id,qr_token,certificate_code,checked_in_at,created_at')
-    .eq('qr_token', qrToken)
+    .eq('qr_token', lookup)
     .single<RegistrationRow>();
 
   if (error) return { valid: false, registration: null };
@@ -48,6 +58,50 @@ export async function verifyQrToken(qrToken: string) {
       checkedInAt: data.checked_in_at,
       createdAt: data.created_at,
     },
+  };
+}
+
+export async function recordDailyAttendance(eventId: string, qrOrDocument: string): Promise<DailyAttendanceResult> {
+  const lookup = extractQrLookupValue(qrOrDocument).trim();
+
+  if (!supabase && isDemoMode()) {
+    const registration =
+      mockRegistrations.find((item) => item.qrToken === lookup && item.eventId === eventId) ??
+      mockRegistrations.find((item) => {
+        if (item.eventId !== eventId) return false;
+        const participant = mockParticipants.find((p) => p.id === item.participantId);
+        return participant?.documentId === lookup;
+      });
+
+    if (!registration) throw new Error('Participante no inscrito en este evento');
+
+    const participant = mockParticipants.find((item) => item.id === registration.participantId);
+    const checkedInAt = new Date().toISOString();
+    return {
+      participantName: `${participant?.firstName ?? ''} ${participant?.lastName ?? ''}`.trim(),
+      documentId: participant?.documentId ?? lookup,
+      checkedInAt,
+      certificateCode: registration.certificateCode,
+      alreadyLoggedToday: false,
+    };
+  }
+  if (!supabase) throw new Error('Supabase no esta configurado en este despliegue.');
+
+  const { data, error } = await supabase.rpc('record_daily_attendance', {
+    p_event_id: eventId,
+    p_lookup: lookup,
+  });
+
+  if (error) throw error;
+  const row = data?.[0];
+  if (!row) throw new Error('No se pudo registrar la asistencia del día');
+
+  return {
+    participantName: row.result_participant_name,
+    documentId: row.result_document_id,
+    checkedInAt: row.result_checked_in_at,
+    certificateCode: row.result_certificate_code,
+    alreadyLoggedToday: row.result_already_logged_today,
   };
 }
 

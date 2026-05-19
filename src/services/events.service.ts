@@ -40,13 +40,33 @@ const mapEvent = (row: {
   organizerId: row.organizer_id,
 });
 
+const eventColumns =
+  'id,title,event_type,description,location,starts_at,ends_at,capacity,status,organizer_id' as const;
+
 export async function listEvents(): Promise<AcademicEvent[]> {
   if (!supabase && isDemoMode()) return mockEvents;
   if (!supabase) return [];
 
   const { data, error } = await supabase
     .from('events')
-    .select('id,title,event_type,description,location,starts_at,ends_at,capacity,status,organizer_id')
+    .select(eventColumns)
+    .order('starts_at', { ascending: false });
+
+  if (error) throw error;
+  return data.map(mapEvent);
+}
+
+/** Eventos visibles sin login (publicados o activos). */
+export async function listPublicEvents(): Promise<AcademicEvent[]> {
+  if (!supabase && isDemoMode()) {
+    return mockEvents.filter((event) => event.status === 'published' || event.status === 'active');
+  }
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(eventColumns)
+    .in('status', ['published', 'active'])
     .order('starts_at', { ascending: false });
 
   if (error) throw error;
@@ -59,11 +79,12 @@ export async function getEvent(eventId: string): Promise<AcademicEvent | null> {
 
   const { data, error } = await supabase
     .from('events')
-    .select('id,title,event_type,description,location,starts_at,ends_at,capacity,status,organizer_id')
+    .select(eventColumns)
     .eq('id', eventId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) return null;
   return mapEvent(data);
 }
 

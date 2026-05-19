@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { RefreshCw, UserPlus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { listParticipants } from '@/services/participants.service';
@@ -52,10 +53,10 @@ export function ParticipantsPage() {
               <RefreshCw size={18} />
               Actualizar
             </button>
-            <button className="primary-button" type="button">
+            <Link className="primary-button" to="/eventos">
               <UserPlus size={18} />
-              Nuevo participante
-            </button>
+              Registrar en un evento
+            </Link>
           </>
         }
       />

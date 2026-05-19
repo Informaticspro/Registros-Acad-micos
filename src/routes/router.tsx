@@ -10,10 +10,12 @@ import { EventsPage } from '@/features/events/pages/EventsPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { ParticipantsPage } from '@/features/participants/pages/ParticipantsPage';
 import { RegisterParticipantPage } from '@/features/registration/pages/RegisterParticipantPage';
+import { ParticipantQrLookupPage } from '@/features/registration/pages/ParticipantQrLookupPage';
 import { ScannerPage } from '@/features/attendance/pages/ScannerPage';
 import { CertificatesPage } from '@/features/certificates/pages/CertificatesPage';
 import { ExportsPage } from '@/features/exports/pages/ExportsPage';
 import { HistoryPage } from '@/features/history/pages/HistoryPage';
+import { UsersPage } from '@/features/admin/pages/UsersPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 export const router = createBrowserRouter([
@@ -22,6 +24,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/eventos/:eventId/registro', element: <RegisterParticipantPage /> },
+      { path: '/mi-codigo', element: <ParticipantQrLookupPage /> },
+      { path: '/eventos/:eventId/mi-codigo', element: <ParticipantQrLookupPage /> },
     ],
   },
   {
@@ -62,6 +66,14 @@ export const router = createBrowserRouter([
       },
       { path: '/certificados', element: <CertificatesPage /> },
       { path: '/exportaciones', element: <ExportsPage /> },
+      {
+        path: '/usuarios',
+        element: (
+          <RoleGuard roles={['admin']}>
+            <UsersPage />
+          </RoleGuard>
+        ),
+      },
       { path: '/historial', element: <HistoryPage /> },
     ],
   },

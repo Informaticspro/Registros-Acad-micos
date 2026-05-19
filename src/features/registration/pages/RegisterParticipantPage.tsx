@@ -1,6 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ClipboardCheck, UserPlus } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ParticipantQrCard } from '@/components/registration/ParticipantQrCard';
+import { RegistrationFormFields } from '@/features/registration/components/RegistrationFormFields';
+import {
+  getRegistrationFormHint,
+  getRegistrationFormKind,
+} from '@/features/registration/registration-config';
 import { getEvent } from '@/services/events.service';
 import { registerPublicCheckIn, PublicCheckInResult } from '@/services/public-check-in.service';
 import { AcademicEvent } from '@/types/domain';
@@ -12,7 +18,7 @@ function getValue(form: FormData, field: string) {
 }
 
 function collectMetadata(form: FormData, eventType: AcademicEvent['eventType'] | undefined): Record<string, string> {
-  if (eventType !== 'congreso') return {};
+  if (getRegistrationFormKind(eventType) !== 'congreso') return {};
 
   return {
     sex: getValue(form, 'sex'),
@@ -25,20 +31,65 @@ function collectMetadata(form: FormData, eventType: AcademicEvent['eventType'] |
   };
 }
 
+type RegisterLocationState = {
+  fromAdmin?: boolean;
+};
+
 export function RegisterParticipantPage() {
+  const navigate = useNavigate();
   const { eventId } = useParams();
+  const location = useLocation();
+  const fromAdmin = Boolean((location.state as RegisterLocationState | null)?.fromAdmin);
   const [event, setEvent] = useState<AcademicEvent | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isLoadingEvent, setIsLoadingEvent] = useState(true);
   const [result, setResult] = useState<PublicCheckInResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (eventId) void getEvent(eventId).then(setEvent);
+    if (!eventId) {
+      setIsLoadingEvent(false);
+      setLoadError('No se indicó el evento.');
+      return;
+    }
+
+    setIsLoadingEvent(true);
+    setLoadError(null);
+    void getEvent(eventId)
+      .then((loaded) => {
+        if (!loaded) {
+          setLoadError('Evento no encontrado o no disponible para registro público.');
+          setEvent(null);
+          return;
+        }
+        setEvent(loaded);
+      })
+      .catch((err) => {
+        setLoadError(getErrorMessage(err, 'No se pudo cargar el evento'));
+        setEvent(null);
+      })
+      .finally(() => setIsLoadingEvent(false));
   }, [eventId]);
+
+  const formKind = getRegistrationFormKind(event?.eventType);
+  const showDraftWarning =
+    event && (event.status === 'draft' || event.status === 'closed' || event.status === 'archived');
+
+  function resetForAnotherRegistration() {
+    setResult(null);
+    setError(null);
+    if (eventId) {
+      navigate(`/eventos/${eventId}/registro`, {
+        replace: true,
+        state: fromAdmin ? { fromAdmin: true } : undefined,
+      });
+    }
+  }
 
   async function handleSubmit(formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
-    if (!eventId) return;
+    if (!eventId || !event) return;
 
     const formElement = formEvent.currentTarget;
     const form = new FormData(formElement);
@@ -52,7 +103,8 @@ export function RegisterParticipantPage() {
         lastName: getValue(form, 'lastName'),
         documentId: getValue(form, 'documentId'),
         email: getValue(form, 'email'),
-        metadata: collectMetadata(form, event?.eventType),
+        eventType: event.eventType,
+        metadata: collectMetadata(form, event.eventType),
       });
       setResult(response);
       formElement.reset();
@@ -63,8 +115,71 @@ export function RegisterParticipantPage() {
     }
   }
 
+  const shellClass = fromAdmin ? 'page-stack register-in-app' : 'public-register';
+
+  if (result && eventId && event) {
+    const fullName = `${result.firstName} ${result.lastName}`.trim();
+    return (
+      <section className={shellClass}>
+        {fromAdmin && eventId ? (
+          <Link className="secondary-button register-back-link" to={`/eventos/${eventId}`}>
+            <ArrowLeft size={18} />
+            Volver al evento
+          </Link>
+        ) : null}
+        <div className="public-copy">
+          <div className="public-icon">
+            <CheckCircle2 size={28} />
+          </div>
+          <span className="eyebrow">Registro completado</span>
+          <h1>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Participante registrado'}</h1>
+          <p>
+            {result.alreadyCheckedIn
+              ? 'Este participante ya tenía registro previo. Se muestra su QR para el control diario.'
+              : 'Guarde o imprima el QR. Lo presentará en cada jornada del evento para marcar llegada con fecha y hora.'}
+          </p>
+        </div>
+        <div className="panel stack-form register-success-panel">
+          <ParticipantQrCard
+            eventId={eventId}
+            qrToken={result.qrToken}
+            documentId={result.documentId}
+            fullName={fullName}
+            certificateCode={result.certificateCode}
+            showDownload
+          />
+          <Link className="secondary-button" to={`/eventos/${eventId}/mi-codigo`}>
+            Consultar este QR después con mi cédula
+          </Link>
+          <div className="register-success-actions">
+            <button className="primary-button" type="button" onClick={resetForAnotherRegistration}>
+              <UserPlus size={18} />
+              Registrar otro participante
+            </button>
+            {fromAdmin ? (
+              <>
+                <Link className="secondary-button" to={`/eventos/${eventId}`}>
+                  Volver al evento
+                </Link>
+                <Link className="secondary-button" to="/participantes">
+                  Ver listado de participantes
+                </Link>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="public-register">
+    <section className={shellClass}>
+      {fromAdmin && eventId ? (
+        <Link className="secondary-button register-back-link" to={`/eventos/${eventId}`}>
+          <ArrowLeft size={18} />
+          Volver al evento
+        </Link>
+      ) : null}
       <div className="public-copy">
         <div className="public-icon">
           <ClipboardCheck size={28} />
@@ -76,94 +191,32 @@ export function RegisterParticipantPage() {
         </p>
         {event ? (
           <div className="public-event-meta">
+            <span>Tipo: {event.eventType}</span>
             <span>{event.location}</span>
             <span>{formatDateTime(event.startsAt)}</span>
           </div>
         ) : null}
       </div>
-      <form className="panel stack-form" onSubmit={handleSubmit}>
-        {event?.eventType === 'congreso' ? (
-          <span className="form-hint">Formulario de congreso</span>
-        ) : (
-          <span className="form-hint">Formulario simple para taller o evento general</span>
-        )}
-        <label>
-          Nombre
-          <input name="firstName" required placeholder="Ej. Maria" autoComplete="given-name" />
-        </label>
-        <label>
-          Apellido
-          <input name="lastName" required placeholder="Ej. Gonzalez" autoComplete="family-name" />
-        </label>
-        <label>
-          Cedula
-          <input name="documentId" required placeholder="Ej. 8-888-111" autoComplete="off" />
-        </label>
-        <label>
-          {event?.eventType === 'congreso' ? 'Correo institucional' : 'Correo institucional'}
-          <input name="email" required type="email" placeholder="correo@institucion.edu" autoComplete="email" />
-        </label>
-        {event?.eventType === 'congreso' ? (
-          <>
-            <label>
-              Sexo
-              <select name="sex" required defaultValue="">
-                <option value="" disabled>Seleccione</option>
-                <option value="femenino">Femenino</option>
-                <option value="masculino">Masculino</option>
-                <option value="otro">Otro</option>
-                <option value="prefiere_no_decir">Prefiere no decir</option>
-              </select>
-            </label>
-            <label>
-              Categoria
-              <input name="category" required placeholder="Ej. Estudiante, docente, investigador" />
-            </label>
-            <label>
-              Correo P.
-              <input name="personalEmail" required type="email" placeholder="correo.personal@gmail.com" />
-            </label>
-            <label>
-              Nacionalidad
-              <input name="nationality" required placeholder="Ej. Panamena" />
-            </label>
-            <label>
-              Otra Nacionalidad
-              <input name="otherNationality" placeholder="Opcional" />
-            </label>
-            <label>
-              Modalidad
-              <select name="modality" required defaultValue="">
-                <option value="" disabled>Seleccione</option>
-                <option value="presencial">Presencial</option>
-                <option value="virtual">Virtual</option>
-                <option value="hibrida">Hibrida</option>
-              </select>
-            </label>
-            <label>
-              Tipo Participacion
-              <select name="participationType" required defaultValue="">
-                <option value="" disabled>Seleccione</option>
-                <option value="asistente">Asistente</option>
-                <option value="ponente">Ponente</option>
-                <option value="organizador">Organizador</option>
-                <option value="invitado">Invitado</option>
-              </select>
-            </label>
-          </>
-        ) : null}
-        {error ? <p className="form-error">{error}</p> : null}
-        <button className="primary-button" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Registrando...' : 'Registrar asistencia'}
-        </button>
-        {result ? (
-          <div className="qr-result">
-            <CheckCircle2 size={22} />
-            <strong>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Asistencia registrada'}</strong>
-            <span>Código de certificado: {result.certificateCode}</span>
-          </div>
-        ) : null}
-      </form>
+      {isLoadingEvent ? <p className="form-hint">Cargando formulario...</p> : null}
+      {loadError ? <p className="form-error">{loadError}</p> : null}
+      {!isLoadingEvent && !loadError && event ? (
+        <form className="panel stack-form" onSubmit={handleSubmit}>
+          <span className="form-hint">{getRegistrationFormHint(formKind)}</span>
+          {showDraftWarning ? (
+            <p className="form-hint">
+              Este evento está en estado «{event.status}». Para registro público debe estar publicado o activo.
+              {fromAdmin
+                ? ' Si eres organizador, el sistema permite registrar manualmente en borrador.'
+                : null}
+            </p>
+          ) : null}
+          <RegistrationFormFields formKind={formKind} />
+          {error ? <p className="form-error">{error}</p> : null}
+          <button className="primary-button" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Registrando...' : 'Registrar asistencia'}
+          </button>
+        </form>
+      ) : null}
     </section>
   );
 }

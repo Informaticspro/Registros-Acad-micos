@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Edit, ExternalLink, UserPlus } from 'lucide-react';
 import QRCode from 'qrcode';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -7,7 +7,15 @@ import { getEvent } from '@/services/events.service';
 import { AcademicEvent } from '@/types/domain';
 import { formatDateTime } from '@/utils/format';
 
+function getRegistrationFormDescription(eventType: AcademicEvent['eventType']) {
+  if (eventType === 'congreso') {
+    return 'Formulario extendido: sexo, categoría, correo personal, nacionalidad, modalidad y tipo de participación.';
+  }
+  return 'Formulario simple: nombre, apellido, cédula y correo institucional.';
+}
+
 export function EventDetailPage() {
+  const navigate = useNavigate();
   const { eventId } = useParams();
   const [event, setEvent] = useState<AcademicEvent | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -37,7 +45,11 @@ export function EventDetailPage() {
         description={event.description}
         actions={
           <>
-            <Link className="secondary-button" to={`/eventos/${event.id}/registro`}>
+            <Link
+              className="secondary-button"
+              to={`/eventos/${event.id}/registro`}
+              state={{ fromAdmin: true }}
+            >
               <ExternalLink size={18} />
               Registro publico
             </Link>
@@ -63,7 +75,7 @@ export function EventDetailPage() {
           <h2>Operación</h2>
           <div className="workflow-list">
             <span>QR público del evento para mostrar en el salón</span>
-            <span>Formulario de nombre, apellido, cédula y correo</span>
+            <span>{getRegistrationFormDescription(event.eventType)}</span>
             <span>Check-in guardado para certificado</span>
             <span>Certificado PDF por asistencia</span>
           </div>
@@ -72,10 +84,24 @@ export function EventDetailPage() {
           <h2>QR para estudiantes</h2>
           <p>Proyecta o imprime este código en el salón. Cada estudiante lo escanea y registra su asistencia.</p>
           {qrDataUrl ? <img src={qrDataUrl} alt="QR de registro del evento" /> : null}
-          <Link className="primary-button" to={`/eventos/${event.id}/registro`}>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() =>
+              navigate(`/eventos/${event.id}/registro`, { state: { fromAdmin: true } })
+            }
+          >
             <UserPlus size={18} />
             Registrar participante
+          </button>
+          <Link className="secondary-button" to={`/eventos/${event.id}/mi-codigo`}>
+            <ExternalLink size={18} />
+            Consultar QR con cédula
           </Link>
+          <a className="secondary-button" href={registrationUrl} target="_blank" rel="noreferrer">
+            <ExternalLink size={18} />
+            Abrir registro en pestaña nueva
+          </a>
           <code>{registrationUrl}</code>
         </article>
       </section>

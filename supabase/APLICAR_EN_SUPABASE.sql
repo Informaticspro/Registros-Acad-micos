@@ -1,6 +1,26 @@
--- Misma actualización que supabase/APLICAR_EN_SUPABASE.sql (solo la función RPC).
--- Ejecutar en Supabase SQL Editor.
+-- =============================================================================
+-- Script único para Supabase SQL Editor
+-- Ejecuta este archivo si ya tienes el proyecto creado y quieres alinear todo
+-- con el registro público (taller simple / congreso extendido).
+--
+-- Si es instalación nueva: ejecuta primero schema.sql completo.
+-- Si ya ejecutaste schema.sql: ejecuta solo las secciones marcadas "ACTUALIZACIÓN".
+-- Después ejecuta también: migration-v2-attendance-export-admin.sql
+-- =============================================================================
 
+-- -----------------------------------------------------------------------------
+-- ACTUALIZACIÓN: lectura pública de eventos publicados/activos (QR y formulario)
+-- -----------------------------------------------------------------------------
+drop policy if exists "events_read_public_published" on public.events;
+
+create policy "events_read_public_published"
+on public.events for select
+to anon
+using (status in ('published', 'active'));
+
+-- -----------------------------------------------------------------------------
+-- ACTUALIZACIÓN: RPC public_event_check_in con metadata y registro staff en borrador
+-- -----------------------------------------------------------------------------
 drop function if exists public.public_event_check_in(uuid, text, text, text, text);
 drop function if exists public.public_event_check_in(uuid, text, text, text, text, jsonb);
 
@@ -136,3 +156,11 @@ end;
 $$;
 
 grant execute on function public.public_event_check_in(uuid, text, text, text, text, jsonb) to anon, authenticated;
+
+-- -----------------------------------------------------------------------------
+-- NOTAS sobre metadata (participants.metadata jsonb)
+-- -----------------------------------------------------------------------------
+-- Taller / seminario / capacitacion / universitario: {} (solo columnas base)
+-- Congreso:
+--   sex, category, personalEmail, nationality, otherNationality,
+--   modality, participationType
