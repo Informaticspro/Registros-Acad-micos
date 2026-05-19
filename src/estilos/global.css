@@ -446,6 +446,7 @@ textarea {
   border-radius: var(--radius);
   background: #0b0e15;
   color: var(--text);
+  font-size: 1rem;
   padding: 12px 14px;
   outline: 0;
 }
@@ -878,6 +879,10 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  body {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+
   .topbar,
   .page-header,
   .section-heading,
@@ -889,16 +894,126 @@ textarea {
   }
 
   .content-shell {
-    padding: 20px;
+    padding: 18px 14px 28px;
   }
 
   .topbar {
+    position: static;
     height: auto;
-    padding: 16px;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .search-box {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .search-box input {
+    font-size: 0.95rem;
   }
 
   .topbar-actions {
     justify-content: space-between;
+  }
+
+  .user-chip {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .user-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    height: auto;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    background: rgba(13, 16, 23, 0.96);
+    backdrop-filter: blur(16px);
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .nav-list {
+    display: flex;
+    gap: 6px;
+    margin-top: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .nav-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-link {
+    min-width: 76px;
+    min-height: 58px;
+    flex: 0 0 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 9px;
+    font-size: 0.72rem;
+    text-align: center;
+  }
+
+  .nav-link svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .panel,
+  .event-card,
+  .login-panel,
+  .event-participants-card {
+    padding: 16px;
+  }
+
+  .page-stack {
+    gap: 18px;
+  }
+
+  .page-header h1,
+  .login-panel h1,
+  .public-copy h1 {
+    font-size: 2rem;
+    line-height: 1.08;
+  }
+
+  .page-header p,
+  .login-panel p,
+  .public-copy p,
+  .event-card p,
+  .panel p {
+    max-width: none;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+  }
+
+  .icon-button {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
   }
 
   .nav-list,
@@ -913,6 +1028,108 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .stat-card {
+    min-height: 110px;
+  }
+
+  .cards-grid {
+    gap: 14px;
+  }
+
+  .event-card {
+    min-height: auto;
+  }
+
+  .event-meta {
+    align-self: auto;
+  }
+
+  .definition-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .data-table {
+    overflow: visible;
+    gap: 12px;
+  }
+
+  .data-table-head {
+    display: none;
+  }
+
+  .data-table-row {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #0b0e15;
+  }
+
+  .data-table-row > span {
+    overflow-wrap: anywhere;
+  }
+
+  .participant-summary strong {
+    font-size: 1.5rem;
+  }
+
+  .event-card-meta {
+    display: grid;
+    gap: 8px;
+  }
+
+  .participants-mini-table {
+    overflow: visible;
+    gap: 12px;
+  }
+
+  .participants-mini-head {
+    display: none;
+  }
+
+  .participants-mini-row,
+  .participants-mini-row.with-actions {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #0b0e15;
+  }
+
+  .participants-mini-row > span {
+    overflow-wrap: anywhere;
+  }
+
+  .participants-mini-row > span:nth-of-type(1)::before {
+    content: "Documento: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .participants-mini-row > span:nth-of-type(2)::before {
+    content: "Correo: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .participants-mini-row > span:nth-of-type(3)::before {
+    content: "Estado: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .participant-edit-form {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
   .user-row,
   .user-edit-row {
     grid-template-columns: 1fr;
@@ -920,6 +1137,11 @@ textarea {
 
   .row-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .row-actions .icon-button {
+    flex: 0 0 44px;
   }
 
   .page-actions {
@@ -928,5 +1150,32 @@ textarea {
 
   .public-register {
     place-items: stretch;
+    min-height: auto;
+    padding: 18px 14px;
+  }
+
+  .public-copy {
+    width: 100%;
+  }
+
+  .public-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 14px;
+  }
+
+  .participant-qr-image,
+  .qr-event-panel img {
+    width: min(220px, 100%);
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .scanner-preview {
+    min-height: 280px;
+  }
+
+  .scanner-video {
+    max-height: 300px;
   }
 }
