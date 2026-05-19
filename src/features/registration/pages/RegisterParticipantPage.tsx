@@ -4,6 +4,7 @@ import { CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { getEvent } from '@/services/events.service';
 import { registerPublicCheckIn, PublicCheckInResult } from '@/services/public-check-in.service';
 import { AcademicEvent } from '@/types/domain';
+import { getErrorMessage } from '@/utils/errors';
 import { formatDateTime } from '@/utils/format';
 
 export function RegisterParticipantPage() {
@@ -36,7 +37,7 @@ export function RegisterParticipantPage() {
       setResult(response);
       formEvent.currentTarget.reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo registrar la asistencia');
+      setError(getErrorMessage(err, 'No se pudo registrar la asistencia'));
     } finally {
       setIsSubmitting(false);
     }
