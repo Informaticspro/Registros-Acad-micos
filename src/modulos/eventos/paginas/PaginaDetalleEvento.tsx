@@ -72,6 +72,7 @@ export function PaginaDetalleEvento() {
   const [error, setError] = useState<string | null>(null);
   const [qrMessage, setQrMessage] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [useAutomaticPeriod, setUseAutomaticPeriod] = useState(true);
   const [attendancePeriod, setAttendancePeriod] = useState<JornadaAsistencia>(() => getAutomaticAttendancePeriod());
   const [attendanceRows, setAttendanceRows] = useState<EventDailyAttendance[]>([]);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
@@ -96,11 +97,13 @@ export function PaginaDetalleEvento() {
     const intervalId = window.setInterval(() => {
       const now = new Date();
       setCurrentTime(now);
-      setAttendancePeriod(getAutomaticAttendancePeriod(now));
+      if (useAutomaticPeriod) {
+        setAttendancePeriod(getAutomaticAttendancePeriod(now));
+      }
     }, 30_000);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [useAutomaticPeriod]);
 
   async function loadAttendance(showLoader = false) {
     if (!eventId || event?.eventType !== 'congreso') return;
@@ -152,6 +155,18 @@ export function PaginaDetalleEvento() {
     } catch {
       setQrMessage('No se pudo copiar automaticamente. Puedes seleccionar el enlace manualmente.');
     }
+  }
+
+  function handleManualPeriodChange(period: JornadaAsistencia) {
+    setUseAutomaticPeriod(false);
+    setAttendancePeriod(period);
+  }
+
+  function handleSyncAutomaticPeriod() {
+    const now = new Date();
+    setUseAutomaticPeriod(true);
+    setCurrentTime(now);
+    setAttendancePeriod(getAutomaticAttendancePeriod(now));
   }
 
   if (!event) {
@@ -257,20 +272,29 @@ export function PaginaDetalleEvento() {
 
             <div className="attendance-toolbar">
               <div className="auto-period-card attendance-auto-period">
-                <span>Jornada automatica</span>
+                <span>{useAutomaticPeriod ? 'Jornada automatica' : 'Jornada manual'}</span>
                 <strong>{attendancePeriod === 'vespertina' ? 'Vespertina presencial' : 'Matutina presencial'}</strong>
                 <small>Hora Panama: {getPanamaTimeLabel(currentTime)}</small>
               </div>
+              <label>
+                Revisar jornada
+                <select
+                  value={attendancePeriod}
+                  onChange={(changeEvent) => handleManualPeriodChange(changeEvent.target.value as JornadaAsistencia)}
+                >
+                  <option value="matutina">Matutina presencial</option>
+                  <option value="vespertina">Vespertina presencial</option>
+                </select>
+              </label>
+              <button className="secondary-button" type="button" onClick={handleSyncAutomaticPeriod}>
+                Usar hora actual
+              </button>
               <span>
                 {lastAttendanceRefresh ? `Actualizado: ${formatDateTime(lastAttendanceRefresh)}` : 'Sin actualizar'}
               </span>
             </div>
 
             <div className="attendance-summary-grid">
-              <div>
-                <span>Total</span>
-                <strong>{attendanceSummary.total}</strong>
-              </div>
               <div>
                 <span>Total</span>
                 <strong>{attendanceSummary.total}</strong>
