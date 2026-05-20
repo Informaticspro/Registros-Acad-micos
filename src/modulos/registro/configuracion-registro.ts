@@ -32,19 +32,43 @@ export type CongresoMetadataField = (typeof CONGRESO_METADATA_FIELDS)[number];
 export const CONGRESO_MODALITY_OPTIONS = [
   {
     value: 'estudiante_plan_1',
-    label: 'Estudiante-Plan 1: $20.00 (congreso presencial y virtual, talleres, refrigerios, certificados, otros)',
+    label: 'Estudiante-Plan 1: $15.00 (congreso presencial y virtual, talleres, refrigerios, certificados, otros)',
   },
   {
     value: 'estudiante_plan_2',
-    label: 'Estudiante-Plan 2: $15.00 (congreso virtual, certificados, otros)',
+    label: 'Estudiante-Plan 2: $25.00 (congreso todo incluido + cena)',
   },
   {
-    value: 'profesional_plan_1',
-    label: 'Profesional-Plan 1: $40.00 (congreso presencial y virtual, talleres, refrigerios, certificados, otros)',
+    value: 'administrativo',
+    label: 'Administrativo: $30.00',
   },
   {
-    value: 'profesional_plan_2',
-    label: 'Profesional-Plan 2: $30.00 (congreso virtual, certificados, otros)',
+    value: 'estudiante_postgrado',
+    label: 'Estudiante de postgrado: $25.00',
+  },
+  {
+    value: 'docente_plan_1',
+    label: 'Docente-Plan 1: $60.00 (TC)',
+  },
+  {
+    value: 'docente_plan_2',
+    label: 'Docente-Plan 2: $50.00 (TM)',
+  },
+  {
+    value: 'docente_plan_3',
+    label: 'Docente-Plan 3: $40.00 (EVE)',
+  },
+  {
+    value: 'publico_general',
+    label: 'Publico en general: $50.00',
   },
 ] as const;
+
+export const CONGRESO_SEX_OPTIONS = ['Hombre', 'Mujer'] as const;
+
+export const CONGRESO_NATIONALITY_OPTIONS = ['Panamena', 'Otra'] as const;
+
+export const CONGRESO_CATEGORY_OPTIONS = ['Estudiante', 'Docente', 'Funcionario', 'Invitado', 'Egresado'] as const;
+
+export const CONGRESO_PARTICIPATION_TYPE_OPTIONS = ['Interno a la universidad', 'Externo a la universidad'] as const;
 

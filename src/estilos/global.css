@@ -627,6 +627,40 @@ textarea {
   resize: vertical;
 }
 
+.choice-group {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #0b0e15;
+}
+
+.choice-group legend {
+  padding: 0 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.choice-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.choice-option input {
+  width: auto;
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.choice-option span {
+  line-height: 1.45;
+}
+
 .data-table {
   display: grid;
   gap: 2px;
