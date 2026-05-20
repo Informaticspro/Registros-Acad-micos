@@ -1052,6 +1052,86 @@ textarea {
   color: var(--muted);
 }
 
+.congress-attendance-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 18px;
+}
+
+.attendance-panel-header,
+.attendance-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.attendance-panel-header h2 {
+  margin-bottom: 8px;
+}
+
+.attendance-toolbar label {
+  width: min(320px, 100%);
+}
+
+.attendance-toolbar > span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.attendance-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.attendance-summary-grid div {
+  display: grid;
+  gap: 8px;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #0b0e15;
+}
+
+.attendance-summary-grid span,
+.live-attendance-head,
+.live-attendance-row span {
+  color: var(--muted);
+}
+
+.attendance-summary-grid strong {
+  color: var(--text);
+  font-size: 2rem;
+}
+
+.live-attendance-list {
+  display: grid;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.live-attendance-head,
+.live-attendance-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(120px, 0.7fr) minmax(160px, 0.8fr) minmax(180px, 0.9fr) minmax(180px, 0.9fr);
+  min-width: 960px;
+  gap: 14px;
+  padding: 13px 14px;
+}
+
+.live-attendance-head {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.live-attendance-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+
 .qr-event-panel code,
 .qr-public-url code {
   overflow-wrap: anywhere;
@@ -1098,6 +1178,8 @@ textarea {
   .page-header,
   .section-heading,
   .event-participants-header,
+  .attendance-panel-header,
+  .attendance-toolbar,
   .certificate-panel,
   .export-panel {
     align-items: stretch;
@@ -1346,6 +1428,10 @@ textarea {
     font-size: 1.5rem;
   }
 
+  .attendance-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .event-card-meta {
     display: grid;
     gap: 8px;
@@ -1402,6 +1488,49 @@ textarea {
 
   .participants-mini-row > span:nth-of-type(3)::before {
     content: "Estado: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .live-attendance-list {
+    overflow: visible;
+    gap: 12px;
+  }
+
+  .live-attendance-head {
+    display: none;
+  }
+
+  .live-attendance-row {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #0b0e15;
+  }
+
+  .live-attendance-row span:nth-of-type(1)::before {
+    content: "Cedula: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .live-attendance-row span:nth-of-type(2)::before {
+    content: "Categoria: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .live-attendance-row span:nth-of-type(3)::before {
+    content: "Hora: ";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .live-attendance-row span:nth-of-type(4)::before {
+    content: "Escaneado por: ";
     color: var(--muted);
     font-weight: 700;
   }

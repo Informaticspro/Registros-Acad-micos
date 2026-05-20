@@ -89,6 +89,20 @@ export type BaseDatos = {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      attendance_daily_logs: {
+        Row: {
+          id: string;
+          event_id: string;
+          registration_id: string;
+          scanned_by: string | null;
+          checked_in_at: string;
+          attendance_period: 'matutina' | 'vespertina';
+          created_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -114,12 +128,14 @@ export type BaseDatos = {
         Args: {
           p_event_id: string;
           p_lookup: string;
+          p_attendance_period: 'matutina' | 'vespertina';
         };
         Returns: {
           result_participant_name: string;
           result_document_id: string;
           result_certificate_code: string;
           result_checked_in_at: string;
+          result_attendance_period: 'matutina' | 'vespertina';
           result_already_logged_today: boolean;
         }[];
       };

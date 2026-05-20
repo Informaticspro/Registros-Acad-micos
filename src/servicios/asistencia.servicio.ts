@@ -1,7 +1,7 @@
 ﻿import { supabase } from '@/infraestructura/supabase';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { mockAttendance, mockParticipantes, mockInscripcions } from '@/datos/datosPrueba';
-import { RegistroAsistencia } from '@/tipos/dominio';
+import { JornadaAsistencia, RegistroAsistencia } from '@/tipos/dominio';
 import { extractQrLookupValue } from '@/utilidades/qr';
 
 type InscripcionRow = {
@@ -23,13 +23,65 @@ type AttendanceRow = {
   checked_in_at: string;
 };
 
+type DailyLogRow = {
+  id: string;
+  event_id: string;
+  registration_id: string;
+  scanned_by: string | null;
+  checked_in_at: string;
+  attendance_period: JornadaAsistencia | null;
+  registrations: {
+    participants: {
+      first_name: string;
+      last_name: string;
+      document_id: string;
+      metadata: Record<string, string> | null;
+    } | null;
+  } | null;
+  profiles: {
+    full_name: string | null;
+  } | null;
+};
+
 export type DailyAttendanceResult = {
   participantName: string;
   documentId: string;
   checkedInAt: string;
   certificateCode: string;
+  attendancePeriod: JornadaAsistencia;
   alreadyLoggedToday: boolean;
 };
+
+export type EventDailyAttendance = {
+  id: string;
+  participantName: string;
+  documentId: string;
+  category: string;
+  attendancePeriod: JornadaAsistencia;
+  checkedInAt: string;
+  scannedByName: string;
+};
+
+function getCurrentDayRange() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+}
+
+function normalizeAttendancePeriod(value?: string | null): JornadaAsistencia {
+  return value === 'vespertina' ? 'vespertina' : 'matutina';
+}
+
+function getMetadataValue(metadata: Record<string, string> | null | undefined, key: string) {
+  return metadata?.[key]?.trim() ?? '';
+}
 
 export async function verifyQrToken(qrToken: string) {
   const lookup = extractQrLookupValue(qrToken);
@@ -61,7 +113,11 @@ export async function verifyQrToken(qrToken: string) {
   };
 }
 
-export async function recordDailyAttendance(eventId: string, qrOrDocument: string): Promise<DailyAttendanceResult> {
+export async function recordDailyAttendance(
+  eventId: string,
+  qrOrDocument: string,
+  attendancePeriod: JornadaAsistencia,
+): Promise<DailyAttendanceResult> {
   const lookup = extractQrLookupValue(qrOrDocument).trim();
 
   if (!supabase && isDemoMode()) {
@@ -82,6 +138,7 @@ export async function recordDailyAttendance(eventId: string, qrOrDocument: strin
       documentId: participant?.documentId ?? lookup,
       checkedInAt,
       certificateCode: registration.certificateCode,
+      attendancePeriod,
       alreadyLoggedToday: false,
     };
   }
@@ -90,6 +147,7 @@ export async function recordDailyAttendance(eventId: string, qrOrDocument: strin
   const { data, error } = await supabase.rpc('record_daily_attendance', {
     p_event_id: eventId,
     p_lookup: lookup,
+    p_attendance_period: attendancePeriod,
   });
 
   if (error) throw error;
@@ -101,8 +159,65 @@ export async function recordDailyAttendance(eventId: string, qrOrDocument: strin
     documentId: row.result_document_id,
     checkedInAt: row.result_checked_in_at,
     certificateCode: row.result_certificate_code,
+    attendancePeriod: normalizeAttendancePeriod(row.result_attendance_period),
     alreadyLoggedToday: row.result_already_logged_today,
   };
+}
+
+export async function listEventDailyAttendance(
+  eventId: string,
+  attendancePeriod: JornadaAsistencia,
+): Promise<EventDailyAttendance[]> {
+  if (!supabase && isDemoMode()) return [];
+  if (!supabase) return [];
+
+  const { start, end } = getCurrentDayRange();
+  const { data, error } = await supabase
+    .from('attendance_daily_logs')
+    .select(
+      `
+      id,
+      event_id,
+      registration_id,
+      scanned_by,
+      checked_in_at,
+      attendance_period,
+      registrations (
+        participants (
+          first_name,
+          last_name,
+          document_id,
+          metadata
+        )
+      ),
+      profiles (
+        full_name
+      )
+    `,
+    )
+    .eq('event_id', eventId)
+    .eq('attendance_period', attendancePeriod)
+    .gte('checked_in_at', start)
+    .lt('checked_in_at', end)
+    .order('checked_in_at', { ascending: false })
+    .returns<DailyLogRow[]>();
+
+  if (error) throw error;
+
+  return data.map((row) => {
+    const participant = row.registrations?.participants;
+    const category = getMetadataValue(participant?.metadata, 'category') || 'Sin categoria';
+
+    return {
+      id: row.id,
+      participantName: `${participant?.first_name ?? ''} ${participant?.last_name ?? ''}`.trim() || 'Participante',
+      documentId: participant?.document_id ?? '',
+      category,
+      attendancePeriod: normalizeAttendancePeriod(row.attendance_period),
+      checkedInAt: row.checked_in_at,
+      scannedByName: row.profiles?.full_name ?? 'Scanner',
+    };
+  });
 }
 
 export async function listAttendance(): Promise<RegistroAsistencia[]> {

@@ -31,6 +31,7 @@ type DailyLog = {
   registration_id: string;
   checked_in_at: string;
   scanned_by: string | null;
+  attendance_period: string | null;
 };
 
 type ExportRowBundle = {
@@ -39,6 +40,7 @@ type ExportRowBundle = {
   logs: Array<{
     checked_in_at: string;
     scanned_by: string | null;
+    attendance_period?: string | null;
     scanner_name?: string;
   }>;
 };
@@ -187,7 +189,9 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
             email: participant.email,
             metadata: participant.metadata ?? null,
           },
-          logs: registration.checkedInAt ? [{ checked_in_at: registration.checkedInAt, scanned_by: 'demo-admin' }] : [],
+          logs: registration.checkedInAt
+            ? [{ checked_in_at: registration.checkedInAt, scanned_by: 'demo-admin', attendance_period: 'matutina' }]
+            : [],
         };
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -218,7 +222,7 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
 
   const { data: logs, error: logError } = await supabase
     .from('attendance_daily_logs')
-    .select('registration_id, checked_in_at, scanned_by')
+    .select('registration_id, checked_in_at, scanned_by, attendance_period')
     .in('registration_id', registrationIds)
     .returns<DailyLog[]>();
 
@@ -238,6 +242,7 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
     list.push({
       checked_in_at: row.checked_in_at,
       scanned_by: row.scanned_by,
+      attendance_period: row.attendance_period,
       scanner_name: row.scanned_by ? scannerMap.get(row.scanned_by) : undefined,
     });
     acc[row.registration_id] = list;
@@ -263,7 +268,7 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
   return rows.map(({ registration, participant, logs }) => {
     const metadata = participant.metadata ?? {};
     const attendance = logs
-      .map((log) => formatDateTime(log.checked_in_at))
+      .map((log) => `${log.attendance_period ?? 'matutina'} - ${formatDateTime(log.checked_in_at)}`)
       .filter(Boolean)
       .join(' | ');
 
@@ -302,6 +307,7 @@ function buildAttendanceRows(rows: ExportRowBundle[]) {
         Apellido: participant.last_name,
         Cedula: participant.document_id,
         Fecha: date.toLocaleDateString('es-PA'),
+        Jornada: log.attendance_period ?? 'matutina',
         Hora: date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
         'Fecha y hora': formatDateTime(log.checked_in_at),
         'Registrado por': log.scanner_name ?? log.scanned_by ?? '',

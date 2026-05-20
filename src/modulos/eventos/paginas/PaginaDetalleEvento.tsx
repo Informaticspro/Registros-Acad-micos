@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Copy, Download, Edit, ExternalLink, Trash2, UserPlus } from 'lucide-react';
+import { Copy, Download, Edit, ExternalLink, RefreshCw, Trash2, UserPlus } from 'lucide-react';
 import QRCode from 'qrcode';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { env } from '@/infraestructura/entorno';
+import { EventDailyAttendance, listEventDailyAttendance } from '@/servicios/asistencia.servicio';
 import { deleteEvent, getEvent } from '@/servicios/eventos.servicio';
-import { EventoAcademico } from '@/tipos/dominio';
+import { EventoAcademico, JornadaAsistencia } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { formatDateTime } from '@/utilidades/formato';
 
@@ -25,6 +26,23 @@ function getQrDownloadName(event: EventoAcademico) {
   return `qr-registro-${safeTitle || event.id}.png`;
 }
 
+function getParticipantGroup(category: string): 'administrativos' | 'estudiantes' | 'invitados' {
+  const normalized = category.toLowerCase();
+  if (normalized.includes('admin')) return 'administrativos';
+  if (normalized.includes('estudiante')) return 'estudiantes';
+  if (normalized.includes('invit')) return 'invitados';
+  return 'invitados';
+}
+
+function getTodayLabel() {
+  return new Intl.DateTimeFormat('es-PA', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
+}
+
 export function PaginaDetalleEvento() {
   const navigate = useNavigate();
   const { eventId } = useParams();
@@ -32,6 +50,11 @@ export function PaginaDetalleEvento() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [qrMessage, setQrMessage] = useState<string | null>(null);
+  const [attendancePeriod, setAttendancePeriod] = useState<JornadaAsistencia>('matutina');
+  const [attendanceRows, setAttendanceRows] = useState<EventDailyAttendance[]>([]);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
+  const [lastAttendanceRefresh, setLastAttendanceRefresh] = useState<string | null>(null);
   const registrationUrl = useMemo(() => {
     if (!eventId) return '';
     const origin = env.publicAppUrl || window.location.origin;
@@ -46,6 +69,33 @@ export function PaginaDetalleEvento() {
     if (!registrationUrl) return;
     void QRCode.toDataURL(registrationUrl, { margin: 2, width: 320 }).then(setQrDataUrl);
   }, [registrationUrl]);
+
+  async function loadAttendance(showLoader = false) {
+    if (!eventId || event?.eventType !== 'congreso') return;
+
+    setAttendanceError(null);
+    if (showLoader) setIsAttendanceLoading(true);
+    try {
+      const rows = await listEventDailyAttendance(eventId, attendancePeriod);
+      setAttendanceRows(rows);
+      setLastAttendanceRefresh(new Date().toISOString());
+    } catch (err) {
+      setAttendanceError(getErrorMessage(err, 'No se pudo cargar la asistencia del congreso'));
+    } finally {
+      if (showLoader) setIsAttendanceLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!eventId || event?.eventType !== 'congreso') return undefined;
+
+    void loadAttendance(true);
+    const intervalId = window.setInterval(() => {
+      void loadAttendance();
+    }, 8000);
+
+    return () => window.clearInterval(intervalId);
+  }, [attendancePeriod, event?.eventType, eventId]);
 
   async function handleDelete() {
     if (!event) return;
@@ -75,6 +125,15 @@ export function PaginaDetalleEvento() {
   if (!event) {
     return <div className="screen-loader">Cargando evento...</div>;
   }
+
+  const attendanceSummary = attendanceRows.reduce(
+    (summary, row) => {
+      summary.total += 1;
+      summary[getParticipantGroup(row.category)] += 1;
+      return summary;
+    },
+    { total: 0, administrativos: 0, estudiantes: 0, invitados: 0 },
+  );
 
   return (
     <div className="page-stack">
@@ -136,6 +195,89 @@ export function PaginaDetalleEvento() {
             <span>Check-in guardado para certificado</span>
           </div>
         </article>
+
+        {event.eventType === 'congreso' ? (
+          <article className="panel congress-attendance-panel">
+            <div className="attendance-panel-header">
+              <div>
+                <h2>Asistencia en tiempo real</h2>
+                <p>
+                  Marcajes de hoy, {getTodayLabel()}. La asistencia matutina y vespertina se controla por separado.
+                </p>
+              </div>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => void loadAttendance(true)}
+                disabled={isAttendanceLoading}
+              >
+                <RefreshCw size={18} />
+                Actualizar
+              </button>
+            </div>
+
+            <div className="attendance-toolbar">
+              <label>
+                Jornada
+                <select
+                  value={attendancePeriod}
+                  onChange={(changeEvent) => setAttendancePeriod(changeEvent.target.value as JornadaAsistencia)}
+                >
+                  <option value="matutina">Matutina presencial</option>
+                  <option value="vespertina">Vespertina presencial</option>
+                </select>
+              </label>
+              <span>
+                {lastAttendanceRefresh ? `Actualizado: ${formatDateTime(lastAttendanceRefresh)}` : 'Sin actualizar'}
+              </span>
+            </div>
+
+            <div className="attendance-summary-grid">
+              <div>
+                <span>Total</span>
+                <strong>{attendanceSummary.total}</strong>
+              </div>
+              <div>
+                <span>Administrativos</span>
+                <strong>{attendanceSummary.administrativos}</strong>
+              </div>
+              <div>
+                <span>Estudiantes</span>
+                <strong>{attendanceSummary.estudiantes}</strong>
+              </div>
+              <div>
+                <span>Invitados</span>
+                <strong>{attendanceSummary.invitados}</strong>
+              </div>
+            </div>
+
+            {attendanceError ? <p className="form-error">{attendanceError}</p> : null}
+            {isAttendanceLoading ? <p className="form-hint">Cargando asistencia...</p> : null}
+
+            <div className="live-attendance-list">
+              <div className="live-attendance-head">
+                <span>Participante</span>
+                <span>Cedula</span>
+                <span>Categoria</span>
+                <span>Hora</span>
+                <span>Escaneado por</span>
+              </div>
+              {attendanceRows.map((row) => (
+                <div className="live-attendance-row" key={row.id}>
+                  <strong>{row.participantName}</strong>
+                  <span>{row.documentId}</span>
+                  <span>{row.category}</span>
+                  <span>{formatDateTime(row.checkedInAt)}</span>
+                  <span>{row.scannedByName}</span>
+                </div>
+              ))}
+            </div>
+
+            {attendanceRows.length === 0 && !isAttendanceLoading ? (
+              <p className="form-hint">Todavia no hay marcajes para esta jornada de hoy.</p>
+            ) : null}
+          </article>
+        ) : null}
 
         <article className="panel qr-event-panel">
           <div className="qr-event-header">

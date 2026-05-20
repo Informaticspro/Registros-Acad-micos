@@ -4,6 +4,8 @@ export type EstadoEvento = 'draft' | 'published' | 'active' | 'closed' | 'archiv
 
 export type EstadoAsistencia = 'present' | 'late' | 'excused';
 
+export type JornadaAsistencia = 'matutina' | 'vespertina';
+
 export type PerfilUsuario = {
   id: string;
   fullName: string;
