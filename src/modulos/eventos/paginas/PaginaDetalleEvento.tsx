@@ -4,8 +4,14 @@ import { Copy, Download, Edit, ExternalLink, RefreshCw, Trash2, UserPlus } from 
 import QRCode from 'qrcode';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { env } from '@/infraestructura/entorno';
-import { EventDailyAttendance, listEventDailyAttendance } from '@/servicios/asistencia.servicio';
+import {
+  EventDailyAttendance,
+  getAutomaticAttendancePeriod,
+  getPanamaTimeLabel,
+  listEventDailyAttendance,
+} from '@/servicios/asistencia.servicio';
 import { deleteEvent, getEvent } from '@/servicios/eventos.servicio';
+import { CONGRESO_CATEGORY_OPTIONS } from '@/modulos/registro/configuracion-registro';
 import { EventoAcademico, JornadaAsistencia } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { formatDateTime } from '@/utilidades/formato';
@@ -26,12 +32,27 @@ function getQrDownloadName(event: EventoAcademico) {
   return `qr-registro-${safeTitle || event.id}.png`;
 }
 
-function getParticipantGroup(category: string): 'administrativos' | 'estudiantes' | 'invitados' {
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function getCategoryLabel(category: string) {
   const normalized = category.toLowerCase();
-  if (normalized.includes('admin')) return 'administrativos';
-  if (normalized.includes('estudiante')) return 'estudiantes';
-  if (normalized.includes('invit')) return 'invitados';
-  return 'invitados';
+  const normalizedWithoutAccent = normalizeText(category);
+
+  if (normalized.includes('admin')) return 'Administrativo';
+  if (normalizedWithoutAccent.includes('estudiante') || normalizedWithoutAccent.includes('etudiante')) {
+    return 'Estudiante';
+  }
+  if (normalizedWithoutAccent.includes('docente') || normalizedWithoutAccent.includes('profesor')) return 'Docente';
+  if (normalizedWithoutAccent.includes('funcionario')) return 'Funcionario';
+  if (normalizedWithoutAccent.includes('egresado')) return 'Egresado';
+  if (normalizedWithoutAccent.includes('invit')) return 'Invitado';
+  return 'Invitado';
 }
 
 function getTodayLabel() {
@@ -50,7 +71,8 @@ export function PaginaDetalleEvento() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [qrMessage, setQrMessage] = useState<string | null>(null);
-  const [attendancePeriod, setAttendancePeriod] = useState<JornadaAsistencia>('matutina');
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [attendancePeriod, setAttendancePeriod] = useState<JornadaAsistencia>(() => getAutomaticAttendancePeriod());
   const [attendanceRows, setAttendanceRows] = useState<EventDailyAttendance[]>([]);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
@@ -69,6 +91,16 @@ export function PaginaDetalleEvento() {
     if (!registrationUrl) return;
     void QRCode.toDataURL(registrationUrl, { margin: 2, width: 320 }).then(setQrDataUrl);
   }, [registrationUrl]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      setAttendancePeriod(getAutomaticAttendancePeriod(now));
+    }, 30_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   async function loadAttendance(showLoader = false) {
     if (!eventId || event?.eventType !== 'congreso') return;
@@ -129,10 +161,17 @@ export function PaginaDetalleEvento() {
   const attendanceSummary = attendanceRows.reduce(
     (summary, row) => {
       summary.total += 1;
-      summary[getParticipantGroup(row.category)] += 1;
+      const category = getCategoryLabel(row.category);
+      summary.categories[category] = (summary.categories[category] ?? 0) + 1;
       return summary;
     },
-    { total: 0, administrativos: 0, estudiantes: 0, invitados: 0 },
+    {
+      total: 0,
+      categories: Object.fromEntries(CONGRESO_CATEGORY_OPTIONS.map((category) => [category, 0])) as Record<
+        string,
+        number
+      >,
+    },
   );
 
   return (
@@ -217,16 +256,11 @@ export function PaginaDetalleEvento() {
             </div>
 
             <div className="attendance-toolbar">
-              <label>
-                Jornada
-                <select
-                  value={attendancePeriod}
-                  onChange={(changeEvent) => setAttendancePeriod(changeEvent.target.value as JornadaAsistencia)}
-                >
-                  <option value="matutina">Matutina presencial</option>
-                  <option value="vespertina">Vespertina presencial</option>
-                </select>
-              </label>
+              <div className="auto-period-card attendance-auto-period">
+                <span>Jornada automatica</span>
+                <strong>{attendancePeriod === 'vespertina' ? 'Vespertina presencial' : 'Matutina presencial'}</strong>
+                <small>Hora Panama: {getPanamaTimeLabel(currentTime)}</small>
+              </div>
               <span>
                 {lastAttendanceRefresh ? `Actualizado: ${formatDateTime(lastAttendanceRefresh)}` : 'Sin actualizar'}
               </span>
@@ -238,17 +272,15 @@ export function PaginaDetalleEvento() {
                 <strong>{attendanceSummary.total}</strong>
               </div>
               <div>
-                <span>Administrativos</span>
-                <strong>{attendanceSummary.administrativos}</strong>
+                <span>Total</span>
+                <strong>{attendanceSummary.total}</strong>
               </div>
-              <div>
-                <span>Estudiantes</span>
-                <strong>{attendanceSummary.estudiantes}</strong>
-              </div>
-              <div>
-                <span>Invitados</span>
-                <strong>{attendanceSummary.invitados}</strong>
-              </div>
+              {CONGRESO_CATEGORY_OPTIONS.map((category) => (
+                <div key={category}>
+                  <span>{category}</span>
+                  <strong>{attendanceSummary.categories[category] ?? 0}</strong>
+                </div>
+              ))}
             </div>
 
             {attendanceError ? <p className="form-error">{attendanceError}</p> : null}
