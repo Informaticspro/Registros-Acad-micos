@@ -32,6 +32,16 @@ type DailyLog = {
   checked_in_at: string;
 };
 
+const INSTITUTION_HEADER = ['UNIVERSIDAD AUTÓNOMA DE CHIRIQUÍ', 'FACULTAD DE ECONOMÍA'] as const;
+
+const eventTypeLabels: Record<EventoAcademico['eventType'], string> = {
+  seminario: 'SEMINARIO',
+  congreso: 'CONGRESO',
+  taller: 'TALLER',
+  capacitacion: 'CAPACITACIÓN',
+  universitario: 'EVENTO UNIVERSITARIO',
+};
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -189,6 +199,7 @@ function buildExportRows(event: EventoAcademico, rows: Awaited<ReturnType<typeof
       'Otra Nacionalidad': metadata.otherNationality ?? '',
       Modalidad: metadata.modality ?? '',
       'Tipo Participacion': metadata.participationType ?? '',
+      Entidad: metadata.entity ?? '',
     };
   });
 }
@@ -203,8 +214,33 @@ export async function exportEventExcel(event: ExportableEvent) {
     );
   }
 
+  const tableHeaders = Object.keys(sheetRows[0]);
+  const columnCount = Math.max(tableHeaders.length, 1);
+  const eventTitle = `${eventTypeLabels[event.eventType]}: ${event.title}`;
+  const generatedAt = `Generado: ${formatDateTime(new Date().toISOString())}`;
+  const headerRows = [
+    [INSTITUTION_HEADER[0]],
+    [INSTITUTION_HEADER[1]],
+    [],
+    [eventTitle],
+    [generatedAt],
+    [],
+  ];
+  const worksheet = utils.aoa_to_sheet(headerRows);
+  utils.sheet_add_json(worksheet, sheetRows, { origin: `A${headerRows.length + 1}` });
+
+  worksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: columnCount - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: columnCount - 1 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: columnCount - 1 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: columnCount - 1 } },
+  ];
+  worksheet['!cols'] = tableHeaders.map((header) => ({
+    wch: Math.max(18, Math.min(42, header.length + 8)),
+  }));
+
   const workbook = utils.book_new();
-  utils.book_append_sheet(workbook, utils.json_to_sheet(sheetRows), 'Participantes');
+  utils.book_append_sheet(workbook, worksheet, 'Participantes');
   const typeSlug = slugify(event.eventType);
   const fileName = `${typeSlug}-${slugify(event.title)}.xlsx`;
   writeFile(workbook, fileName);
