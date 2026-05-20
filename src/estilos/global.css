@@ -279,6 +279,9 @@ a.primary-button {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
 }
 
 .user-chip span {
@@ -289,6 +292,42 @@ a.primary-button {
   color: var(--accent);
   font-size: 0.72rem;
   text-transform: uppercase;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.user-menu-popover button {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.user-menu-popover button:hover {
+  background: var(--surface-soft);
 }
 
 .content-shell {
@@ -1078,6 +1117,11 @@ textarea {
 
   .user-chip strong {
     font-size: 0.62rem;
+  }
+
+  .user-menu-popover {
+    right: 0;
+    min-width: 170px;
   }
 
   .sidebar {
