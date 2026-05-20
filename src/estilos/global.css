@@ -488,6 +488,59 @@ p {
   gap: 14px;
 }
 
+.table-list,
+.timeline,
+.users-list,
+.data-table,
+.participants-mini-table,
+.live-attendance-list {
+  scrollbar-color: rgba(55, 213, 167, 0.5) rgba(16, 20, 29, 0.7);
+  scrollbar-width: thin;
+}
+
+.table-list::-webkit-scrollbar,
+.timeline::-webkit-scrollbar,
+.users-list::-webkit-scrollbar,
+.data-table::-webkit-scrollbar,
+.participants-mini-table::-webkit-scrollbar,
+.live-attendance-list::-webkit-scrollbar,
+.participant-edit-form::-webkit-scrollbar,
+.form-grid::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-list::-webkit-scrollbar-thumb,
+.timeline::-webkit-scrollbar-thumb,
+.users-list::-webkit-scrollbar-thumb,
+.data-table::-webkit-scrollbar-thumb,
+.participants-mini-table::-webkit-scrollbar-thumb,
+.live-attendance-list::-webkit-scrollbar-thumb,
+.participant-edit-form::-webkit-scrollbar-thumb,
+.form-grid::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(16, 20, 29, 0.8);
+  border-radius: 999px;
+  background: rgba(55, 213, 167, 0.55);
+}
+
+.table-list::-webkit-scrollbar-track,
+.timeline::-webkit-scrollbar-track,
+.users-list::-webkit-scrollbar-track,
+.data-table::-webkit-scrollbar-track,
+.participants-mini-table::-webkit-scrollbar-track,
+.live-attendance-list::-webkit-scrollbar-track,
+.participant-edit-form::-webkit-scrollbar-track,
+.form-grid::-webkit-scrollbar-track {
+  background: rgba(16, 20, 29, 0.7);
+}
+
+.table-list,
+.timeline {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 .table-row,
 .timeline-item,
 .workflow-list span,
@@ -577,7 +630,8 @@ textarea {
 .data-table {
   display: grid;
   gap: 2px;
-  overflow-x: auto;
+  max-height: 560px;
+  overflow: auto;
 }
 
 .data-table-head,
@@ -590,6 +644,10 @@ textarea {
 }
 
 .data-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
   color: var(--muted);
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -769,7 +827,9 @@ textarea {
 .participants-mini-table {
   display: grid;
   gap: 2px;
-  overflow-x: auto;
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
 .participants-mini-head,
@@ -788,6 +848,10 @@ textarea {
 }
 
 .participants-mini-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -807,6 +871,8 @@ textarea {
   display: grid;
   gap: 16px;
   min-width: 860px;
+  max-height: min(680px, 72vh);
+  overflow: auto;
   padding: 16px;
   border-top: 1px solid var(--line);
   background: #0b0e15;
@@ -820,6 +886,9 @@ textarea {
   display: grid;
   gap: 10px;
   margin-top: 18px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .user-row,
@@ -1109,7 +1178,9 @@ textarea {
 .live-attendance-list {
   display: grid;
   gap: 2px;
-  overflow-x: auto;
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
 .live-attendance-head,
@@ -1122,6 +1193,10 @@ textarea {
 }
 
 .live-attendance-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1402,7 +1477,9 @@ textarea {
   }
 
   .data-table {
-    overflow: visible;
+    max-height: 68vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     gap: 12px;
   }
 
@@ -1451,7 +1528,9 @@ textarea {
   }
 
   .participants-mini-table {
-    overflow: visible;
+    max-height: 68vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     gap: 12px;
   }
 
@@ -1493,7 +1572,9 @@ textarea {
   }
 
   .live-attendance-list {
-    overflow: visible;
+    max-height: 68vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     gap: 12px;
   }
 
@@ -1537,6 +1618,9 @@ textarea {
 
   .participant-edit-form {
     min-width: 0;
+    max-height: 68vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
