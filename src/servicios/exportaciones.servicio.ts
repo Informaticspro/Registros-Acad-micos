@@ -1,4 +1,4 @@
-﻿import { utils, writeFile } from 'xlsx';
+import { utils, writeFile } from 'xlsx-js-style';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
 import { mockParticipantes, mockInscripcions } from '@/datos/datosPrueba';
@@ -34,6 +34,51 @@ type DailyLog = {
 
 const INSTITUTION_HEADER = ['UNIVERSIDAD AUTÓNOMA DE CHIRIQUÍ', 'FACULTAD DE ECONOMÍA'] as const;
 
+const borderStyle = {
+  top: { style: 'thin', color: { rgb: 'D9E2EC' } },
+  right: { style: 'thin', color: { rgb: 'D9E2EC' } },
+  bottom: { style: 'thin', color: { rgb: 'D9E2EC' } },
+  left: { style: 'thin', color: { rgb: 'D9E2EC' } },
+};
+
+const titleStyle = {
+  font: { bold: true, sz: 15, color: { rgb: '102A43' } },
+  alignment: { horizontal: 'center', vertical: 'center' },
+};
+
+const subtitleStyle = {
+  font: { bold: true, sz: 12, color: { rgb: '334E68' } },
+  alignment: { horizontal: 'center', vertical: 'center' },
+};
+
+const eventTitleStyle = {
+  font: { bold: true, sz: 13, color: { rgb: 'FFFFFF' } },
+  alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  fill: { fgColor: { rgb: '0F5132' } },
+};
+
+const generatedAtStyle = {
+  font: { italic: true, sz: 10, color: { rgb: '486581' } },
+  alignment: { horizontal: 'center', vertical: 'center' },
+};
+
+const tableHeaderStyle = {
+  font: { bold: true, color: { rgb: 'FFFFFF' } },
+  alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  fill: { fgColor: { rgb: '1F2937' } },
+  border: borderStyle,
+};
+
+const tableCellStyle = {
+  alignment: { vertical: 'center', wrapText: true },
+  border: borderStyle,
+};
+
+const alternateCellStyle = {
+  ...tableCellStyle,
+  fill: { fgColor: { rgb: 'F8FAFC' } },
+};
+
 const eventTypeLabels: Record<EventoAcademico['eventType'], string> = {
   seminario: 'SEMINARIO',
   congreso: 'CONGRESO',
@@ -49,6 +94,29 @@ function slugify(value: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+function applyExcelStyles(worksheet: ReturnType<typeof utils.aoa_to_sheet>, rowCount: number, columnCount: number) {
+  const tableHeaderRow = 6;
+  const lastColumn = columnCount - 1;
+
+  worksheet['A1'].s = titleStyle;
+  worksheet['A2'].s = subtitleStyle;
+  worksheet['A4'].s = eventTitleStyle;
+  worksheet['A5'].s = generatedAtStyle;
+
+  for (let column = 0; column <= lastColumn; column += 1) {
+    const headerCell = utils.encode_cell({ r: tableHeaderRow, c: column });
+    if (worksheet[headerCell]) worksheet[headerCell].s = tableHeaderStyle;
+  }
+
+  for (let row = tableHeaderRow + 1; row < tableHeaderRow + 1 + rowCount; row += 1) {
+    const rowStyle = (row - tableHeaderRow) % 2 === 0 ? alternateCellStyle : tableCellStyle;
+    for (let column = 0; column <= lastColumn; column += 1) {
+      const cell = utils.encode_cell({ r: row, c: column });
+      if (worksheet[cell]) worksheet[cell].s = rowStyle;
+    }
+  }
 }
 
 async function getInscripcionCounts(): Promise<Record<string, number>> {
@@ -238,6 +306,17 @@ export async function exportEventExcel(event: ExportableEvent) {
   worksheet['!cols'] = tableHeaders.map((header) => ({
     wch: Math.max(18, Math.min(42, header.length + 8)),
   }));
+  worksheet['!rows'] = [
+    { hpt: 24 },
+    { hpt: 21 },
+    { hpt: 8 },
+    { hpt: 26 },
+    { hpt: 18 },
+    { hpt: 8 },
+    { hpt: 24 },
+  ];
+  worksheet['!freeze'] = { xSplit: 0, ySplit: headerRows.length + 1 };
+  applyExcelStyles(worksheet, sheetRows.length, columnCount);
 
   const workbook = utils.book_new();
   utils.book_append_sheet(workbook, worksheet, 'Participantes');
