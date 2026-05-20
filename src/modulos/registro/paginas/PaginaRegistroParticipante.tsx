@@ -134,9 +134,19 @@ export function PaginaRegistroParticipante() {
             <CheckCircle2 size={28} />
           </div>
           <span className="eyebrow">Registro completado</span>
-          <h1>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Participante registrado'}</h1>
+          <h1>
+            {fromAdmin
+              ? result.alreadyCheckedIn
+                ? 'Asistencia ya registrada'
+                : 'Participante registrado'
+              : 'Gracias por inscribirse'}
+          </h1>
           <p>
-            {shouldGenerateParticipantQr
+            {!fromAdmin
+              ? shouldGenerateParticipantQr
+                ? 'Su registro fue recibido correctamente. Guarde el QR que aparece abajo y presentelo el dia del congreso.'
+                : 'Su registro fue recibido correctamente. No necesita realizar ninguna otra accion.'
+              : shouldGenerateParticipantQr
               ? result.alreadyCheckedIn
                 ? 'Este participante ya tenia registro previo. Se muestra su QR para el control del evento.'
                 : 'Guarde o imprima el QR. Lo presentara el dia del congreso para validar su asistencia.'
@@ -179,12 +189,12 @@ export function PaginaRegistroParticipante() {
             </dl>
           )}
           <div className="register-success-actions">
-            <button className="primary-button" type="button" onClick={resetForAnotherInscripcion}>
-              <UserPlus size={18} />
-              Registrar otro participante
-            </button>
             {fromAdmin ? (
               <>
+                <button className="primary-button" type="button" onClick={resetForAnotherInscripcion}>
+                  <UserPlus size={18} />
+                  Registrar otro participante
+                </button>
                 <Link className="secondary-button" to={`/eventos/${eventId}`}>
                   Volver al evento
                 </Link>
@@ -192,7 +202,11 @@ export function PaginaRegistroParticipante() {
                   Ver listado de participantes
                 </Link>
               </>
-            ) : null}
+            ) : (
+              <p className="form-hint">
+                Puede cerrar esta pagina. El acceso del QR es solo para completar este registro.
+              </p>
+            )}
           </div>
         </div>
       </section>
