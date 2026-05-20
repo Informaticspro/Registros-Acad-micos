@@ -6,7 +6,6 @@ import {
   ClipboardCheck,
   FileArchive,
   FileSpreadsheet,
-  GraduationCap,
   LayoutDashboard,
   QrCode,
   Users,
@@ -47,11 +46,11 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
     <aside className="sidebar" aria-label="Menu principal">
       <div className="brand">
         <div className="brand-mark">
-          <GraduationCap size={22} />
+          <img src="/logo-registros-academicos.svg" alt="Registros academicos" />
         </div>
         <div className="brand-copy">
-          <strong>AcadEvents</strong>
-          <span>Control academico</span>
+          <strong>Registros Academicos</strong>
+          <span>Facultad de Economia</span>
         </div>
       </div>
       <button

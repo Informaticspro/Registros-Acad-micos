@@ -1,6 +1,6 @@
 ﻿import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, QrCode } from 'lucide-react';
+import { QrCode } from 'lucide-react';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { hasSupabaseConfig, isDemoMode } from '@/infraestructura/entorno';
 
@@ -26,11 +26,11 @@ export function PaginaLogin() {
     <section className="login-panel">
       <div className="brand auth-brand">
         <div className="brand-mark">
-          <GraduationCap size={24} />
+          <img src="/logo-registros-academicos.svg" alt="Registros academicos" />
         </div>
         <div>
-          <strong>AcadEvents</strong>
-          <span>Registro y asistencia</span>
+          <strong>Registros Academicos</strong>
+          <span>Facultad de Economia</span>
         </div>
       </div>
       <div>
