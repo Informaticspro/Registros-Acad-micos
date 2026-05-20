@@ -10,6 +10,9 @@ type Props = {
   fullName: string;
   certificateCode: string;
   showDownload?: boolean;
+  title?: string;
+  description?: string;
+  downloadLabel?: string;
 };
 
 export function TarjetaQrParticipante({
@@ -19,6 +22,9 @@ export function TarjetaQrParticipante({
   fullName,
   certificateCode,
   showDownload = false,
+  title = 'Tu codigo QR de asistencia',
+  description = 'Guarde o descargue esta imagen. Presentela al llegar cada dia del evento.',
+  downloadLabel = 'Descargar QR en el celular',
 }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const payload = buildParticipanteQrPayload({ eventId, qrToken, documentId });
@@ -30,13 +36,13 @@ export function TarjetaQrParticipante({
 
   return (
     <article className="participant-qr-card panel">
-      <h3>Tu codigo QR de asistencia</h3>
-      <p>Guarde o descargue esta imagen. Presentela al llegar cada dia del evento.</p>
+      <h3>{title}</h3>
+      <p>{description}</p>
       {qrDataUrl ? <img src={qrDataUrl} alt={`QR de ${fullName}`} className="participant-qr-image" /> : null}
       {showDownload && qrDataUrl ? (
         <a className="primary-button" href={qrDataUrl} download={downloadName}>
           <Download size={18} />
-          Descargar QR en el celular
+          {downloadLabel}
         </a>
       ) : null}
       <dl className="definition-list compact">

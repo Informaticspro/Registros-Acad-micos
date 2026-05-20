@@ -843,7 +843,7 @@ textarea {
 
 .participants-mini-head.with-actions,
 .participants-mini-row.with-actions {
-  grid-template-columns: minmax(220px, 1.2fr) minmax(120px, 0.7fr) minmax(220px, 1fr) minmax(120px, 0.6fr) 120px;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(120px, 0.7fr) minmax(220px, 1fr) minmax(120px, 0.6fr) 156px;
   min-width: 980px;
 }
 
@@ -927,6 +927,54 @@ textarea {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(10px);
+}
+
+.modal-panel {
+  width: min(560px, 100%);
+  max-height: min(760px, 88vh);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 0;
+}
+
+.modal-header h2 {
+  margin: 6px 0 0;
+}
+
+.qr-admin-modal {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+.qr-admin-modal .participant-qr-card {
+  margin: 0 18px;
+  border-color: rgba(55, 213, 167, 0.24);
+}
+
+.qr-admin-modal > .form-hint {
+  margin: 0 18px;
 }
 
 .screen-loader {

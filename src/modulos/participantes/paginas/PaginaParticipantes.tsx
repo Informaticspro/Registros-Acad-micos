@@ -4,6 +4,7 @@ import {
   CalendarDays,
   MapPin,
   Pencil,
+  QrCode,
   RefreshCw,
   Save,
   Trash2,
@@ -12,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
+import { TarjetaQrParticipante } from '@/componentes/registro/TarjetaQrParticipante';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { listEvents } from '@/servicios/eventos.servicio';
 import {
@@ -52,6 +54,12 @@ type EditTarget = {
   rowId: string;
 } | null;
 
+type QrTarget = {
+  event: EventoAcademico;
+  participant: Participante;
+  registration: Inscripcion;
+} | null;
+
 const eventTypeOrder: EventoAcademico['eventType'][] = [
   'congreso',
   'taller',
@@ -80,6 +88,7 @@ export function PaginaParticipantes() {
     participants: [],
   });
   const [editing, setEditing] = useState<EditTarget>(null);
+  const [qrTarget, setQrTarget] = useState<QrTarget>(null);
   const [totalParticipants, setTotalParticipantes] = useState(0);
   const [totalRegistrations, setTotalInscripciones] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -328,6 +337,7 @@ export function PaginaParticipantes() {
                         onCancelEdit={() => setEditing(null)}
                         onDeleteRegistration={handleDeleteRegistration}
                         onEditParticipant={handleEditParticipant}
+                        onOpenQr={setQrTarget}
                         onStartEdit={setEditing}
                         participants={eventGroup.participants}
                       />
@@ -410,6 +420,37 @@ export function PaginaParticipantes() {
           </article>
         </section>
       ) : null}
+
+      {qrTarget ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setQrTarget(null)}>
+          <section className="modal-panel qr-admin-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="eyebrow">QR administrativo</span>
+                <h2>{qrTarget.event.title}</h2>
+              </div>
+              <button className="icon-button" type="button" aria-label="Cerrar QR" onClick={() => setQrTarget(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <TarjetaQrParticipante
+              eventId={qrTarget.event.id}
+              qrToken={qrTarget.registration.qrToken}
+              documentId={qrTarget.participant.documentId}
+              fullName={`${qrTarget.participant.firstName} ${qrTarget.participant.lastName}`.trim()}
+              certificateCode={qrTarget.registration.certificateCode}
+              title="QR personal del participante"
+              description="Descargue esta imagen para reenviarla o imprimirla si el participante la necesita nuevamente."
+              downloadLabel="Descargar QR"
+              showDownload
+            />
+            <p className="form-hint">
+              Este QR usa los datos actuales del participante. Si edita cedula o nombre, cierre y vuelva a abrir esta
+              ventana para descargar la version actualizada.
+            </p>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -427,6 +468,7 @@ type ParticipantsTableProps = {
     event: EventoAcademico,
   ) => Promise<void>;
   onEditParticipant: (event: FormEvent<HTMLFormElement>, participant: Participante) => Promise<void>;
+  onOpenQr: (target: QrTarget) => void;
   onStartEdit: (target: EditTarget) => void;
   participants: ParticipanteInscrito[];
 };
@@ -440,6 +482,7 @@ function ParticipantsTable({
   onCancelEdit,
   onDeleteRegistration,
   onEditParticipant,
+  onOpenQr,
   onStartEdit,
   participants,
 }: ParticipantsTableProps) {
@@ -475,6 +518,14 @@ function ParticipantsTable({
             <span>{registration.checkedInAt ? 'Registrada' : 'Pendiente'}</span>
             {canManage ? (
               <div className="row-actions">
+                <button
+                  className="icon-button"
+                  type="button"
+                  aria-label="Ver y descargar QR"
+                  onClick={() => onOpenQr({ event, participant, registration })}
+                >
+                  <QrCode size={18} />
+                </button>
                 <button
                   className="icon-button"
                   type="button"
