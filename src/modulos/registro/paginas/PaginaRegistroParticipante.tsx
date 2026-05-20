@@ -164,9 +164,6 @@ export function PaginaRegistroParticipante() {
                 certificateCode={result.certificateCode}
                 showDownload
               />
-              <Link className="secondary-button" to={`/eventos/${eventId}/mi-codigo`}>
-                Consultar este QR despues con mi cedula
-              </Link>
             </>
           ) : (
             <dl className="definition-list compact">

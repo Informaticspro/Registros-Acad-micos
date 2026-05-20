@@ -1,6 +1,6 @@
 ﻿import { FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { GraduationCap, QrCode } from 'lucide-react';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { hasSupabaseConfig, isDemoMode } from '@/infraestructura/entorno';
 
@@ -63,6 +63,10 @@ export function PaginaLogin() {
           Entrar
         </button>
       </form>
+      <Link className="secondary-button public-lookup-button" to="/mi-codigo">
+        <QrCode size={18} />
+        Consultar mi QR
+      </Link>
     </section>
   );
 }
