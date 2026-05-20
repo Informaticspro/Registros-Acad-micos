@@ -245,6 +245,16 @@ export async function listEventDailyAttendance(
   });
 }
 
+export async function deleteEventDailyAttendanceLog(logId: string): Promise<void> {
+  if (!supabase) {
+    if (!isDemoMode()) throw new Error('Supabase no esta configurado en este despliegue.');
+    return;
+  }
+
+  const { error } = await supabase.from('attendance_daily_logs').delete().eq('id', logId);
+  if (error) throw error;
+}
+
 export async function listAttendance(): Promise<RegistroAsistencia[]> {
   if (!supabase && isDemoMode()) return mockAttendance;
   if (!supabase) return [];

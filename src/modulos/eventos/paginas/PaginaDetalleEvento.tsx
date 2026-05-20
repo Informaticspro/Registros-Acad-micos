@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { env } from '@/infraestructura/entorno';
 import {
+  deleteEventDailyAttendanceLog,
   EventDailyAttendance,
   getAutomaticAttendancePeriod,
   getPanamaTimeLabel,
@@ -12,6 +13,7 @@ import {
 } from '@/servicios/asistencia.servicio';
 import { deleteEvent, getEvent } from '@/servicios/eventos.servicio';
 import { CONGRESO_CATEGORY_OPTIONS } from '@/modulos/registro/configuracion-registro';
+import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { EventoAcademico, JornadaAsistencia } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { formatDateTime } from '@/utilidades/formato';
@@ -67,6 +69,7 @@ function getTodayLabel() {
 export function PaginaDetalleEvento() {
   const navigate = useNavigate();
   const { eventId } = useParams();
+  const { profile } = useAutenticacion();
   const [event, setEvent] = useState<EventoAcademico | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +80,9 @@ export function PaginaDetalleEvento() {
   const [attendanceRows, setAttendanceRows] = useState<EventDailyAttendance[]>([]);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
+  const [deletingAttendanceId, setDeletingAttendanceId] = useState<string | null>(null);
   const [lastAttendanceRefresh, setLastAttendanceRefresh] = useState<string | null>(null);
+  const canDeleteAttendance = profile?.role === 'admin' || profile?.role === 'organizador';
   const registrationUrl = useMemo(() => {
     if (!eventId) return '';
     const origin = env.publicAppUrl || window.location.origin;
@@ -167,6 +172,25 @@ export function PaginaDetalleEvento() {
     setUseAutomaticPeriod(true);
     setCurrentTime(now);
     setAttendancePeriod(getAutomaticAttendancePeriod(now));
+  }
+
+  async function handleDeleteAttendance(row: EventDailyAttendance) {
+    const confirmed = window.confirm(
+      `Desea eliminar la asistencia de ${row.participantName} registrada el ${formatDateTime(row.checkedInAt)}?`,
+    );
+    if (!confirmed) return;
+
+    setAttendanceError(null);
+    setDeletingAttendanceId(row.id);
+    try {
+      await deleteEventDailyAttendanceLog(row.id);
+      setAttendanceRows((currentRows) => currentRows.filter((item) => item.id !== row.id));
+      setLastAttendanceRefresh(new Date().toISOString());
+    } catch (err) {
+      setAttendanceError(getErrorMessage(err, 'No se pudo eliminar la asistencia'));
+    } finally {
+      setDeletingAttendanceId(null);
+    }
   }
 
   if (!event) {
@@ -311,20 +335,32 @@ export function PaginaDetalleEvento() {
             {isAttendanceLoading ? <p className="form-hint">Cargando asistencia...</p> : null}
 
             <div className="live-attendance-list">
-              <div className="live-attendance-head">
+              <div className={`live-attendance-head ${canDeleteAttendance ? 'with-actions' : ''}`}>
                 <span>Participante</span>
                 <span>Cedula</span>
                 <span>Categoria</span>
                 <span>Hora</span>
                 <span>Escaneado por</span>
+                {canDeleteAttendance ? <span>Acciones</span> : null}
               </div>
               {attendanceRows.map((row) => (
-                <div className="live-attendance-row" key={row.id}>
+                <div className={`live-attendance-row ${canDeleteAttendance ? 'with-actions' : ''}`} key={row.id}>
                   <strong>{row.participantName}</strong>
                   <span>{row.documentId}</span>
                   <span>{row.category}</span>
                   <span>{formatDateTime(row.checkedInAt)}</span>
                   <span>{row.scannedByName}</span>
+                  {canDeleteAttendance ? (
+                    <button
+                      className="icon-button danger-button"
+                      type="button"
+                      aria-label="Eliminar asistencia"
+                      disabled={deletingAttendanceId === row.id}
+                      onClick={() => void handleDeleteAttendance(row)}
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>

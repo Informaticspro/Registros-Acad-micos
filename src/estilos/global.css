@@ -248,6 +248,11 @@ textarea {
   color: var(--text);
 }
 
+.danger-button {
+  border: 1px solid rgba(255, 107, 107, 0.38);
+  color: var(--danger);
+}
+
 .primary-button {
   padding: 0 16px;
   background: var(--accent);
@@ -1394,6 +1399,12 @@ textarea {
   padding: 13px 14px;
 }
 
+.live-attendance-head.with-actions,
+.live-attendance-row.with-actions {
+  grid-template-columns: minmax(220px, 1.2fr) minmax(120px, 0.7fr) minmax(160px, 0.8fr) minmax(180px, 0.9fr) minmax(180px, 0.9fr) 84px;
+  min-width: 1040px;
+}
+
 .live-attendance-head {
   position: sticky;
   top: 0;
@@ -1816,6 +1827,10 @@ textarea {
     content: "Escaneado por: ";
     color: var(--muted);
     font-weight: 700;
+  }
+
+  .live-attendance-row.with-actions .danger-button {
+    justify-self: start;
   }
 
   .participant-edit-form {
