@@ -80,11 +80,28 @@ function normalizeAttendancePeriod(value?: string | null): JornadaAsistencia {
 }
 
 export function getAutomaticAttendancePeriod(date = new Date()): JornadaAsistencia {
-  return date.getHours() >= 13 ? 'vespertina' : 'matutina';
+  const panamaHour = Number(
+    new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      hour12: false,
+      hourCycle: 'h23',
+      timeZone: 'America/Panama',
+    }).format(date),
+  );
+
+  return panamaHour >= 13 ? 'vespertina' : 'matutina';
 }
 
 export function getAttendancePeriodLabel(period: JornadaAsistencia) {
   return period === 'vespertina' ? 'Vespertina presencial' : 'Matutina presencial';
+}
+
+export function getPanamaTimeLabel(date = new Date()) {
+  return new Intl.DateTimeFormat('es-PA', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Panama',
+  }).format(date);
 }
 
 function getMetadataValue(metadata: Record<string, string> | null | undefined, key: string) {

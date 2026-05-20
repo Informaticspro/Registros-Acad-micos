@@ -1,12 +1,13 @@
 ﻿import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
-import { Camera, CheckCircle2, ScanLine } from 'lucide-react';
+import { Camera, CheckCircle2, ScanLine, ShieldCheck, Volume2 } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { listEvents } from '@/servicios/eventos.servicio';
 import {
   DailyAttendanceResult,
   getAttendancePeriodLabel,
   getAutomaticAttendancePeriod,
+  getPanamaTimeLabel,
   recordDailyAttendance,
 } from '@/servicios/asistencia.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
@@ -15,11 +16,35 @@ import { formatDateTime } from '@/utilidades/formato';
 
 type ScanResultState = DailyAttendanceResult & {
   message: string;
+  variant: 'success' | 'duplicate';
 };
+
+function playScanSound(variant: ScanResultState['variant'] | 'error') {
+  const AudioContextClass =
+    window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return;
+
+  const audioContext = new AudioContextClass();
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const frequency = variant === 'success' ? 880 : variant === 'duplicate' ? 520 : 220;
+
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + 0.2);
+}
 
 export function PaginaEscaner() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
+  const lookupInProgressRef = useRef(false);
   const [events, setEvents] = useState<EventoAcademico[]>([]);
   const [eventId, setEventId] = useState('');
   const [currentTime, setCurrentTime] = useState(() => new Date());
@@ -51,11 +76,15 @@ export function PaginaEscaner() {
 
   const handleLookup = useCallback(
     async (rawValue: string) => {
+      if (lookupInProgressRef.current) return;
+
       if (!eventId) {
         setError('Seleccione el evento activo antes de escanear.');
+        playScanSound('error');
         return;
       }
 
+      lookupInProgressRef.current = true;
       setError(null);
       setResult(null);
       setIsSubmitting(true);
@@ -65,19 +94,28 @@ export function PaginaEscaner() {
         setCurrentTime(new Date());
         const response = await recordDailyAttendance(eventId, rawValue, automaticPeriod);
         const message = response.alreadyLoggedToday
-          ? `Este participante ya tenia marcaje en la jornada ${automaticPeriod}. Se guardo un nuevo registro.`
+          ? `Este participante ya tiene asistencia registrada en la jornada ${automaticPeriod}. No se creo duplicado.`
           : 'Asistencia registrada correctamente.';
-        setResult({ ...response, message });
+        const variant = response.alreadyLoggedToday ? 'duplicate' : 'success';
+        setResult({ ...response, message, variant });
+        playScanSound(variant);
         setManualValue('');
         setIsScanning(false);
       } catch (err) {
         setError(getErrorMessage(err, 'No se pudo validar el QR'));
+        playScanSound('error');
       } finally {
         setIsSubmitting(false);
+        lookupInProgressRef.current = false;
       }
     },
     [eventId],
   );
+
+  useEffect(() => {
+    if (!result && !error) return;
+    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error, result]);
 
   useEffect(() => {
     if (!isScanning || !videoRef.current) return;
@@ -142,9 +180,7 @@ export function PaginaEscaner() {
           <div className="auto-period-card">
             <span>Jornada automatica</span>
             <strong>{getAttendancePeriodLabel(attendancePeriod)}</strong>
-            <small>
-              Hora actual: {currentTime.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' })}
-            </small>
+            <small>Hora Panama: {getPanamaTimeLabel(currentTime)}</small>
             <small>8:00 a. m. - 12:59 p. m. matutina / 1:00 p. m. - 6:00 p. m. vespertina</small>
           </div>
           {events.length === 0 ? (
@@ -170,6 +206,30 @@ export function PaginaEscaner() {
           </button>
         </article>
         <form className="panel stack-form" onSubmit={handleManualSubmit}>
+          <div ref={resultRef} className="scanner-feedback-anchor">
+            {result ? (
+              <div className={`scan-result attendance-scan-card ${result.variant}`}>
+                {result.variant === 'duplicate' ? <ShieldCheck size={24} /> : <CheckCircle2 size={24} />}
+                <div>
+                  <strong>{result.message}</strong>
+                  <span>{result.participantName}</span>
+                  <small>Cedula: {result.documentId}</small>
+                  <small>Jornada: {getAttendancePeriodLabel(result.attendancePeriod)}</small>
+                  <small>Fecha y hora: {formatDateTime(result.checkedInAt)}</small>
+                  <small>Certificado: {result.certificateCode}</small>
+                </div>
+              </div>
+            ) : null}
+            {error ? (
+              <div className="scan-result attendance-scan-card error">
+                <Volume2 size={24} />
+                <div>
+                  <strong>No se pudo registrar</strong>
+                  <span>{error}</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
           <label>
             QR personal del participante o cedula
             <input
@@ -182,22 +242,22 @@ export function PaginaEscaner() {
           <button className="primary-button" type="submit" disabled={isSubmitting || !eventId}>
             {isSubmitting ? 'Validando...' : `Registrar asistencia ${getAttendancePeriodLabel(attendancePeriod)}`}
           </button>
-          {error ? <p className="form-error">{error}</p> : null}
-          {result ? (
-            <div className="scan-result attendance-scan-card">
-              <CheckCircle2 size={24} />
-              <div>
-                <strong>{result.message}</strong>
-                <span>{result.participantName}</span>
-                <small>Cedula: {result.documentId}</small>
-                <small>Jornada: {getAttendancePeriodLabel(result.attendancePeriod)}</small>
-                <small>Fecha y hora: {formatDateTime(result.checkedInAt)}</small>
-                <small>Certificado: {result.certificateCode}</small>
-              </div>
-            </div>
-          ) : null}
         </form>
       </section>
+      {result ? (
+        <div className={`scanner-floating-result ${result.variant}`}>
+          <strong>{result.variant === 'duplicate' ? 'Ya registrado' : 'Registrado'}</strong>
+          <span>
+            {result.participantName} - {getAttendancePeriodLabel(result.attendancePeriod)}
+          </span>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="scanner-floating-result error">
+          <strong>Error de escaneo</strong>
+          <span>{error}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
