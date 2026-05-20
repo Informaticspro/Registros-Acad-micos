@@ -1,6 +1,6 @@
 ﻿import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
-import { Camera, CheckCircle2, ScanLine, ShieldCheck, Volume2 } from 'lucide-react';
+import { Camera, CheckCircle2, IdCard, ScanLine, ShieldCheck, Volume2 } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { listEvents } from '@/servicios/eventos.servicio';
 import {
@@ -230,15 +230,26 @@ export function PaginaEscaner() {
               </div>
             ) : null}
           </div>
-          <label>
-            QR personal del participante o cedula
-            <input
-              value={manualValue}
-              onChange={(event) => setManualValue(event.target.value)}
-              placeholder="Escanee el QR o escriba la cedula"
-              required
-            />
-          </label>
+          <div className="manual-attendance-card">
+            <div>
+              <IdCard size={22} />
+              <div>
+                <strong>Registro manual por cedula</strong>
+                <span>Use este cuadro cuando el participante no tenga su QR y le dicte la cedula.</span>
+              </div>
+            </div>
+            <label>
+              Cedula o QR personal del participante
+              <input
+                value={manualValue}
+                onChange={(event) => setManualValue(event.target.value)}
+                placeholder="Ej. 8-888-111 o escanee/pegue el QR"
+                required
+                autoComplete="off"
+                inputMode="text"
+              />
+            </label>
+          </div>
           <button className="primary-button" type="submit" disabled={isSubmitting || !eventId}>
             {isSubmitting ? 'Validando...' : `Registrar asistencia ${getAttendancePeriodLabel(attendancePeriod)}`}
           </button>

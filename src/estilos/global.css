@@ -1219,6 +1219,41 @@ textarea {
   min-height: 1px;
 }
 
+.manual-attendance-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(55, 213, 167, 0.32);
+  border-radius: var(--radius);
+  background: rgba(55, 213, 167, 0.08);
+}
+
+.manual-attendance-card > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.manual-attendance-card svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.manual-attendance-card strong,
+.manual-attendance-card span {
+  display: block;
+}
+
+.manual-attendance-card strong {
+  color: var(--text);
+}
+
+.manual-attendance-card span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .scanner-floating-result {
   position: fixed;
   left: 50%;
