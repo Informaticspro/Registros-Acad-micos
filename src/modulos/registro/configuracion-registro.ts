@@ -24,7 +24,6 @@ export const CONGRESO_METADATA_FIELDS = [
   'otherNationality',
   'modality',
   'participationType',
-  'entity',
 ] as const;
 
 export type CongresoMetadataField = (typeof CONGRESO_METADATA_FIELDS)[number];

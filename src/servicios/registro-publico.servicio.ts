@@ -7,12 +7,11 @@ import { EventoAcademico } from '@/tipos/dominio';
 const congresoMetadataSchema = z.object({
   sex: z.string().min(1, 'Sexo requerido'),
   category: z.string().min(1, 'Categoria requerida'),
-  personalEmail: z.string().email('Correo personal invalido'),
+  personalEmail: z.string().email('Correo personal invalido').optional().or(z.literal('')),
   nationality: z.string().min(1, 'Nacionalidad requerida'),
   otherNationality: z.string().optional(),
   modality: z.string().min(1, 'Modalidad requerida'),
   participationType: z.string().min(1, 'Tipo de participacion requerido'),
-  entity: z.string().min(1, 'Entidad requerida'),
 });
 
 export const publicCheckInSchema = z

@@ -47,7 +47,7 @@ export function CamposFormularioRegistro({ formKind }: Props) {
         <input name="documentId" required placeholder="Ej. 8-888-111" autoComplete="off" />
       </label>
       <label>
-        {formKind === 'congreso' ? 'Correo' : 'Correo institucional'}
+        Correo institucional
         <input name="email" required type="email" placeholder="correo@institucion.edu" autoComplete="email" />
       </label>
       {formKind === 'congreso' ? (
@@ -56,7 +56,7 @@ export function CamposFormularioRegistro({ formKind }: Props) {
           <RadioGroup legend="Nacionalidad" name="nationality" options={CONGRESO_NATIONALITY_OPTIONS} />
           <label>
             Correo P.
-            <input name="personalEmail" required type="email" placeholder="correo.personal@gmail.com" />
+            <input name="personalEmail" type="email" placeholder="Opcional si ya coloco correo institucional" />
           </label>
           <label>
             Otra Nacionalidad
@@ -77,10 +77,6 @@ export function CamposFormularioRegistro({ formKind }: Props) {
             name="participationType"
             options={CONGRESO_PARTICIPATION_TYPE_OPTIONS}
           />
-          <label>
-            Entidad
-            <input name="entity" required placeholder="Ej. Universidad, institucion o empresa" />
-          </label>
         </>
       ) : null}
     </>

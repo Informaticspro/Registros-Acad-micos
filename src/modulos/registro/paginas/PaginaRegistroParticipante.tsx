@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, ClipboardCheck, ThumbsUp, UserPlus } from 'luc
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { TarjetaQrParticipante } from '@/componentes/registro/TarjetaQrParticipante';
 import { CamposFormularioRegistro } from '@/modulos/registro/componentes/CamposFormularioRegistro';
+import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import {
   getInscripcionFormHint,
   getInscripcionFormKind,
@@ -28,7 +29,6 @@ function collectMetadata(form: FormData, eventType: EventoAcademico['eventType']
     otherNationality: getValue(form, 'otherNationality'),
     modality: getValue(form, 'modality'),
     participationType: getValue(form, 'participationType'),
-    entity: getValue(form, 'entity'),
   };
 }
 
@@ -40,7 +40,9 @@ export function PaginaRegistroParticipante() {
   const navigate = useNavigate();
   const { eventId } = useParams();
   const location = useLocation();
-  const fromAdmin = Boolean((location.state as RegisterLocationState | null)?.fromAdmin);
+  const { profile } = useAutenticacion();
+  const isStaffUser = profile?.role === 'admin' || profile?.role === 'organizador';
+  const fromAdmin = Boolean((location.state as RegisterLocationState | null)?.fromAdmin || isStaffUser);
   const [event, setEvent] = useState<EventoAcademico | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoadingEvent, setIsLoadingEvent] = useState(true);
