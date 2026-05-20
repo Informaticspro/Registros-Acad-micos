@@ -151,8 +151,7 @@ export async function listExportableEvents(): Promise<ExportableEvent[]> {
     .map((event) => ({
       ...event,
       registrationCount: counts[event.id] ?? 0,
-    }))
-    .sort((a, b) => b.registrationCount - a.registrationCount);
+    }));
 }
 
 async function fetchEventInscripcions(eventId: string) {
