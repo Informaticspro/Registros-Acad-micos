@@ -971,6 +971,24 @@ textarea {
   gap: 12px;
 }
 
+.registration-done-badge {
+  width: 100%;
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(55, 213, 167, 0.35);
+  border-radius: var(--radius);
+  background: rgba(55, 213, 167, 0.1);
+  color: var(--accent);
+  text-align: center;
+}
+
+.registration-done-badge strong {
+  color: var(--text);
+}
+
 .public-register .participant-qr-card {
   width: min(420px, 100%);
 }

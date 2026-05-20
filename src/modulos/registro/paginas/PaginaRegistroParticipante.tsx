@@ -1,5 +1,5 @@
 ﻿import { FormEvent, useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, ClipboardCheck, UserPlus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ClipboardCheck, ThumbsUp, UserPlus } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { TarjetaQrParticipante } from '@/componentes/registro/TarjetaQrParticipante';
 import { CamposFormularioRegistro } from '@/modulos/registro/componentes/CamposFormularioRegistro';
@@ -200,9 +200,10 @@ export function PaginaRegistroParticipante() {
                 </Link>
               </>
             ) : (
-              <p className="form-hint">
-                Puede cerrar esta pagina. El acceso del QR es solo para completar este registro.
-              </p>
+              <div className="registration-done-badge" aria-label="Registro realizado exitosamente">
+                <ThumbsUp size={28} />
+                <strong>Registro realizado exitosamente</strong>
+              </div>
             )}
           </div>
         </div>
