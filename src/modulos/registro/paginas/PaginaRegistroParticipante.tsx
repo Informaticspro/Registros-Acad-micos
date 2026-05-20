@@ -120,6 +120,7 @@ export function PaginaRegistroParticipante() {
 
   if (result && eventId && event) {
     const fullName = `${result.firstName} ${result.lastName}`.trim();
+    const shouldGenerateParticipantQr = event.eventType === 'congreso';
     return (
       <section className={shellClass}>
         {fromAdmin && eventId ? (
@@ -135,23 +136,48 @@ export function PaginaRegistroParticipante() {
           <span className="eyebrow">Registro completado</span>
           <h1>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Participante registrado'}</h1>
           <p>
-            {result.alreadyCheckedIn
-              ? 'Este participante ya tenia registro previo. Se muestra su QR para el control diario.'
-              : 'Guarde o imprima el QR. Lo presentara en cada jornada del evento para marcar llegada con fecha y hora.'}
+            {shouldGenerateParticipantQr
+              ? result.alreadyCheckedIn
+                ? 'Este participante ya tenia registro previo. Se muestra su QR para el control del evento.'
+                : 'Guarde o imprima el QR. Lo presentara el dia del congreso para validar su asistencia.'
+              : 'Su registro de asistencia quedo guardado. Para talleres y capacitaciones no se genera QR personal.'}
           </p>
         </div>
         <div className="panel stack-form register-success-panel">
-          <TarjetaQrParticipante
-            eventId={eventId}
-            qrToken={result.qrToken}
-            documentId={result.documentId}
-            fullName={fullName}
-            certificateCode={result.certificateCode}
-            showDownload
-          />
-          <Link className="secondary-button" to={`/eventos/${eventId}/mi-codigo`}>
-            Consultar este QR despues con mi cedula
-          </Link>
+          {shouldGenerateParticipantQr ? (
+            <>
+              <TarjetaQrParticipante
+                eventId={eventId}
+                qrToken={result.qrToken}
+                documentId={result.documentId}
+                fullName={fullName}
+                certificateCode={result.certificateCode}
+                showDownload
+              />
+              <Link className="secondary-button" to={`/eventos/${eventId}/mi-codigo`}>
+                Consultar este QR despues con mi cedula
+              </Link>
+            </>
+          ) : (
+            <dl className="definition-list compact">
+              <div>
+                <dt>Participante</dt>
+                <dd>{fullName}</dd>
+              </div>
+              <div>
+                <dt>Cedula</dt>
+                <dd>{result.documentId}</dd>
+              </div>
+              <div>
+                <dt>Evento</dt>
+                <dd>{event.title}</dd>
+              </div>
+              <div>
+                <dt>Estado</dt>
+                <dd>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Asistencia registrada'}</dd>
+              </div>
+            </dl>
+          )}
           <div className="register-success-actions">
             <button className="primary-button" type="button" onClick={resetForAnotherInscripcion}>
               <UserPlus size={18} />
