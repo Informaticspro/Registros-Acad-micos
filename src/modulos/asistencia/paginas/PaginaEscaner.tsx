@@ -3,8 +3,13 @@ import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { Camera, CheckCircle2, ScanLine } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { listEvents } from '@/servicios/eventos.servicio';
-import { DailyAttendanceResult, recordDailyAttendance } from '@/servicios/asistencia.servicio';
-import { EventoAcademico, JornadaAsistencia } from '@/tipos/dominio';
+import {
+  DailyAttendanceResult,
+  getAttendancePeriodLabel,
+  getAutomaticAttendancePeriod,
+  recordDailyAttendance,
+} from '@/servicios/asistencia.servicio';
+import { EventoAcademico } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { formatDateTime } from '@/utilidades/formato';
 
@@ -17,7 +22,7 @@ export function PaginaEscaner() {
   const controlsRef = useRef<IScannerControls | null>(null);
   const [events, setEvents] = useState<EventoAcademico[]>([]);
   const [eventId, setEventId] = useState('');
-  const [attendancePeriod, setAttendancePeriod] = useState<JornadaAsistencia>('matutina');
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const [manualValue, setManualValue] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResultState | null>(null);
@@ -36,6 +41,14 @@ export function PaginaEscaner() {
     });
   }, []);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const handleLookup = useCallback(
     async (rawValue: string) => {
       if (!eventId) {
@@ -48,9 +61,11 @@ export function PaginaEscaner() {
       setIsSubmitting(true);
 
       try {
-        const response = await recordDailyAttendance(eventId, rawValue, attendancePeriod);
+        const automaticPeriod = getAutomaticAttendancePeriod();
+        setCurrentTime(new Date());
+        const response = await recordDailyAttendance(eventId, rawValue, automaticPeriod);
         const message = response.alreadyLoggedToday
-          ? `Este participante ya tenia marcaje en la jornada ${attendancePeriod}. Se guardo un nuevo registro.`
+          ? `Este participante ya tenia marcaje en la jornada ${automaticPeriod}. Se guardo un nuevo registro.`
           : 'Asistencia registrada correctamente.';
         setResult({ ...response, message });
         setManualValue('');
@@ -61,7 +76,7 @@ export function PaginaEscaner() {
         setIsSubmitting(false);
       }
     },
-    [attendancePeriod, eventId],
+    [eventId],
   );
 
   useEffect(() => {
@@ -95,6 +110,7 @@ export function PaginaEscaner() {
   }
 
   const selectedEvent = events.find((event) => event.id === eventId);
+  const attendancePeriod = getAutomaticAttendancePeriod(currentTime);
 
   return (
     <div className="page-stack">
@@ -123,17 +139,14 @@ export function PaginaEscaner() {
               {selectedEvent.location} - {formatDateTime(selectedEvent.startsAt)}
             </p>
           ) : null}
-          <label>
-            Jornada
-            <select
-              value={attendancePeriod}
-              onChange={(event) => setAttendancePeriod(event.target.value as JornadaAsistencia)}
-              required
-            >
-              <option value="matutina">Matutina presencial</option>
-              <option value="vespertina">Vespertina presencial</option>
-            </select>
-          </label>
+          <div className="auto-period-card">
+            <span>Jornada automatica</span>
+            <strong>{getAttendancePeriodLabel(attendancePeriod)}</strong>
+            <small>
+              Hora actual: {currentTime.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' })}
+            </small>
+            <small>8:00 a. m. - 12:59 p. m. matutina / 1:00 p. m. - 6:00 p. m. vespertina</small>
+          </div>
           {events.length === 0 ? (
             <p className="form-hint">No hay congresos publicados o activos disponibles para escaneo.</p>
           ) : null}
@@ -167,7 +180,7 @@ export function PaginaEscaner() {
             />
           </label>
           <button className="primary-button" type="submit" disabled={isSubmitting || !eventId}>
-            {isSubmitting ? 'Validando...' : `Registrar asistencia ${attendancePeriod}`}
+            {isSubmitting ? 'Validando...' : `Registrar asistencia ${getAttendancePeriodLabel(attendancePeriod)}`}
           </button>
           {error ? <p className="form-error">{error}</p> : null}
           {result ? (
@@ -177,7 +190,7 @@ export function PaginaEscaner() {
                 <strong>{result.message}</strong>
                 <span>{result.participantName}</span>
                 <small>Cedula: {result.documentId}</small>
-                <small>Jornada: {result.attendancePeriod}</small>
+                <small>Jornada: {getAttendancePeriodLabel(result.attendancePeriod)}</small>
                 <small>Fecha y hora: {formatDateTime(result.checkedInAt)}</small>
                 <small>Certificado: {result.certificateCode}</small>
               </div>

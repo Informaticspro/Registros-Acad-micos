@@ -79,6 +79,14 @@ function normalizeAttendancePeriod(value?: string | null): JornadaAsistencia {
   return value === 'vespertina' ? 'vespertina' : 'matutina';
 }
 
+export function getAutomaticAttendancePeriod(date = new Date()): JornadaAsistencia {
+  return date.getHours() >= 13 ? 'vespertina' : 'matutina';
+}
+
+export function getAttendancePeriodLabel(period: JornadaAsistencia) {
+  return period === 'vespertina' ? 'Vespertina presencial' : 'Matutina presencial';
+}
+
 function getMetadataValue(metadata: Record<string, string> | null | undefined, key: string) {
   return metadata?.[key]?.trim() ?? '';
 }
