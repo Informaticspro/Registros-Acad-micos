@@ -39,8 +39,22 @@ export const enrutador = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: '/dashboard', element: <PaginaPanel /> },
-      { path: '/eventos', element: <PaginaEventos /> },
+      {
+        path: '/dashboard',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaPanel />
+          </GuardaRol>
+        ),
+      },
+      {
+        path: '/eventos',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaEventos />
+          </GuardaRol>
+        ),
+      },
       {
         path: '/eventos/nuevo',
         element: (
@@ -49,7 +63,14 @@ export const enrutador = createBrowserRouter([
           </GuardaRol>
         ),
       },
-      { path: '/eventos/:eventId', element: <PaginaDetalleEvento /> },
+      {
+        path: '/eventos/:eventId',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaDetalleEvento />
+          </GuardaRol>
+        ),
+      },
       {
         path: '/eventos/:eventId/editar',
         element: (
@@ -58,7 +79,14 @@ export const enrutador = createBrowserRouter([
           </GuardaRol>
         ),
       },
-      { path: '/participantes', element: <PaginaParticipantes /> },
+      {
+        path: '/participantes',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaParticipantes />
+          </GuardaRol>
+        ),
+      },
       {
         path: '/asistencia/escanear',
         element: (
@@ -67,8 +95,22 @@ export const enrutador = createBrowserRouter([
           </GuardaRol>
         ),
       },
-      { path: '/certificados', element: <PaginaCertificados /> },
-      { path: '/exportaciones', element: <PaginaExportaciones /> },
+      {
+        path: '/certificados',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaCertificados />
+          </GuardaRol>
+        ),
+      },
+      {
+        path: '/exportaciones',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaExportaciones />
+          </GuardaRol>
+        ),
+      },
       {
         path: '/usuarios',
         element: (
@@ -77,7 +119,14 @@ export const enrutador = createBrowserRouter([
           </GuardaRol>
         ),
       },
-      { path: '/historial', element: <PaginaHistorial /> },
+      {
+        path: '/historial',
+        element: (
+          <GuardaRol roles={['admin', 'organizador']}>
+            <PaginaHistorial />
+          </GuardaRol>
+        ),
+      },
     ],
   },
   { path: '*', element: <PaginaNoEncontrada /> },

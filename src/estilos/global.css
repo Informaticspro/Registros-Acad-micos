@@ -1031,6 +1031,27 @@ textarea {
   color: var(--accent);
 }
 
+.attendance-scan-card {
+  padding: 14px;
+  border: 1px solid rgba(55, 213, 167, 0.35);
+  border-radius: var(--radius);
+  background: rgba(55, 213, 167, 0.1);
+}
+
+.attendance-scan-card > div {
+  display: grid;
+  gap: 5px;
+}
+
+.attendance-scan-card strong {
+  color: var(--text);
+}
+
+.attendance-scan-card span,
+.attendance-scan-card small {
+  color: var(--muted);
+}
+
 .qr-event-panel code,
 .qr-public-url code {
   overflow-wrap: anywhere;

@@ -37,7 +37,11 @@ const adminNavItem = { to: '/usuarios', label: 'Usuarios', icon: UserCog };
 export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateralProps) {
   const { profile } = useAutenticacion();
   const items =
-    profile?.role === 'admin' ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)] : navItems;
+    profile?.role === 'scanner'
+      ? navItems.filter((item) => item.to === '/asistencia/escanear')
+      : profile?.role === 'admin'
+        ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)]
+        : navItems;
 
   return (
     <aside className="sidebar" aria-label="Menu principal">

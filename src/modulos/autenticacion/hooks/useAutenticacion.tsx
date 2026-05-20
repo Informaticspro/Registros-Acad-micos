@@ -8,7 +8,7 @@ type AuthContextValue = {
   profile: PerfilUsuario | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<PerfilUsuario>;
   signOut: () => Promise<void>;
 };
 
@@ -98,8 +98,9 @@ export function ProveedorAutenticacion({ children }: PropsWithChildren) {
       async signIn(email, password) {
         if (!supabase) {
           if (!isDemoMode()) throw new Error('Supabase no esta configurado en este despliegue.');
-          setProfile({ ...demoProfile, email });
-          return;
+          const profile = { ...demoProfile, email };
+          setProfile(profile);
+          return profile;
         }
         setIsLoading(true);
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -111,8 +112,10 @@ export function ProveedorAutenticacion({ children }: PropsWithChildren) {
           setIsLoading(false);
           throw new Error('No se pudo obtener el usuario autenticado.');
         }
-        setProfile(await loadProfile(data.user));
+        const profile = await loadProfile(data.user);
+        setProfile(profile);
         setIsLoading(false);
+        return profile;
       },
       async signOut() {
         if (supabase) await supabase.auth.signOut();

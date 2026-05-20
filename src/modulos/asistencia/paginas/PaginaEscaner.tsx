@@ -3,10 +3,14 @@ import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { Camera, CheckCircle2, ScanLine } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { listEvents } from '@/servicios/eventos.servicio';
-import { recordDailyAttendance } from '@/servicios/asistencia.servicio';
+import { DailyAttendanceResult, recordDailyAttendance } from '@/servicios/asistencia.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { formatDateTime } from '@/utilidades/formato';
+
+type ScanResultState = DailyAttendanceResult & {
+  message: string;
+};
 
 export function PaginaEscaner() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -15,14 +19,19 @@ export function PaginaEscaner() {
   const [eventId, setEventId] = useState('');
   const [manualValue, setManualValue] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<ScanResultState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     void listEvents().then((loaded) => {
-      setEvents(loaded);
-      if (loaded[0]) setEventId(loaded[0].id);
+      const congressEvents = loaded.filter(
+        (event) =>
+          event.eventType === 'congreso' &&
+          (event.status === 'published' || event.status === 'active' || event.status === 'closed'),
+      );
+      setEvents(congressEvents);
+      if (congressEvents[0]) setEventId(congressEvents[0].id);
     });
   }, []);
 
@@ -40,9 +49,10 @@ export function PaginaEscaner() {
       try {
         const response = await recordDailyAttendance(eventId, rawValue);
         const message = response.alreadyLoggedToday
-          ? `${response.participantName} (${response.documentId}) ya tenia marcaje hoy. Nuevo registro: ${formatDateTime(response.checkedInAt)}`
-          : `Asistencia registrada: ${response.participantName} (${response.documentId}) - ${formatDateTime(response.checkedInAt)}`;
-        setResult(message);
+          ? 'Este participante ya tenia marcaje hoy. Se guardo un nuevo registro de asistencia.'
+          : 'Asistencia registrada correctamente.';
+        setResult({ ...response, message });
+        setManualValue('');
         setIsScanning(false);
       } catch (err) {
         setError(getErrorMessage(err, 'No se pudo validar el QR'));
@@ -88,15 +98,18 @@ export function PaginaEscaner() {
   return (
     <div className="page-stack">
       <PageEncabezado
-        eyebrow="Control de asistencia"
-        title="Escanear QR"
-        description="Marca la llegada diaria de participantes inscritos. Funciona con el QR personal (cedula) o ingresando la cedula manualmente."
+        eyebrow="Control de congreso"
+        title="Escanear asistencia"
+        description="Registra entrada por jornada usando el QR personal generado al inscribirse al congreso."
       />
       <section className="scanner-grid">
         <article className="panel stack-form">
           <label>
-            Evento del dia
+            Congreso
             <select value={eventId} onChange={(event) => setEventId(event.target.value)} required>
+              <option value="" disabled>
+                Seleccione el congreso
+              </option>
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
                   {event.title} ({event.eventType})
@@ -108,6 +121,9 @@ export function PaginaEscaner() {
             <p className="form-hint">
               {selectedEvent.location} - {formatDateTime(selectedEvent.startsAt)}
             </p>
+          ) : null}
+          {events.length === 0 ? (
+            <p className="form-hint">No hay congresos publicados o activos disponibles para escaneo.</p>
           ) : null}
           <div className="scanner-preview">
             {isScanning ? (
@@ -130,11 +146,11 @@ export function PaginaEscaner() {
         </article>
         <form className="panel stack-form" onSubmit={handleManualSubmit}>
           <label>
-            QR del participante o cedula
+            QR personal del participante o cedula
             <input
               value={manualValue}
               onChange={(event) => setManualValue(event.target.value)}
-              placeholder="Escanee o escriba la cedula"
+              placeholder="Escanee el QR o escriba la cedula"
               required
             />
           </label>
@@ -143,9 +159,15 @@ export function PaginaEscaner() {
           </button>
           {error ? <p className="form-error">{error}</p> : null}
           {result ? (
-            <div className="scan-result">
-              <CheckCircle2 size={20} />
-              <span>{result}</span>
+            <div className="scan-result attendance-scan-card">
+              <CheckCircle2 size={24} />
+              <div>
+                <strong>{result.message}</strong>
+                <span>{result.participantName}</span>
+                <small>Cedula: {result.documentId}</small>
+                <small>Fecha y hora: {formatDateTime(result.checkedInAt)}</small>
+                <small>Certificado: {result.certificateCode}</small>
+              </div>
             </div>
           ) : null}
         </form>

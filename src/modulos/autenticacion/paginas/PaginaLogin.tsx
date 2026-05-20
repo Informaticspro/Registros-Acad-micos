@@ -15,8 +15,8 @@ export function PaginaLogin() {
     event.preventDefault();
     setError(null);
     try {
-      await signIn(email, password);
-      navigate('/dashboard');
+      const profile = await signIn(email, password);
+      navigate(profile.role === 'scanner' ? '/asistencia/escanear' : '/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion');
     }

@@ -30,6 +30,17 @@ type ParticipanteBase = {
 type DailyLog = {
   registration_id: string;
   checked_in_at: string;
+  scanned_by: string | null;
+};
+
+type ExportRowBundle = {
+  registration: InscripcionBase;
+  participant: ParticipanteBase;
+  logs: Array<{
+    checked_in_at: string;
+    scanned_by: string | null;
+    scanner_name?: string;
+  }>;
 };
 
 const INSTITUTION_HEADER = ['UNIVERSIDAD AUTÓNOMA DE CHIRIQUÍ', 'FACULTAD DE ECONOMÍA'] as const;
@@ -154,7 +165,7 @@ export async function listExportableEvents(): Promise<ExportableEvent[]> {
     }));
 }
 
-async function fetchEventInscripcions(eventId: string) {
+async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[]> {
   if (!supabase && isDemoMode()) {
     return mockInscripcions
       .filter((registration) => registration.eventId === eventId)
@@ -176,7 +187,7 @@ async function fetchEventInscripcions(eventId: string) {
             email: participant.email,
             metadata: participant.metadata ?? null,
           },
-          logs: registration.checkedInAt ? [{ checked_in_at: registration.checkedInAt }] : [],
+          logs: registration.checkedInAt ? [{ checked_in_at: registration.checkedInAt, scanned_by: 'demo-admin' }] : [],
         };
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -207,7 +218,7 @@ async function fetchEventInscripcions(eventId: string) {
 
   const { data: logs, error: logError } = await supabase
     .from('attendance_daily_logs')
-    .select('registration_id, checked_in_at')
+    .select('registration_id, checked_in_at, scanned_by')
     .in('registration_id', registrationIds)
     .returns<DailyLog[]>();
 
@@ -215,9 +226,20 @@ async function fetchEventInscripcions(eventId: string) {
     console.warn('No se pudieron cargar asistencias diarias:', logError.message);
   }
 
-  const logsByInscripcion = (logs ?? []).reduce<Record<string, string[]>>((acc, row) => {
+  const scannerIds = [...new Set((logs ?? []).map((row) => row.scanned_by).filter(Boolean))] as string[];
+  const { data: scanners } =
+    scannerIds.length > 0
+      ? await supabase.from('profiles').select('id, full_name').in('id', scannerIds)
+      : { data: [] };
+  const scannerMap = new Map((scanners ?? []).map((row) => [row.id as string, row.full_name as string]));
+
+  const logsByInscripcion = (logs ?? []).reduce<Record<string, ExportRowBundle['logs']>>((acc, row) => {
     const list = acc[row.registration_id] ?? [];
-    list.push(row.checked_in_at);
+    list.push({
+      checked_in_at: row.checked_in_at,
+      scanned_by: row.scanned_by,
+      scanner_name: row.scanned_by ? scannerMap.get(row.scanned_by) : undefined,
+    });
     acc[row.registration_id] = list;
     return acc;
   }, {});
@@ -229,13 +251,13 @@ async function fetchEventInscripcions(eventId: string) {
       return {
         registration,
         participant,
-        logs: (logsByInscripcion[registration.id] ?? []).map((checked_in_at) => ({ checked_in_at })),
+        logs: logsByInscripcion[registration.id] ?? [],
       };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 }
 
-function buildExportRows(event: EventoAcademico, rows: Awaited<ReturnType<typeof fetchEventInscripcions>>) {
+function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
   const isCongreso = getInscripcionFormKind(event.eventType) === 'congreso';
 
   return rows.map(({ registration, participant, logs }) => {
@@ -271,19 +293,27 @@ function buildExportRows(event: EventoAcademico, rows: Awaited<ReturnType<typeof
   });
 }
 
-export async function exportEventExcel(event: ExportableEvent) {
-  const rows = await fetchEventInscripcions(event.id);
-  const sheetRows = buildExportRows(event, rows);
+function buildAttendanceRows(rows: ExportRowBundle[]) {
+  return rows.flatMap(({ participant, logs }) =>
+    logs.map((log) => {
+      const date = new Date(log.checked_in_at);
+      return {
+        Nombre: participant.first_name,
+        Apellido: participant.last_name,
+        Cedula: participant.document_id,
+        Fecha: date.toLocaleDateString('es-PA'),
+        Hora: date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
+        'Fecha y hora': formatDateTime(log.checked_in_at),
+        'Registrado por': log.scanner_name ?? log.scanned_by ?? '',
+      };
+    }),
+  );
+}
 
-  if (sheetRows.length === 0) {
-    throw new Error(
-      `No hay participantes registrados en "${event.title}". Registre asistentes antes de exportar.`,
-    );
-  }
-
+function buildStyledWorksheet(event: EventoAcademico, sheetRows: Record<string, unknown>[], subtitle = '') {
   const tableHeaders = Object.keys(sheetRows[0]);
   const columnCount = Math.max(tableHeaders.length, 1);
-  const eventTitle = `${eventTypeLabels[event.eventType]}: ${event.title}`;
+  const eventTitle = `${eventTypeLabels[event.eventType]}: ${event.title}${subtitle ? ` - ${subtitle}` : ''}`;
   const generatedAt = `Generado: ${formatDateTime(new Date().toISOString())}`;
   const headerRows = [
     [INSTITUTION_HEADER[0]],
@@ -316,9 +346,25 @@ export async function exportEventExcel(event: ExportableEvent) {
   ];
   worksheet['!freeze'] = { xSplit: 0, ySplit: headerRows.length + 1 };
   applyExcelStyles(worksheet, sheetRows.length, columnCount);
+  return worksheet;
+}
+
+export async function exportEventExcel(event: ExportableEvent) {
+  const rows = await fetchEventInscripcions(event.id);
+  const sheetRows = buildExportRows(event, rows);
+  const attendanceRows = buildAttendanceRows(rows);
+
+  if (sheetRows.length === 0) {
+    throw new Error(
+      `No hay participantes registrados en "${event.title}". Registre asistentes antes de exportar.`,
+    );
+  }
 
   const workbook = utils.book_new();
-  utils.book_append_sheet(workbook, worksheet, 'Participantes');
+  utils.book_append_sheet(workbook, buildStyledWorksheet(event, sheetRows), 'Participantes');
+  if (attendanceRows.length > 0) {
+    utils.book_append_sheet(workbook, buildStyledWorksheet(event, attendanceRows, 'ASISTENCIA'), 'Asistencia');
+  }
   const typeSlug = slugify(event.eventType);
   const fileName = `${typeSlug}-${slugify(event.title)}.xlsx`;
   writeFile(workbook, fileName);
