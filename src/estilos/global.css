@@ -785,6 +785,22 @@ textarea {
   margin-bottom: 0;
 }
 
+.login-recovery-link {
+  width: fit-content;
+  color: var(--accent-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.login-recovery-link:hover {
+  color: var(--warning);
+}
+
+.recovery-panel {
+  display: grid;
+  gap: 18px;
+}
+
 .form-error {
   color: var(--danger);
 }

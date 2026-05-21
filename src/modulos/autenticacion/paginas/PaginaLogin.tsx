@@ -52,6 +52,9 @@ export function PaginaLogin() {
             required
           />
         </label>
+        <Link className="login-recovery-link" to="/recuperar-contrasena">
+          Olvide mi contrasena
+        </Link>
         {error ? <p className="form-error">{error}</p> : null}
         {isDemoMode() ? (
           <p className="form-hint">Modo demo activo hasta configurar Supabase en `.env`.</p>

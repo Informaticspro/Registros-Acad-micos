@@ -9,6 +9,8 @@ import { PaginaDetalleEvento } from '@/modulos/eventos/paginas/PaginaDetalleEven
 import { PaginaFormularioEvento } from '@/modulos/eventos/paginas/PaginaFormularioEvento';
 import { PaginaEventos } from '@/modulos/eventos/paginas/PaginaEventos';
 import { PaginaLogin } from '@/modulos/autenticacion/paginas/PaginaLogin';
+import { PaginaActualizarContrasena } from '@/modulos/autenticacion/paginas/PaginaActualizarContrasena';
+import { PaginaRecuperarContrasena } from '@/modulos/autenticacion/paginas/PaginaRecuperarContrasena';
 import { PaginaParticipantes } from '@/modulos/participantes/paginas/PaginaParticipantes';
 import { PaginaRegistroParticipante } from '@/modulos/registro/paginas/PaginaRegistroParticipante';
 import { PaginaConsultaQrParticipante } from '@/modulos/registro/paginas/PaginaConsultaQrParticipante';
@@ -25,6 +27,8 @@ export const enrutador = createBrowserRouter([
     element: <LayoutAutenticacion />,
     children: [
       { path: '/login', element: <PaginaLogin /> },
+      { path: '/recuperar-contrasena', element: <PaginaRecuperarContrasena /> },
+      { path: '/actualizar-contrasena', element: <PaginaActualizarContrasena /> },
       { path: '/eventos/:eventId/registr', element: <RedireccionRegistroEvento /> },
       { path: '/eventos/:eventId/register', element: <RedireccionRegistroEvento /> },
       { path: '/eventos/:eventId/registro', element: <PaginaRegistroParticipante /> },

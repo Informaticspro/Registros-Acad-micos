@@ -174,6 +174,19 @@ export async function updateOwnPassword(password: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function sendPasswordRecovery(email: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase no esta configurado.');
+
+  const normalizedEmail = email.trim().toLowerCase();
+  validarCorreo(normalizedEmail);
+
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo: `${window.location.origin}/actualizar-contrasena`,
+  });
+
+  if (error) throw error;
+}
+
 export async function resetStaffUserPassword(input: RestablecerContrasenaInput): Promise<void> {
   if (!supabase) throw new Error('Supabase no esta configurado.');
   validarContrasena(input.password);
