@@ -720,6 +720,19 @@ p {
   background: var(--accent);
 }
 
+.timeline-item.registro > span {
+  background: var(--gold);
+}
+
+.timeline-item p {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.timeline-item small {
+  color: var(--muted);
+}
+
 .definition-list {
   display: grid;
   gap: 14px;
