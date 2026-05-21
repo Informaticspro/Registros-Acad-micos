@@ -489,7 +489,6 @@ p {
 
 .panel-heading span,
 .card-topline span,
-.card-topline strong,
 .event-meta,
 .table-row span,
 .table-row small,
@@ -919,14 +918,48 @@ textarea {
 
 .status-pill {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: fit-content;
   padding: 6px 9px;
   border-radius: var(--radius);
   background: rgba(43, 103, 199, 0.16);
   color: #9fc2ff;
+  border: 1px solid rgba(43, 103, 199, 0.3);
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.status-pill-active {
+  background: rgba(44, 221, 141, 0.22);
+  border-color: rgba(44, 221, 141, 0.58);
+  box-shadow: 0 0 0 1px rgba(44, 221, 141, 0.12), 0 0 18px rgba(44, 221, 141, 0.2);
+  color: #42f0a6;
+}
+
+.status-pill-published {
+  background: rgba(43, 103, 199, 0.18);
+  border-color: rgba(75, 137, 232, 0.42);
+  color: #9fc2ff;
+}
+
+.status-pill-draft {
+  background: rgba(243, 185, 73, 0.16);
+  border-color: rgba(243, 185, 73, 0.42);
+  color: #ffd985;
+}
+
+.status-pill-closed {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.34);
+  color: #cbd5e1;
+}
+
+.status-pill-archived {
+  background: rgba(125, 92, 210, 0.16);
+  border-color: rgba(167, 139, 250, 0.36);
+  color: #c9b8ff;
 }
 
 .event-card-meta {

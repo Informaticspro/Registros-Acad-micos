@@ -39,6 +39,10 @@ export function getEstadoEventoLabel(status: EstadoEvento) {
   return labels[status];
 }
 
+export function getEstadoEventoClassName(status: EstadoEvento) {
+  return `status-pill status-pill-${status}`;
+}
+
 export function isPublicRegistrationOpen(event: EventoAcademico) {
   if (event.eventType === 'congreso') return event.status === 'published' || event.status === 'active';
   return event.status === 'active';
