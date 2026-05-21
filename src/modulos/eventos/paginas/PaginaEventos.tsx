@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { listEvents } from '@/servicios/eventos.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
+import { getEstadoEventoLabel } from '@/utilidades/estado-evento';
 import { formatDateTime, toTitleCase } from '@/utilidades/formato';
 
 export function PaginaEventos() {
@@ -31,7 +32,7 @@ export function PaginaEventos() {
           <Link className="event-card" to={`/eventos/${event.id}`} key={event.id}>
             <div className="card-topline">
               <span>{toTitleCase(event.eventType)}</span>
-              <strong>{event.status}</strong>
+              <strong>{getEstadoEventoLabel(event.status)}</strong>
             </div>
             <h2>{event.title}</h2>
             <p>{event.description}</p>
@@ -46,4 +47,3 @@ export function PaginaEventos() {
     </div>
   );
 }
-

@@ -794,6 +794,15 @@ textarea {
   color: var(--warning);
 }
 
+.field-hint {
+  color: var(--muted);
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.35;
+  margin-top: 6px;
+}
+
 .public-register {
   grid-template-columns: minmax(0, 0.9fr) minmax(320px, 520px);
   gap: 36px;

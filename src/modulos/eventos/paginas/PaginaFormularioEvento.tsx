@@ -151,12 +151,15 @@ export function PaginaFormularioEvento() {
         <label>
           Estado
           <select name="status" defaultValue={initialValues.status} required key={`status-${initialValues.status}`}>
-            <option value="published">Publicado</option>
+            <option value="published">Programado / publicado</option>
             <option value="active">Activo</option>
             <option value="draft">Borrador</option>
-            <option value="closed">Cerrado</option>
+            <option value="closed">Finalizado</option>
             <option value="archived">Archivado</option>
           </select>
+          <span className="field-hint">
+            El sistema ajusta automaticamente Activo o Finalizado segun las fechas de inicio y fin.
+          </span>
         </label>
         <label className="full-field">
           Descripcion

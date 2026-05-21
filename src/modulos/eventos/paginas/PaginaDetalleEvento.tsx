@@ -16,6 +16,7 @@ import { CONGRESO_CATEGORY_OPTIONS } from '@/modulos/registro/configuracion-regi
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { EventoAcademico, JornadaAsistencia } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
+import { getEstadoEventoLabel } from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
 
 function getInscripcionFormDescription(eventType: EventoAcademico['eventType']) {
@@ -216,7 +217,7 @@ export function PaginaDetalleEvento() {
   return (
     <div className="page-stack">
       <PageEncabezado
-        eyebrow={event.status}
+        eyebrow={getEstadoEventoLabel(event.status)}
         title={event.title}
         description={event.description}
         actions={

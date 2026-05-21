@@ -2,7 +2,9 @@
 import { getInscripcionFormKind } from '@/modulos/registro/configuracion-registro';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
+import { getEvent } from '@/servicios/eventos.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
+import { isPublicRegistrationOpen } from '@/utilidades/estado-evento';
 
 const congresoMetadataSchema = z.object({
   sex: z.string().min(1, 'Sexo requerido'),
@@ -56,6 +58,12 @@ export type PublicCheckInResult = {
 
 export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<PublicCheckInResult> {
   const parsed = publicCheckInSchema.parse(input);
+  const event = await getEvent(parsed.eventId);
+
+  if (!event || !isPublicRegistrationOpen(event)) {
+    throw new Error('Este evento no esta disponible para registro en este momento.');
+  }
+
   const metadata =
     getInscripcionFormKind(parsed.eventType as EventoAcademico['eventType'] | undefined) === 'congreso'
       ? Object.fromEntries(

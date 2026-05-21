@@ -12,6 +12,7 @@ import { getEvent } from '@/servicios/eventos.servicio';
 import { registerPublicCheckIn, PublicCheckInResult } from '@/servicios/registro-publico.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
+import { getEstadoEventoLabel, isPublicRegistrationOpen } from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
 
 function getValue(form: FormData, field: string) {
@@ -76,8 +77,8 @@ export function PaginaRegistroParticipante() {
   }, [eventId]);
 
   const formKind = getInscripcionFormKind(event?.eventType);
-  const showDraftWarning =
-    event && (event.status === 'draft' || event.status === 'closed' || event.status === 'archived');
+  const registrationOpen = event ? isPublicRegistrationOpen(event) : false;
+  const showDraftWarning = event && !registrationOpen;
 
   function resetForAnotherInscripcion() {
     setResult(null);
@@ -245,7 +246,7 @@ export function PaginaRegistroParticipante() {
           <span className="form-hint">{getInscripcionFormHint(formKind)}</span>
           {showDraftWarning ? (
             <p className="form-hint">
-              Este evento esta en estado "{event.status}". Para registro publico debe estar publicado o activo.
+              Este evento esta en estado "{getEstadoEventoLabel(event.status)}" y no acepta registros en este momento.
               {fromAdmin
                 ? ' Si eres organizador, el sistema permite registrar manualmente en borrador.'
                 : null}

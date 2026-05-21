@@ -2,6 +2,7 @@
 import { isDemoMode } from '@/infraestructura/entorno';
 import { mockEvents } from '@/datos/datosPrueba';
 import { EventoAcademico } from '@/tipos/dominio';
+import { getEstadoEventoPorFecha, normalizeEventStatusForSave } from '@/utilidades/estado-evento';
 
 export type SaveEventInput = {
   title: string;
@@ -31,25 +32,59 @@ const mapEvent = (row: {
   capacity: number;
   status: string;
   organizer_id: string;
-}): EventoAcademico => ({
-  id: row.id,
-  title: row.title,
-  eventType: row.event_type as EventoAcademico['eventType'],
-  description: row.description,
-  location: row.location,
-  startsAt: row.starts_at,
-  endsAt: row.ends_at,
-  capacity: row.capacity,
-  status: row.status as EventoAcademico['status'],
-  organizerId: row.organizer_id,
-});
+}): EventoAcademico => {
+  const event = {
+    id: row.id,
+    title: row.title,
+    eventType: row.event_type as EventoAcademico['eventType'],
+    description: row.description,
+    location: row.location,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    capacity: row.capacity,
+    status: row.status as EventoAcademico['status'],
+    organizerId: row.organizer_id,
+  };
+
+  return {
+    ...event,
+    status: getEstadoEventoPorFecha(event),
+  };
+};
 
 const eventColumns =
   'id,title,event_type,description,location,starts_at,ends_at,capacity,status,organizer_id' as const;
 
+async function syncEventLifecycleStatuses() {
+  if (!supabase) return;
+
+  const now = new Date().toISOString();
+  await Promise.all([
+    supabase
+      .from('events')
+      .update({ status: 'closed', updated_at: now })
+      .lt('ends_at', now)
+      .not('ends_at', 'is', null)
+      .not('status', 'in', '(draft,archived,closed)'),
+    supabase
+      .from('events')
+      .update({ status: 'active', updated_at: now })
+      .lte('starts_at', now)
+      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .in('status', ['published']),
+    supabase
+      .from('events')
+      .update({ status: 'published', updated_at: now })
+      .gt('starts_at', now)
+      .eq('status', 'active'),
+  ]);
+}
+
 export async function listEvents(): Promise<EventoAcademico[]> {
   if (!supabase && isDemoMode()) return mockEvents;
   if (!supabase) return [];
+
+  await syncEventLifecycleStatuses().catch(() => undefined);
 
   const { data, error } = await supabase
     .from('events')
@@ -63,7 +98,9 @@ export async function listEvents(): Promise<EventoAcademico[]> {
 /** Eventos visibles sin login (publicados o activos). */
 export async function listPublicEvents(): Promise<EventoAcademico[]> {
   if (!supabase && isDemoMode()) {
-    return mockEvents.filter((event) => event.status === 'published' || event.status === 'active');
+    return mockEvents
+      .map((event) => ({ ...event, status: getEstadoEventoPorFecha(event) }))
+      .filter((event) => event.status === 'published' || event.status === 'active');
   }
   if (!supabase) return [];
 
@@ -74,7 +111,7 @@ export async function listPublicEvents(): Promise<EventoAcademico[]> {
     .order('starts_at', { ascending: false });
 
   if (error) throw error;
-  return data.map(mapEvent);
+  return data.map(mapEvent).filter((event) => event.status === 'published' || event.status === 'active');
 }
 
 export async function getEvent(eventId: string): Promise<EventoAcademico | null> {
@@ -104,7 +141,7 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       capacity: input.capacity,
-      status: input.status,
+      status: normalizeEventStatusForSave(input),
       organizerId: input.organizerId,
     };
   }
@@ -125,7 +162,7 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
       starts_at: input.startsAt,
       ends_at: input.endsAt,
       capacity: input.capacity,
-      status: input.status,
+      status: normalizeEventStatusForSave(input),
     })
     .select('id,title,event_type,description,location,starts_at,ends_at,capacity,status,organizer_id')
     .single();
@@ -146,7 +183,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       capacity: input.capacity,
-      status: input.status,
+      status: normalizeEventStatusForSave(input),
       organizerId: 'demo-admin',
     };
   }
@@ -161,7 +198,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
       starts_at: input.startsAt,
       ends_at: input.endsAt,
       capacity: input.capacity,
-      status: input.status,
+      status: normalizeEventStatusForSave(input),
       updated_at: new Date().toISOString(),
     })
     .eq('id', input.id)

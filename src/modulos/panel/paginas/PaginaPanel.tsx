@@ -23,8 +23,10 @@ export function PaginaPanel() {
     );
   }, []);
 
+  const activeEvents = events.filter((event) => event.status === 'active');
   const congressEvent =
-    events.find((event) => event.eventType === 'congreso' && ['active', 'published'].includes(event.status)) ??
+    events.find((event) => event.eventType === 'congreso' && event.status === 'active') ??
+    events.find((event) => event.eventType === 'congreso' && event.status === 'published') ??
     events.find((event) => event.eventType === 'congreso');
   const attendanceTarget = congressEvent ? `/eventos/${congressEvent.id}#asistencias-hoy` : '/eventos';
 
@@ -38,7 +40,7 @@ export function PaginaPanel() {
       <section className="stats-grid">
         <TarjetaEstadistica
           label="Eventos activos"
-          value={String(events.length)}
+          value={String(activeEvents.length)}
           trend="Ver eventos"
           icon={CalendarDays}
           to="/eventos"

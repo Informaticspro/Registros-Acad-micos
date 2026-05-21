@@ -1,5 +1,6 @@
-﻿import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
+import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { mockEvents } from '@/datos/datosPrueba';
+import { getEstadoEventoLabel, getEstadoEventoPorFecha } from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
 
 export function PaginaHistorial() {
@@ -16,7 +17,7 @@ export function PaginaHistorial() {
             <span />
             <div>
               <strong>{event.title}</strong>
-              <p>{formatDateTime(event.startsAt)} - {event.status}</p>
+              <p>{formatDateTime(event.startsAt)} - {getEstadoEventoLabel(getEstadoEventoPorFecha(event))}</p>
             </div>
           </div>
         ))}
@@ -24,4 +25,3 @@ export function PaginaHistorial() {
     </div>
   );
 }
-
