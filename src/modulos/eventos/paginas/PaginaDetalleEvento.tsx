@@ -275,7 +275,7 @@ export function PaginaDetalleEvento() {
         </article>
 
         {event.eventType === 'congreso' ? (
-          <article className="panel congress-attendance-panel">
+          <article className="panel congress-attendance-panel" id="asistencias-hoy">
             <div className="attendance-panel-header">
               <div>
                 <h2>Asistencia en tiempo real</h2>

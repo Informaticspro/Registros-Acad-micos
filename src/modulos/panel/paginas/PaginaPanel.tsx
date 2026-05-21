@@ -1,36 +1,39 @@
-﻿import { useEffect, useState } from 'react';
-import { CalendarDays, ClipboardCheck, QrCode, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CalendarDays, ClipboardCheck, Users } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { TarjetaEstadistica } from '@/componentes/interfaz/TarjetaEstadistica';
 import { listAttendance } from '@/servicios/asistencia.servicio';
 import { listEvents } from '@/servicios/eventos.servicio';
-import { listParticipantes, listInscripcions } from '@/servicios/participantes.servicio';
-import { EventoAcademico, RegistroAsistencia, Participante, Inscripcion } from '@/tipos/dominio';
+import { listParticipantes } from '@/servicios/participantes.servicio';
+import { EventoAcademico, RegistroAsistencia, Participante } from '@/tipos/dominio';
 import { formatDateTime } from '@/utilidades/formato';
 
 export function PaginaPanel() {
   const [events, setEvents] = useState<EventoAcademico[]>([]);
   const [participants, setParticipantes] = useState<Participante[]>([]);
-  const [registrations, setInscripcions] = useState<Inscripcion[]>([]);
   const [attendance, setAttendance] = useState<RegistroAsistencia[]>([]);
 
   useEffect(() => {
-    void Promise.all([listEvents(), listParticipantes(), listInscripcions(), listAttendance()]).then(
-      ([eventsData, participantsData, registrationsData, attendanceData]) => {
+    void Promise.all([listEvents(), listParticipantes(), listAttendance()]).then(
+      ([eventsData, participantsData, attendanceData]) => {
         setEvents(eventsData);
         setParticipantes(participantsData);
-        setInscripcions(registrationsData);
         setAttendance(attendanceData);
       },
     );
   }, []);
+
+  const congressEvent =
+    events.find((event) => event.eventType === 'congreso' && ['active', 'published'].includes(event.status)) ??
+    events.find((event) => event.eventType === 'congreso');
+  const attendanceTarget = congressEvent ? `/eventos/${congressEvent.id}#asistencias-hoy` : '/eventos';
 
   return (
     <div className="page-stack">
       <PageEncabezado
         eyebrow="Panel administrativo"
         title="Panel de control"
-        description="Vista ejecutiva de eventos, inscripciones, asistencia y certificados."
+        description="Vista ejecutiva de eventos, participantes, asistencia y certificados."
       />
       <section className="stats-grid">
         <TarjetaEstadistica
@@ -48,18 +51,11 @@ export function PaginaPanel() {
           to="/participantes"
         />
         <TarjetaEstadistica
-          label="Inscripciones"
-          value={String(registrations.length)}
-          trend="Ver registros por evento"
-          icon={QrCode}
-          to="/participantes"
-        />
-        <TarjetaEstadistica
           label="Asistencias"
           value={String(attendance.length)}
-          trend="Ir al escaner"
+          trend="Ver asistencia de hoy"
           icon={ClipboardCheck}
-          to="/asistencia/escanear"
+          to={attendanceTarget}
         />
       </section>
       <section className="split-grid">
@@ -101,4 +97,3 @@ export function PaginaPanel() {
     </div>
   );
 }
-
