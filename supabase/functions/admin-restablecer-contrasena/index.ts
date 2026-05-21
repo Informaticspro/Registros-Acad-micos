@@ -45,8 +45,8 @@ Deno.serve(async (request) => {
     .eq('id', userData.user.id)
     .maybeSingle();
 
-  if (profileError || profile?.role !== 'admin') {
-    return jsonResponse({ error: 'Solo administradores pueden restablecer contrasenas.' }, 403);
+  if (profileError || (profile?.role !== 'admin' && profile?.role !== 'propietario')) {
+    return jsonResponse({ error: 'Solo propietarios o administradores pueden restablecer contrasenas.' }, 403);
   }
 
   const body = await request.json().catch(() => null);
@@ -59,13 +59,17 @@ Deno.serve(async (request) => {
 
   const { data: targetProfile, error: targetProfileError } = await adminClient
     .from('profiles')
-    .select('id')
+    .select('id, role')
     .eq('id', userId)
     .eq('organization_id', profile.organization_id)
     .maybeSingle();
 
   if (targetProfileError || !targetProfile) {
     return jsonResponse({ error: 'El usuario no pertenece a tu organizacion.' }, 404);
+  }
+
+  if (targetProfile.role === 'propietario') {
+    return jsonResponse({ error: 'La cuenta propietaria cambia su contrasena desde Mi cuenta o recuperacion.' }, 403);
   }
 
   const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, { password });

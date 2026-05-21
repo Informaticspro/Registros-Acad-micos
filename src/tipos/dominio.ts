@@ -1,4 +1,4 @@
-﻿export type RolAplicacion = 'admin' | 'organizador' | 'scanner';
+export type RolAplicacion = 'propietario' | 'admin' | 'organizador' | 'scanner';
 
 export type EstadoEvento = 'draft' | 'published' | 'active' | 'closed' | 'archived';
 
@@ -57,4 +57,3 @@ export type RegistroAsistencia = {
   status: EstadoAsistencia;
   checkedInAt: string;
 };
-

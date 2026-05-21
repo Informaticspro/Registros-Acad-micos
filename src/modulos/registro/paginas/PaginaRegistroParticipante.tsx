@@ -42,7 +42,7 @@ export function PaginaRegistroParticipante() {
   const { eventId } = useParams();
   const location = useLocation();
   const { profile } = useAutenticacion();
-  const isStaffUser = profile?.role === 'admin' || profile?.role === 'organizador';
+  const isStaffUser = profile?.role === 'propietario' || profile?.role === 'admin' || profile?.role === 'organizador';
   const fromAdmin = Boolean((location.state as RegisterLocationState | null)?.fromAdmin || isStaffUser);
   const [event, setEvent] = useState<EventoAcademico | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

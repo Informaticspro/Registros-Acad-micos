@@ -1113,6 +1113,18 @@ textarea {
   text-transform: uppercase;
 }
 
+.owner-lock {
+  width: fit-content;
+  justify-self: end;
+  padding: 8px 10px;
+  border: 1px solid rgba(121, 183, 53, 0.4);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;

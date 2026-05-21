@@ -82,7 +82,7 @@ const metadataFields = [
 
 export function PaginaParticipantes() {
   const { profile } = useAutenticacion();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'propietario' || profile?.role === 'admin';
   const [groups, setGroups] = useState<GrupoTipoEvento[]>([]);
   const [unassignedParticipants, setUnassignedParticipants] = useState<GrupoParticipantesSinEvento>({
     eventType: unassignedEventType,

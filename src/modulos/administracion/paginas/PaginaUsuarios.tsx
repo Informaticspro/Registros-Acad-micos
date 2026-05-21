@@ -13,6 +13,7 @@ import { RolAplicacion } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 
 const roleLabels: Record<RolAplicacion, string> = {
+  propietario: 'Propietario',
   admin: 'Administrador',
   organizador: 'Organizador',
   scanner: 'Escaner',
@@ -197,7 +198,7 @@ export function PaginaUsuarios() {
         </div>
         <div className="users-list">
           {users.map((user) =>
-            editingId === user.id ? (
+            editingId === user.id && user.role !== 'propietario' ? (
               <form className="user-edit-row" key={user.id} onSubmit={(event) => void handleUpdate(event, user.id)}>
                 <input name="fullName" defaultValue={user.fullName} required />
                 <input name="email" defaultValue={user.email} type="email" required />
@@ -221,30 +222,34 @@ export function PaginaUsuarios() {
                     <span>{user.email}</span>
                   </div>
                   <span className="role-pill">{roleLabels[user.role]}</span>
-                  <div className="row-actions">
-                    <button
-                      className="icon-button"
-                      type="button"
-                      aria-label={`Restablecer contrasena de ${user.fullName}`}
-                      onClick={() => setResettingPasswordId((value) => (value === user.id ? null : user.id))}
-                    >
-                      <KeyRound size={18} />
-                    </button>
-                    <button className="icon-button" type="button" aria-label="Editar usuario" onClick={() => setEditingId(user.id)}>
-                      <Pencil size={18} />
-                    </button>
-                    <button
-                      className="icon-button"
-                      type="button"
-                      aria-label="Borrar usuario"
-                      disabled={isSaving}
-                      onClick={() => void handleDelete(user)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                  {user.role === 'propietario' ? (
+                    <span className="owner-lock">Cuenta protegida</span>
+                  ) : (
+                    <div className="row-actions">
+                      <button
+                        className="icon-button"
+                        type="button"
+                        aria-label={`Restablecer contrasena de ${user.fullName}`}
+                        onClick={() => setResettingPasswordId((value) => (value === user.id ? null : user.id))}
+                      >
+                        <KeyRound size={18} />
+                      </button>
+                      <button className="icon-button" type="button" aria-label="Editar usuario" onClick={() => setEditingId(user.id)}>
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        className="icon-button"
+                        type="button"
+                        aria-label="Borrar usuario"
+                        disabled={isSaving}
+                        onClick={() => void handleDelete(user)}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {resettingPasswordId === user.id ? (
+                {resettingPasswordId === user.id && user.role !== 'propietario' ? (
                   <form className="password-reset-row" onSubmit={(event) => void handleResetPassword(event, user)}>
                     <strong>Restablecer contrasena</strong>
                     <input name="password" type="password" minLength={8} required placeholder="Nueva contrasena temporal" />

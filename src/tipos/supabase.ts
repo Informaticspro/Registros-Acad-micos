@@ -8,7 +8,7 @@ export type BaseDatos = {
           id: string;
           full_name: string;
           email: string;
-          role: 'admin' | 'organizador' | 'scanner';
+          role: 'propietario' | 'admin' | 'organizador' | 'scanner';
           organization_id: string | null;
           created_at: string;
         };
@@ -16,13 +16,13 @@ export type BaseDatos = {
           id: string;
           full_name: string;
           email: string;
-          role?: 'admin' | 'organizador' | 'scanner';
+          role?: 'propietario' | 'admin' | 'organizador' | 'scanner';
           organization_id?: string | null;
         };
         Update: {
           full_name?: string;
           email?: string;
-          role?: 'admin' | 'organizador' | 'scanner';
+          role?: 'propietario' | 'admin' | 'organizador' | 'scanner';
           organization_id?: string | null;
         };
         Relationships: [];
@@ -158,7 +158,7 @@ export type BaseDatos = {
           p_user_id: string;
           p_full_name: string;
           p_email: string;
-          p_role: 'admin' | 'organizador' | 'scanner';
+          p_role: 'propietario' | 'admin' | 'organizador' | 'scanner';
         };
         Returns: undefined;
       };

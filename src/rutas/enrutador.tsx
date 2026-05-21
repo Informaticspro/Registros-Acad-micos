@@ -47,7 +47,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/dashboard',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaPanel />
           </GuardaRol>
         ),
@@ -55,7 +55,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/eventos',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaEventos />
           </GuardaRol>
         ),
@@ -63,7 +63,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/eventos/nuevo',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaFormularioEvento />
           </GuardaRol>
         ),
@@ -71,7 +71,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/eventos/:eventId',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaDetalleEvento />
           </GuardaRol>
         ),
@@ -79,7 +79,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/eventos/:eventId/editar',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaFormularioEvento />
           </GuardaRol>
         ),
@@ -87,7 +87,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/participantes',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaParticipantes />
           </GuardaRol>
         ),
@@ -95,7 +95,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/asistencia/escanear',
         element: (
-          <GuardaRol roles={['admin', 'organizador', 'scanner']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador', 'scanner']}>
             <PaginaEscaner />
           </GuardaRol>
         ),
@@ -103,7 +103,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/certificados',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaCertificados />
           </GuardaRol>
         ),
@@ -111,7 +111,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/exportaciones',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaExportaciones />
           </GuardaRol>
         ),
@@ -119,7 +119,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/usuarios',
         element: (
-          <GuardaRol roles={['admin']}>
+          <GuardaRol roles={['propietario', 'admin']}>
             <PaginaUsuarios />
           </GuardaRol>
         ),
@@ -131,7 +131,7 @@ export const enrutador = createBrowserRouter([
       {
         path: '/historial',
         element: (
-          <GuardaRol roles={['admin', 'organizador']}>
+          <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaHistorial />
           </GuardaRol>
         ),

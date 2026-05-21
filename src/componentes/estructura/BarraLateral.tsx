@@ -38,7 +38,7 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
   const items =
     profile?.role === 'scanner'
       ? navItems.filter((item) => item.to === '/asistencia/escanear')
-      : profile?.role === 'admin'
+      : profile?.role === 'admin' || profile?.role === 'propietario'
         ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)]
         : navItems;
 

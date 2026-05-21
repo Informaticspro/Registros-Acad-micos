@@ -83,7 +83,8 @@ export function PaginaDetalleEvento() {
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [deletingAttendanceId, setDeletingAttendanceId] = useState<string | null>(null);
   const [lastAttendanceRefresh, setLastAttendanceRefresh] = useState<string | null>(null);
-  const canDeleteAttendance = profile?.role === 'admin' || profile?.role === 'organizador';
+  const canDeleteAttendance =
+    profile?.role === 'propietario' || profile?.role === 'admin' || profile?.role === 'organizador';
   const registrationUrl = useMemo(() => {
     if (!eventId) return '';
     const origin = env.publicAppUrl || window.location.origin;

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Usuarios administrados desde localhost
 -- Ejecutar en Supabase SQL Editor.
--- Permite que un admin liste, edite y desactive perfiles de usuarios.
+-- Permite que un propietario o admin liste, edite y desactive perfiles de usuarios.
 -- La creacion usa Supabase Auth desde la app y luego admin_assign_staff_profile.
 -- =============================================================================
 
@@ -12,7 +12,7 @@ to authenticated
 using (
   id = auth.uid()
   or (
-    public.current_profile_role() = 'admin'
+    public.current_profile_role()::text in ('propietario', 'admin')
     and organization_id = public.current_profile_organization_id()
   )
 );
@@ -22,12 +22,14 @@ create policy "profiles_update_admin"
 on public.profiles for update
 to authenticated
 using (
-  public.current_profile_role() = 'admin'
+  public.current_profile_role()::text in ('propietario', 'admin')
   and organization_id = public.current_profile_organization_id()
+  and role::text <> 'propietario'
 )
 with check (
-  public.current_profile_role() = 'admin'
+  public.current_profile_role()::text in ('propietario', 'admin')
   and organization_id = public.current_profile_organization_id()
+  and role::text <> 'propietario'
 );
 
 drop function if exists public.admin_assign_staff_profile(uuid, text, text, public.app_role);
@@ -45,8 +47,12 @@ as $$
 declare
   v_org uuid;
 begin
-  if public.current_profile_role() <> 'admin' then
-    raise exception 'Solo administradores pueden crear usuarios';
+  if public.current_profile_role()::text not in ('propietario', 'admin') then
+    raise exception 'Solo propietarios o administradores pueden crear usuarios';
+  end if;
+
+  if p_role::text = 'propietario' then
+    raise exception 'El rol propietario solo se asigna desde Supabase SQL Editor';
   end if;
 
   v_org := public.current_profile_organization_id();
@@ -74,8 +80,8 @@ security definer
 set search_path = public
 as $$
 begin
-  if public.current_profile_role() <> 'admin' then
-    raise exception 'Solo administradores pueden desactivar usuarios';
+  if public.current_profile_role()::text not in ('propietario', 'admin') then
+    raise exception 'Solo propietarios o administradores pueden desactivar usuarios';
   end if;
 
   if p_user_id = auth.uid() then
@@ -84,7 +90,8 @@ begin
 
   delete from public.profiles
   where id = p_user_id
-    and organization_id = public.current_profile_organization_id();
+    and organization_id = public.current_profile_organization_id()
+    and role::text <> 'propietario';
 end;
 $$;
 

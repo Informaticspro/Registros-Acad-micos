@@ -1,6 +1,6 @@
 create extension if not exists "pgcrypto";
 
-create type public.app_role as enum ('admin', 'organizador', 'scanner');
+create type public.app_role as enum ('propietario', 'admin', 'organizador', 'scanner');
 create type public.event_type as enum ('seminario', 'congreso', 'taller', 'capacitacion', 'universitario');
 create type public.event_status as enum ('draft', 'published', 'active', 'closed', 'archived');
 create type public.attendance_status as enum ('present', 'late', 'excused');
@@ -137,7 +137,7 @@ create policy "events_insert_admin_organizer"
 on public.events for insert
 to authenticated
 with check (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
   and organizer_id = auth.uid()
 );
@@ -146,11 +146,11 @@ create policy "events_update_admin_organizer"
 on public.events for update
 to authenticated
 using (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 )
 with check (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 );
 
@@ -158,7 +158,7 @@ create policy "events_delete_admin_organizer"
 on public.events for delete
 to authenticated
 using (
-  public.current_profile_role() = 'admin'
+  public.current_profile_role() in ('propietario', 'admin')
   and organization_id = public.current_profile_organization_id()
 );
 
@@ -166,7 +166,7 @@ create policy "participants_select_admin_organizer"
 on public.participants for select
 to authenticated
 using (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 );
 
@@ -174,7 +174,7 @@ create policy "participants_insert_admin_organizer"
 on public.participants for insert
 to authenticated
 with check (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 );
 
@@ -182,11 +182,11 @@ create policy "participants_update_admin_organizer"
 on public.participants for update
 to authenticated
 using (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 )
 with check (
-  public.current_profile_role() in ('admin', 'organizador')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 );
 
@@ -194,21 +194,21 @@ create policy "participants_delete_admin"
 on public.participants for delete
 to authenticated
 using (
-  public.current_profile_role() = 'admin'
+  public.current_profile_role() in ('propietario', 'admin')
   and organization_id = public.current_profile_organization_id()
 );
 
 create policy "registrations_manage_admin_organizer"
 on public.registrations for all
 to authenticated
-using (public.current_profile_role() in ('admin', 'organizador'))
-with check (public.current_profile_role() in ('admin', 'organizador'));
+using (public.current_profile_role() in ('propietario', 'admin', 'organizador'))
+with check (public.current_profile_role() in ('propietario', 'admin', 'organizador'));
 
 create policy "attendance_manage_scanners"
 on public.attendance_records for all
 to authenticated
-using (public.current_profile_role() in ('admin', 'organizador', 'scanner'))
-with check (public.current_profile_role() in ('admin', 'organizador', 'scanner'));
+using (public.current_profile_role() in ('propietario', 'admin', 'organizador', 'scanner'))
+with check (public.current_profile_role() in ('propietario', 'admin', 'organizador', 'scanner'));
 
 create policy "certificates_read_own_org"
 on public.certificate_issues for select
@@ -271,7 +271,7 @@ begin
     from public.profiles p
     where p.id = auth.uid()
       and p.organization_id = v_event.organization_id
-      and p.role in ('admin', 'organizador')
+      and p.role in ('propietario', 'admin', 'organizador')
   ) then
     v_staff_bypass := true;
   else
