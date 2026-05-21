@@ -7,6 +7,11 @@ import { createEvent, getEvent, updateEvent } from '@/servicios/eventos.servicio
 import { EventoAcademico } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 
+function getEditableStatus(status: EventoAcademico['status']) {
+  if (status === 'draft' || status === 'archived') return status;
+  return 'published';
+}
+
 function toDateTimeLocal(value: string | null) {
   if (!value) return '';
   const date = new Date(value);
@@ -32,7 +37,7 @@ export function PaginaFormularioEvento() {
       capacity: eventToEdit?.capacity ?? '',
       startsAt: toDateTimeLocal(eventToEdit?.startsAt ?? null),
       endsAt: toDateTimeLocal(eventToEdit?.endsAt ?? null),
-      status: eventToEdit?.status ?? 'published',
+      status: getEditableStatus(eventToEdit?.status ?? 'published'),
       description: eventToEdit?.description ?? '',
     }),
     [eventToEdit],
@@ -151,14 +156,12 @@ export function PaginaFormularioEvento() {
         <label>
           Estado
           <select name="status" defaultValue={initialValues.status} required key={`status-${initialValues.status}`}>
-            <option value="published">Programado / publicado</option>
-            <option value="active">Activo</option>
             <option value="draft">Borrador</option>
-            <option value="closed">Finalizado</option>
+            <option value="published">Publicado / visible</option>
             <option value="archived">Archivado</option>
           </select>
           <span className="field-hint">
-            El sistema ajusta automaticamente Activo o Finalizado segun las fechas de inicio y fin.
+            Activo y Finalizado no se eligen manualmente: el sistema los calcula segun la fecha de inicio y fin.
           </span>
         </label>
         <label className="full-field">
