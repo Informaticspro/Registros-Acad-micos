@@ -446,6 +446,16 @@ p {
   justify-content: space-between;
   gap: 16px;
   padding: 18px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.stat-card:hover {
+  border-color: rgba(243, 189, 34, 0.52);
+  background: var(--surface-soft);
+  transform: translateY(-2px);
 }
 
 .stat-card span,

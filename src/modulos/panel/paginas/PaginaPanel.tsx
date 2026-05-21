@@ -33,10 +33,34 @@ export function PaginaPanel() {
         description="Vista ejecutiva de eventos, inscripciones, asistencia y certificados."
       />
       <section className="stats-grid">
-        <TarjetaEstadistica label="Eventos activos" value={String(events.length)} trend="Multi-evento habilitado" icon={CalendarDays} />
-        <TarjetaEstadistica label="Participantes" value={String(participants.length)} trend="Base unica de personas" icon={Users} />
-        <TarjetaEstadistica label="Inscripciones" value={String(registrations.length)} trend="QR por registro" icon={QrCode} />
-        <TarjetaEstadistica label="Asistencias" value={String(attendance.length)} trend="Escaneo en tiempo real" icon={ClipboardCheck} />
+        <TarjetaEstadistica
+          label="Eventos activos"
+          value={String(events.length)}
+          trend="Ver eventos"
+          icon={CalendarDays}
+          to="/eventos"
+        />
+        <TarjetaEstadistica
+          label="Participantes"
+          value={String(participants.length)}
+          trend="Ver participantes"
+          icon={Users}
+          to="/participantes"
+        />
+        <TarjetaEstadistica
+          label="Inscripciones"
+          value={String(registrations.length)}
+          trend="Ver registros por evento"
+          icon={QrCode}
+          to="/participantes"
+        />
+        <TarjetaEstadistica
+          label="Asistencias"
+          value={String(attendance.length)}
+          trend="Ir al escaner"
+          icon={ClipboardCheck}
+          to="/asistencia/escanear"
+        />
       </section>
       <section className="split-grid">
         <article className="panel">
