@@ -154,14 +154,14 @@ export function PaginaFormularioEvento() {
           <input name="endsAt" type="datetime-local" step="60" defaultValue={initialValues.endsAt} />
         </label>
         <label>
-          Estado
+          Publicacion del evento
           <select name="status" defaultValue={initialValues.status} required key={`status-${initialValues.status}`}>
             <option value="draft">Borrador</option>
             <option value="published">Publicado / visible</option>
             <option value="archived">Archivado</option>
           </select>
           <span className="field-hint">
-            Activo y Finalizado no se eligen manualmente: el sistema los calcula segun la fecha de inicio y fin.
+            Activo y Finalizado son estados automaticos. El sistema los calcula segun la fecha de inicio y fin.
           </span>
         </label>
         <label className="full-field">
