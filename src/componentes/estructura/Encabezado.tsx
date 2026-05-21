@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { Bell, KeyRound, LogOut, Menu, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import { Bell, CalendarDays, ClipboardCheck, KeyRound, LogOut, Menu, Search, Users } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
+import { buscarGlobal, ResultadoBusqueda } from '@/servicios/busqueda.servicio';
+import { getErrorMessage } from '@/utilidades/errores';
 
 type EncabezadoProps = {
   onToggleMenu: () => void;
@@ -9,8 +11,63 @@ type EncabezadoProps = {
 
 export function Encabezado({ onToggleMenu }: EncabezadoProps) {
   const { profile, signOut } = useAutenticacion();
+  const location = useLocation();
   const navigate = useNavigate();
+  const searchRef = useRef<HTMLFormElement>(null);
+  const searchRequest = useRef(0);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<ResultadoBusqueda[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSearchOpen(false);
+  }, [location.pathname, location.hash]);
+
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      if (!searchRef.current?.contains(event.target as Node)) setIsSearchOpen(false);
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    const searchTerm = query.trim();
+    if (searchTerm.length < 2) {
+      searchRequest.current += 1;
+      setResults([]);
+      setSearchError(null);
+      setIsSearching(false);
+      return;
+    }
+
+    const requestId = searchRequest.current + 1;
+    searchRequest.current = requestId;
+    setIsSearching(true);
+    setSearchError(null);
+
+    const timer = window.setTimeout(() => {
+      void buscarGlobal(searchTerm)
+        .then((found) => {
+          if (searchRequest.current !== requestId) return;
+          setResults(found);
+        })
+        .catch((error) => {
+          if (searchRequest.current !== requestId) return;
+          setResults([]);
+          setSearchError(getErrorMessage(error, 'No se pudo completar la busqueda'));
+        })
+        .finally(() => {
+          if (searchRequest.current === requestId) setIsSearching(false);
+        });
+    }, 260);
+
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
   async function handleSignOut() {
     setIsUserMenuOpen(false);
@@ -22,15 +79,66 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
     navigate('/mi-cuenta');
   }
 
+  function openResult(result: ResultadoBusqueda) {
+    setIsSearchOpen(false);
+    setQuery('');
+    navigate(result.to);
+  }
+
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (results[0]) openResult(results[0]);
+  }
+
+  function getResultIcon(result: ResultadoBusqueda) {
+    if (result.kind === 'evento') return <CalendarDays size={17} />;
+    if (result.kind === 'asistencia') return <ClipboardCheck size={17} />;
+    return <Users size={17} />;
+  }
+
   return (
     <header className="topbar">
       <button className="icon-button menu-button" type="button" aria-label="Mostrar u ocultar menu" onClick={onToggleMenu}>
         <Menu size={19} />
       </button>
-      <div className="search-box">
-        <Search size={18} />
-        <input aria-label="Buscar" placeholder="Buscar evento, participante o asistencia" />
-      </div>
+      <form className="global-search" onSubmit={handleSearchSubmit} ref={searchRef}>
+        <div className="search-box">
+          <Search size={18} />
+          <input
+            aria-label="Buscar"
+            placeholder="Buscar evento, participante o asistencia"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setIsSearchOpen(true);
+            }}
+            onFocus={() => setIsSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setIsSearchOpen(false);
+            }}
+          />
+        </div>
+        {isSearchOpen && query.trim().length >= 2 ? (
+          <section className="global-search-results" aria-live="polite">
+            {isSearching ? <p>Buscando coincidencias...</p> : null}
+            {searchError ? <p className="form-error">{searchError}</p> : null}
+            {!isSearching && !searchError && results.length === 0 ? <p>No se encontraron resultados.</p> : null}
+            {results.length > 0 ? (
+              <div className="global-search-list">
+                {results.map((result) => (
+                  <button key={result.id} type="button" onClick={() => openResult(result)}>
+                    <span className={`global-search-icon ${result.kind}`}>{getResultIcon(result)}</span>
+                    <span>
+                      <strong>{result.title}</strong>
+                      <small>{result.description}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+      </form>
       <div className="topbar-actions">
         <button className="icon-button" aria-label="Notificaciones">
           <Bell size={18} />
