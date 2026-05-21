@@ -192,7 +192,10 @@ textarea {
 }
 
 .app-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
+  min-height: 100vh;
 }
 
 .topbar {
@@ -356,6 +359,32 @@ a.primary-button {
 
 .content-shell {
   padding: 30px;
+}
+
+.legal-footer {
+  width: 100%;
+  padding: 0 30px 20px;
+  color: var(--muted);
+}
+
+.legal-footer small {
+  display: block;
+  padding-top: 14px;
+  border-top: 1px solid rgba(168, 180, 195, 0.14);
+  font-size: 0.76rem;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+.legal-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(243, 189, 34, 0.45);
+  text-underline-offset: 3px;
+}
+
+.legal-footer a:hover {
+  color: var(--text);
 }
 
 .page-stack {
@@ -731,6 +760,12 @@ textarea {
   border-top: 1px solid var(--line);
 }
 
+.auth-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
 .auth-shell,
 .public-register,
 .not-found {
@@ -738,6 +773,14 @@ textarea {
   display: grid;
   place-items: center;
   padding: 28px;
+}
+
+.auth-layout .auth-shell {
+  min-height: 0;
+}
+
+.auth-layout .legal-footer {
+  padding-top: 0;
 }
 
 .login-panel {
@@ -1640,6 +1683,11 @@ textarea {
 
   .content-shell {
     padding: 18px 14px 28px;
+  }
+
+  .legal-footer {
+    padding: 0 14px 16px;
+    text-align: center;
   }
 
   .topbar {

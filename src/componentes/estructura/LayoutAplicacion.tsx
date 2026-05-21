@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Encabezado } from '@/componentes/estructura/Encabezado';
 import { BarraLateral } from '@/componentes/estructura/BarraLateral';
+import { PieLegal } from '@/componentes/estructura/PieLegal';
 
 export function LayoutAplicacion() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
@@ -34,6 +35,7 @@ export function LayoutAplicacion() {
         <main className="content-shell">
           <Outlet />
         </main>
+        <PieLegal />
       </div>
     </div>
   );

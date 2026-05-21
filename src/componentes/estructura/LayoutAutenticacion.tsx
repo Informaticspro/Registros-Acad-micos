@@ -1,10 +1,14 @@
 ﻿import { Outlet } from 'react-router-dom';
+import { PieLegal } from '@/componentes/estructura/PieLegal';
 
 export function LayoutAutenticacion() {
   return (
-    <main className="auth-shell">
-      <Outlet />
-    </main>
+    <div className="auth-layout">
+      <main className="auth-shell">
+        <Outlet />
+      </main>
+      <PieLegal />
+    </div>
   );
 }
 
