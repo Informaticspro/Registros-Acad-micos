@@ -18,6 +18,11 @@ export type ActualizarUsuarioInput = {
   role: RolAplicacion;
 };
 
+export type RestablecerContrasenaInput = {
+  id: string;
+  password: string;
+};
+
 export type UsuarioSistema = {
   id: string;
   fullName: string;
@@ -152,6 +157,32 @@ export async function deleteStaffUser(id: string): Promise<void> {
 
   const { error } = await supabase.rpc('admin_disable_staff_profile', {
     p_user_id: id,
+  });
+
+  if (error) throw error;
+}
+
+function validarContrasena(password: string) {
+  if (password.length < 8) throw new Error('La contrasena debe tener minimo 8 caracteres.');
+}
+
+export async function updateOwnPassword(password: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase no esta configurado.');
+  validarContrasena(password);
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+export async function resetStaffUserPassword(input: RestablecerContrasenaInput): Promise<void> {
+  if (!supabase) throw new Error('Supabase no esta configurado.');
+  validarContrasena(input.password);
+
+  const { error } = await supabase.functions.invoke('admin-restablecer-contrasena', {
+    body: {
+      userId: input.id,
+      password: input.password,
+    },
   });
 
   if (error) throw error;

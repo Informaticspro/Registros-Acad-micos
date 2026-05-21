@@ -17,6 +17,7 @@ import { PaginaCertificados } from '@/modulos/certificados/paginas/PaginaCertifi
 import { PaginaExportaciones } from '@/modulos/exportaciones/paginas/PaginaExportaciones';
 import { PaginaHistorial } from '@/modulos/historial/paginas/PaginaHistorial';
 import { PaginaUsuarios } from '@/modulos/administracion/paginas/PaginaUsuarios';
+import { PaginaMiCuenta } from '@/modulos/autenticacion/paginas/PaginaMiCuenta';
 import { PaginaNoEncontrada } from '@/paginas/PaginaNoEncontrada';
 
 export const enrutador = createBrowserRouter([
@@ -118,6 +119,10 @@ export const enrutador = createBrowserRouter([
             <PaginaUsuarios />
           </GuardaRol>
         ),
+      },
+      {
+        path: '/mi-cuenta',
+        element: <PaginaMiCuenta />,
       },
       {
         path: '/historial',

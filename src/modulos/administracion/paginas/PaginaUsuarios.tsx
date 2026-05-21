@@ -1,10 +1,11 @@
-﻿import { FormEvent, useEffect, useState } from 'react';
-import { Pencil, RefreshCw, Save, Trash2, UserPlus, X } from 'lucide-react';
+import { FormEvent, Fragment, useEffect, useState } from 'react';
+import { KeyRound, Pencil, RefreshCw, Save, Trash2, UserPlus, X } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import {
   createStaffUser,
   deleteStaffUser,
   listStaffUsers,
+  resetStaffUserPassword,
   UsuarioSistema,
   updateStaffUser,
 } from '@/servicios/usuarios.servicio';
@@ -30,6 +31,7 @@ function readForm(form: HTMLFormElement) {
 export function PaginaUsuarios() {
   const [users, setUsers] = useState<UsuarioSistema[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [resettingPasswordId, setResettingPasswordId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +60,6 @@ export function PaginaUsuarios() {
       const input = readForm(formElement);
       await createStaffUser(input);
       setSuccess('Usuario creado en Supabase Auth y habilitado para iniciar sesion.');
-      setError(null);
       formElement.reset();
       await loadUsers();
     } catch (err) {
@@ -111,6 +112,33 @@ export function PaginaUsuarios() {
     }
   }
 
+  async function handleResetPassword(event: FormEvent<HTMLFormElement>, user: UsuarioSistema) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const password = String(form.get('password') ?? '');
+    const confirmPassword = String(form.get('confirmPassword') ?? '');
+
+    if (password !== confirmPassword) {
+      setError('Las contrasenas no coinciden.');
+      setSuccess(null);
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    setIsSaving(true);
+
+    try {
+      await resetStaffUserPassword({ id: user.id, password });
+      setResettingPasswordId(null);
+      setSuccess(`Contrasena restablecida para ${user.fullName}.`);
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo restablecer la contrasena'));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   useEffect(() => {
     void loadUsers();
   }, []);
@@ -120,7 +148,7 @@ export function PaginaUsuarios() {
       <PageEncabezado
         eyebrow="Administracion"
         title="Usuarios del sistema"
-        description="Solo administradores pueden crear, editar y borrar cuentas de la organizacion."
+        description="Solo administradores pueden crear, editar, restablecer contrasenas y borrar cuentas de la organizacion."
         actions={
           <button className="secondary-button" type="button" onClick={() => void loadUsers()}>
             <RefreshCw size={18} />
@@ -186,27 +214,51 @@ export function PaginaUsuarios() {
                 </button>
               </form>
             ) : (
-              <div className="user-row" key={user.id}>
-                <div>
-                  <strong>{user.fullName}</strong>
-                  <span>{user.email}</span>
+              <Fragment key={user.id}>
+                <div className="user-row">
+                  <div>
+                    <strong>{user.fullName}</strong>
+                    <span>{user.email}</span>
+                  </div>
+                  <span className="role-pill">{roleLabels[user.role]}</span>
+                  <div className="row-actions">
+                    <button
+                      className="icon-button"
+                      type="button"
+                      aria-label={`Restablecer contrasena de ${user.fullName}`}
+                      onClick={() => setResettingPasswordId((value) => (value === user.id ? null : user.id))}
+                    >
+                      <KeyRound size={18} />
+                    </button>
+                    <button className="icon-button" type="button" aria-label="Editar usuario" onClick={() => setEditingId(user.id)}>
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      className="icon-button"
+                      type="button"
+                      aria-label="Borrar usuario"
+                      disabled={isSaving}
+                      onClick={() => void handleDelete(user)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
-                <span className="role-pill">{roleLabels[user.role]}</span>
-                <div className="row-actions">
-                  <button className="icon-button" type="button" aria-label="Editar usuario" onClick={() => setEditingId(user.id)}>
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    aria-label="Borrar usuario"
-                    disabled={isSaving}
-                    onClick={() => void handleDelete(user)}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
+                {resettingPasswordId === user.id ? (
+                  <form className="password-reset-row" onSubmit={(event) => void handleResetPassword(event, user)}>
+                    <strong>Restablecer contrasena</strong>
+                    <input name="password" type="password" minLength={8} required placeholder="Nueva contrasena temporal" />
+                    <input name="confirmPassword" type="password" minLength={8} required placeholder="Confirmar contrasena" />
+                    <button className="secondary-button" type="button" disabled={isSaving} onClick={() => setResettingPasswordId(null)}>
+                      Cancelar
+                    </button>
+                    <button className="primary-button" type="submit" disabled={isSaving}>
+                      <KeyRound size={18} />
+                      Guardar contrasena
+                    </button>
+                  </form>
+                ) : null}
+              </Fragment>
             ),
           )}
           {!isLoading && users.length === 0 ? <p className="form-hint">No hay usuarios registrados.</p> : null}
@@ -215,4 +267,3 @@ export function PaginaUsuarios() {
     </div>
   );
 }
-

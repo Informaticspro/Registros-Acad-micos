@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Bell, LogOut, Menu, Search } from 'lucide-react';
+import { Bell, KeyRound, LogOut, Menu, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 
 type EncabezadoProps = {
@@ -8,11 +9,17 @@ type EncabezadoProps = {
 
 export function Encabezado({ onToggleMenu }: EncabezadoProps) {
   const { profile, signOut } = useAutenticacion();
+  const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   async function handleSignOut() {
     setIsUserMenuOpen(false);
     await signOut();
+  }
+
+  function handleAccount() {
+    setIsUserMenuOpen(false);
+    navigate('/mi-cuenta');
   }
 
   return (
@@ -41,6 +48,10 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
           </button>
           {isUserMenuOpen ? (
             <div className="user-menu-popover" role="menu">
+              <button type="button" role="menuitem" onClick={handleAccount}>
+                <KeyRound size={17} />
+                Cambiar contrasena
+              </button>
               <button type="button" role="menuitem" onClick={() => void handleSignOut()}>
                 <LogOut size={17} />
                 Cerrar sesion
