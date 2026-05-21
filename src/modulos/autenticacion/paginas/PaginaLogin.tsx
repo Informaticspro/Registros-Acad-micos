@@ -33,7 +33,7 @@ export function PaginaLogin() {
           <span>Facultad de Economia</span>
         </div>
       </div>
-      <div>
+      <div className="login-heading">
         <span className="eyebrow">Acceso administrativo</span>
         <h1>Control profesional de eventos academicos</h1>
         <p>Administra inscripciones, asistencia por QR, certificados y reportes desde una sola consola.</p>
@@ -70,4 +70,3 @@ export function PaginaLogin() {
     </section>
   );
 }
-
