@@ -1,12 +1,12 @@
 :root {
   color-scheme: dark;
-  --bg: #06140d;
-  --surface: #0e1d14;
-  --surface-soft: #162c1d;
+  --bg: #0b0f14;
+  --surface: #121821;
+  --surface-soft: #1a2430;
   --surface-raised: #f7fbf2;
-  --line: #2b5330;
+  --line: #2d3746;
   --text: #f5f8ef;
-  --muted: #b8c9ad;
+  --muted: #a8b4c3;
   --accent: #79b735;
   --accent-strong: #0b5f33;
   --gold: #f3bd22;
@@ -56,7 +56,7 @@ textarea {
 
 .sidebar {
   border-right: 1px solid var(--line);
-  background: #07170e;
+  background: #0f151d;
   padding: 24px 18px;
   position: sticky;
   top: 0;
@@ -203,7 +203,7 @@ textarea {
   gap: 18px;
   padding: 0 28px;
   border-bottom: 1px solid var(--line);
-  background: rgba(6, 20, 13, 0.92);
+  background: rgba(11, 15, 20, 0.94);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -293,7 +293,7 @@ a.primary-button {
 .secondary-button:hover,
 .icon-button:hover {
   border-color: rgba(243, 189, 34, 0.48);
-  background: #173720;
+  background: #1b2932;
 }
 
 .user-chip {
@@ -518,7 +518,7 @@ p {
 .data-table,
 .participants-mini-table,
 .live-attendance-list {
-  scrollbar-color: rgba(121, 183, 53, 0.5) rgba(14, 29, 20, 0.7);
+  scrollbar-color: rgba(121, 183, 53, 0.5) rgba(18, 24, 33, 0.72);
   scrollbar-width: thin;
 }
 
@@ -542,7 +542,7 @@ p {
 .live-attendance-list::-webkit-scrollbar-thumb,
 .participant-edit-form::-webkit-scrollbar-thumb,
 .form-grid::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(14, 29, 20, 0.8);
+  border: 2px solid rgba(18, 24, 33, 0.82);
   border-radius: 999px;
   background: rgba(121, 183, 53, 0.55);
 }
@@ -555,7 +555,7 @@ p {
 .live-attendance-list::-webkit-scrollbar-track,
 .participant-edit-form::-webkit-scrollbar-track,
 .form-grid::-webkit-scrollbar-track {
-  background: rgba(14, 29, 20, 0.7);
+  background: rgba(18, 24, 33, 0.72);
 }
 
 .table-list,
@@ -640,7 +640,7 @@ textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #07170e;
+  background: #0f151d;
   color: var(--text);
   font-size: 1rem;
   padding: 12px 14px;
@@ -665,7 +665,7 @@ textarea {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #07170e;
+  background: #0f151d;
 }
 
 .choice-group legend {
@@ -830,7 +830,7 @@ textarea {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #07170e;
+  background: #0f151d;
 }
 
 .participant-summary span,
@@ -974,7 +974,7 @@ textarea {
   overflow: auto;
   padding: 16px;
   border-top: 1px solid var(--line);
-  background: #07170e;
+  background: #0f151d;
 }
 
 .participant-edit-form .row-actions {
@@ -999,7 +999,7 @@ textarea {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #07170e;
+  background: #0f151d;
 }
 
 .user-edit-row {
@@ -1156,7 +1156,7 @@ textarea {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #07170e;
+  background: #0f151d;
 }
 
 .qr-public-url span {
@@ -1428,7 +1428,7 @@ textarea {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #07170e;
+  background: #0f151d;
 }
 
 .attendance-summary-grid span,
@@ -1604,7 +1604,7 @@ textarea {
     padding: 22px 18px;
     border-right: 1px solid var(--line);
     border-top: 0;
-    background: rgba(7, 23, 14, 0.97);
+    background: rgba(13, 18, 25, 0.97);
     backdrop-filter: blur(16px);
     transform: translateX(0);
     transition: transform 180ms ease;
@@ -1767,7 +1767,7 @@ textarea {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: #07170e;
+    background: #0f151d;
   }
 
   .data-table-row > span {
@@ -1819,7 +1819,7 @@ textarea {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: #07170e;
+    background: #0f151d;
   }
 
   .participants-mini-row > span {
@@ -1862,7 +1862,7 @@ textarea {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: #07170e;
+    background: #0f151d;
   }
 
   .live-attendance-row span:nth-of-type(1)::before {
@@ -1952,4 +1952,5 @@ textarea {
     max-height: 300px;
   }
 }
+
 
