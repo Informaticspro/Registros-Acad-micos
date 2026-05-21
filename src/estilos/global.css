@@ -1,15 +1,19 @@
 :root {
   color-scheme: dark;
-  --bg: #090b10;
-  --surface: #10141d;
-  --surface-soft: #161b27;
-  --line: #242b3a;
-  --text: #edf2f8;
-  --muted: #96a3b7;
-  --accent: #37d5a7;
-  --accent-strong: #15b884;
-  --warning: #f5c451;
+  --bg: #06140d;
+  --surface: #0e1d14;
+  --surface-soft: #162c1d;
+  --surface-raised: #f7fbf2;
+  --line: #2b5330;
+  --text: #f5f8ef;
+  --muted: #b8c9ad;
+  --accent: #79b735;
+  --accent-strong: #0b5f33;
+  --gold: #f3bd22;
+  --blue: #2b67c7;
+  --warning: #f3bd22;
   --danger: #ff6b6b;
+  --button-text: #07140c;
   --radius: 8px;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -52,7 +56,7 @@ textarea {
 
 .sidebar {
   border-right: 1px solid var(--line);
-  background: #0d1017;
+  background: #07170e;
   padding: 24px 18px;
   position: sticky;
   top: 0;
@@ -102,7 +106,7 @@ textarea {
   flex: 0 0 46px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(55, 213, 167, 0.28);
+  border: 1px solid rgba(243, 189, 34, 0.38);
   border-radius: 14px;
   background: #ffffff;
   color: var(--accent);
@@ -184,6 +188,7 @@ textarea {
 .nav-link:hover {
   background: var(--surface-soft);
   color: var(--text);
+  box-shadow: inset 3px 0 0 var(--gold);
 }
 
 .app-main {
@@ -198,7 +203,7 @@ textarea {
   gap: 18px;
   padding: 0 28px;
   border-bottom: 1px solid var(--line);
-  background: rgba(9, 11, 16, 0.9);
+  background: rgba(6, 20, 13, 0.92);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -263,8 +268,8 @@ textarea {
 
 .primary-button {
   padding: 0 16px;
-  background: var(--accent);
-  color: #04100c;
+  background: var(--gold);
+  color: var(--button-text);
   font-weight: 800;
 }
 
@@ -275,7 +280,7 @@ a.secondary-button {
 }
 
 a.primary-button {
-  color: #04100c;
+  color: var(--button-text);
 }
 
 .secondary-button {
@@ -283,6 +288,12 @@ a.primary-button {
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--text);
+}
+
+.secondary-button:hover,
+.icon-button:hover {
+  border-color: rgba(243, 189, 34, 0.48);
+  background: #173720;
 }
 
 .user-chip {
@@ -455,7 +466,7 @@ p {
   display: grid;
   place-items: center;
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.12);
+  background: rgba(121, 183, 53, 0.12);
   color: var(--accent);
 }
 
@@ -507,7 +518,7 @@ p {
 .data-table,
 .participants-mini-table,
 .live-attendance-list {
-  scrollbar-color: rgba(55, 213, 167, 0.5) rgba(16, 20, 29, 0.7);
+  scrollbar-color: rgba(121, 183, 53, 0.5) rgba(14, 29, 20, 0.7);
   scrollbar-width: thin;
 }
 
@@ -531,9 +542,9 @@ p {
 .live-attendance-list::-webkit-scrollbar-thumb,
 .participant-edit-form::-webkit-scrollbar-thumb,
 .form-grid::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(16, 20, 29, 0.8);
+  border: 2px solid rgba(14, 29, 20, 0.8);
   border-radius: 999px;
-  background: rgba(55, 213, 167, 0.55);
+  background: rgba(121, 183, 53, 0.55);
 }
 
 .table-list::-webkit-scrollbar-track,
@@ -544,7 +555,7 @@ p {
 .live-attendance-list::-webkit-scrollbar-track,
 .participant-edit-form::-webkit-scrollbar-track,
 .form-grid::-webkit-scrollbar-track {
-  background: rgba(16, 20, 29, 0.7);
+  background: rgba(14, 29, 20, 0.7);
 }
 
 .table-list,
@@ -629,11 +640,18 @@ textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0b0e15;
+  background: #07170e;
   color: var(--text);
   font-size: 1rem;
   padding: 12px 14px;
   outline: 0;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(243, 189, 34, 0.16);
 }
 
 textarea {
@@ -647,7 +665,7 @@ textarea {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0b0e15;
+  background: #07170e;
 }
 
 .choice-group legend {
@@ -785,8 +803,8 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
-    linear-gradient(90deg, rgba(55, 213, 167, 0.08) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(55, 213, 167, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(121, 183, 53, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(121, 183, 53, 0.08) 1px, transparent 1px),
     var(--surface);
   background-size: 34px 34px;
   color: var(--accent);
@@ -812,7 +830,7 @@ textarea {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0b0e15;
+  background: #07170e;
 }
 
 .participant-summary span,
@@ -875,7 +893,7 @@ textarea {
   align-items: center;
   gap: 8px;
   padding: 9px 11px;
-  border: 1px solid rgba(55, 213, 167, 0.35);
+  border: 1px solid rgba(121, 183, 53, 0.35);
   border-radius: var(--radius);
   color: var(--accent);
 }
@@ -885,8 +903,8 @@ textarea {
   width: fit-content;
   padding: 6px 9px;
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.12);
-  color: var(--accent);
+  background: rgba(43, 103, 199, 0.16);
+  color: #9fc2ff;
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -956,7 +974,7 @@ textarea {
   overflow: auto;
   padding: 16px;
   border-top: 1px solid var(--line);
-  background: #0b0e15;
+  background: #07170e;
 }
 
 .participant-edit-form .row-actions {
@@ -981,7 +999,7 @@ textarea {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0b0e15;
+  background: #07170e;
 }
 
 .user-edit-row {
@@ -996,9 +1014,9 @@ textarea {
 .role-pill {
   width: fit-content;
   padding: 8px 10px;
-  border: 1px solid rgba(55, 213, 167, 0.35);
+  border: 1px solid rgba(43, 103, 199, 0.38);
   border-radius: var(--radius);
-  color: var(--accent);
+  color: #9fc2ff;
   font-size: 0.82rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1051,7 +1069,7 @@ textarea {
 
 .qr-admin-modal .participant-qr-card {
   margin: 0 18px;
-  border-color: rgba(55, 213, 167, 0.24);
+  border-color: rgba(121, 183, 53, 0.24);
 }
 
 .qr-admin-modal > .form-hint {
@@ -1072,7 +1090,7 @@ textarea {
   place-items: center;
   margin-bottom: 22px;
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.12);
+  background: rgba(121, 183, 53, 0.12);
   color: var(--accent);
 }
 
@@ -1138,7 +1156,7 @@ textarea {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0b0e15;
+  background: #07170e;
 }
 
 .qr-public-url span {
@@ -1176,9 +1194,9 @@ textarea {
   place-items: center;
   gap: 10px;
   padding: 18px;
-  border: 1px solid rgba(55, 213, 167, 0.35);
+  border: 1px solid rgba(121, 183, 53, 0.35);
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.1);
+  background: rgba(121, 183, 53, 0.1);
   color: var(--accent);
   text-align: center;
 }
@@ -1231,9 +1249,9 @@ textarea {
 
 .attendance-scan-card {
   padding: 14px;
-  border: 1px solid rgba(55, 213, 167, 0.35);
+  border: 1px solid rgba(121, 183, 53, 0.35);
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.1);
+  background: rgba(121, 183, 53, 0.1);
 }
 
 .attendance-scan-card.duplicate {
@@ -1270,9 +1288,9 @@ textarea {
   display: grid;
   gap: 14px;
   padding: 16px;
-  border: 1px solid rgba(55, 213, 167, 0.32);
+  border: 1px solid rgba(121, 183, 53, 0.32);
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.08);
+  background: rgba(121, 183, 53, 0.08);
 }
 
 .manual-attendance-card > div {
@@ -1310,7 +1328,7 @@ textarea {
   display: grid;
   gap: 3px;
   padding: 14px 16px;
-  border: 1px solid rgba(55, 213, 167, 0.5);
+  border: 1px solid rgba(121, 183, 53, 0.5);
   border-radius: var(--radius);
   background: rgba(10, 20, 18, 0.96);
   color: var(--text);
@@ -1348,9 +1366,9 @@ textarea {
   display: grid;
   gap: 6px;
   padding: 14px;
-  border: 1px solid rgba(55, 213, 167, 0.35);
+  border: 1px solid rgba(121, 183, 53, 0.35);
   border-radius: var(--radius);
-  background: rgba(55, 213, 167, 0.1);
+  background: rgba(121, 183, 53, 0.1);
 }
 
 .auto-period-card span {
@@ -1410,7 +1428,7 @@ textarea {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0b0e15;
+  background: #07170e;
 }
 
 .attendance-summary-grid span,
@@ -1586,7 +1604,7 @@ textarea {
     padding: 22px 18px;
     border-right: 1px solid var(--line);
     border-top: 0;
-    background: rgba(13, 16, 23, 0.96);
+    background: rgba(7, 23, 14, 0.97);
     backdrop-filter: blur(16px);
     transform: translateX(0);
     transition: transform 180ms ease;
@@ -1749,7 +1767,7 @@ textarea {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: #0b0e15;
+    background: #07170e;
   }
 
   .data-table-row > span {
@@ -1801,7 +1819,7 @@ textarea {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: #0b0e15;
+    background: #07170e;
   }
 
   .participants-mini-row > span {
@@ -1844,7 +1862,7 @@ textarea {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: #0b0e15;
+    background: #07170e;
   }
 
   .live-attendance-row span:nth-of-type(1)::before {
@@ -1934,3 +1952,4 @@ textarea {
     max-height: 300px;
   }
 }
+
