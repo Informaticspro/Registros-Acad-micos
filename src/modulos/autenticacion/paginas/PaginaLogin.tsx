@@ -1,15 +1,17 @@
 ﻿import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { QrCode } from 'lucide-react';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { hasSupabaseConfig, isDemoMode } from '@/infraestructura/entorno';
 
 export function PaginaLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAutenticacion();
   const [email, setEmail] = useState('admin@academico.local');
   const [password, setPassword] = useState('demo123456');
   const [error, setError] = useState<string | null>(null);
+  const passwordUpdated = Boolean((location.state as { passwordUpdated?: boolean } | null)?.passwordUpdated);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +58,7 @@ export function PaginaLogin() {
           Olvide mi contrasena
         </Link>
         {error ? <p className="form-error">{error}</p> : null}
+        {passwordUpdated ? <p className="form-hint">Contrasena actualizada. Inicie sesion nuevamente.</p> : null}
         {isDemoMode() ? (
           <p className="form-hint">Modo demo activo hasta configurar Supabase en `.env`.</p>
         ) : null}

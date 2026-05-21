@@ -1,12 +1,13 @@
 import { FormEvent, useState } from 'react';
 import { KeyRound } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/infraestructura/supabase';
 import { updateOwnPassword } from '@/servicios/usuarios.servicio';
 import { getErrorMessage } from '@/utilidades/errores';
 
 export function PaginaActualizarContrasena() {
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -18,18 +19,20 @@ export function PaginaActualizarContrasena() {
 
     if (password !== confirmPassword) {
       setError('Las contrasenas no coinciden.');
-      setSuccess(null);
       return;
     }
 
     setError(null);
-    setSuccess(null);
     setIsSaving(true);
 
     try {
       await updateOwnPassword(password);
       formElement.reset();
-      setSuccess('Contrasena actualizada. Ya puede volver al login.');
+      if (supabase) await supabase.auth.signOut();
+      navigate('/login', {
+        replace: true,
+        state: { passwordUpdated: true },
+      });
     } catch (err) {
       setError(
         getErrorMessage(
@@ -59,7 +62,6 @@ export function PaginaActualizarContrasena() {
           <input name="confirmPassword" type="password" minLength={8} required placeholder="Repita la contrasena" />
         </label>
         {error ? <p className="form-error">{error}</p> : null}
-        {success ? <p className="form-hint">{success}</p> : null}
         <button className="primary-button" type="submit" disabled={isSaving}>
           <KeyRound size={18} />
           {isSaving ? 'Guardando...' : 'Guardar nueva contrasena'}
