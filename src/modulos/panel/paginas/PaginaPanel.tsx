@@ -29,7 +29,7 @@ export function PaginaPanel() {
     <div className="page-stack">
       <PageEncabezado
         eyebrow="Panel administrativo"
-        title="Dashboard"
+        title="Panel de control"
         description="Vista ejecutiva de eventos, inscripciones, asistencia y certificados."
       />
       <section className="stats-grid">

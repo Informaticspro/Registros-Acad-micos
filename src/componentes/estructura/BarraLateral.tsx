@@ -21,7 +21,7 @@ type BarraLateralProps = {
 };
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/dashboard', label: 'Panel de control', icon: LayoutDashboard },
   { to: '/eventos', label: 'Eventos', icon: CalendarDays },
   { to: '/participantes', label: 'Participantes', icon: Users },
   { to: '/asistencia/escanear', label: 'Escanear QR', icon: QrCode },

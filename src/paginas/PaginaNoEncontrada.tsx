@@ -6,7 +6,7 @@ export function PaginaNoEncontrada() {
       <h1>Ruta no encontrada</h1>
       <p>La pagina solicitada no existe o ya no esta disponible.</p>
       <Link className="primary-button" to="/dashboard">
-        Volver al dashboard
+        Volver al panel de control
       </Link>
     </main>
   );
