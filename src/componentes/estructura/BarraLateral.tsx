@@ -46,7 +46,7 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
     <aside className="sidebar" aria-label="Menu principal">
       <div className="brand">
         <div className="brand-mark">
-          <img src="/logo-registros-academicos.svg" alt="Registros academicos" />
+          <img src="/logo-registros-academicos.png" alt="Registros academicos" />
         </div>
         <div className="brand-copy">
           <strong>Registros Academicos</strong>

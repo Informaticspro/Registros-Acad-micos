@@ -26,7 +26,7 @@ export function PaginaLogin() {
     <section className="login-panel">
       <div className="brand auth-brand">
         <div className="brand-mark">
-          <img src="/logo-registros-academicos.svg" alt="Registros academicos" />
+          <img src="/logo-registros-academicos.png" alt="Registros academicos" />
         </div>
         <div>
           <strong>Registros Academicos</strong>
