@@ -290,8 +290,9 @@ export function PaginaParticipantes() {
         ) : null}
       </section>
 
-      {!isLoading && !error
-        ? groups.map((typeGroup) => (
+      {!isLoading && !error ? (
+        <div className="participant-type-grid">
+          {groups.map((typeGroup) => (
             <section className="participant-type-section" key={typeGroup.eventType}>
               <div className="section-heading">
                 <div>
@@ -349,8 +350,9 @@ export function PaginaParticipantes() {
                 ))}
               </div>
             </section>
-          ))
-        : null}
+          ))}
+        </div>
+      ) : null}
 
       {!isLoading && !error && unassignedParticipants.participants.length > 0 ? (
         <section className="participant-type-section">

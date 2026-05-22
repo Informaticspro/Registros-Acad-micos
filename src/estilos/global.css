@@ -1030,7 +1030,19 @@ textarea {
 
 .participant-type-section {
   display: grid;
+  min-width: 0;
   gap: 16px;
+}
+
+.participant-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px 16px;
+}
+
+.participant-type-grid .event-participants-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .section-heading {
@@ -1768,6 +1780,7 @@ textarea {
   .split-grid,
   .detail-grid,
   .scanner-grid,
+  .participant-type-grid,
   .event-participants-grid,
   .public-register {
     grid-template-columns: 1fr 1fr;
@@ -2002,6 +2015,7 @@ textarea {
   .split-grid,
   .detail-grid,
   .scanner-grid,
+  .participant-type-grid,
   .event-participants-grid,
   .public-register,
   .form-grid {
