@@ -62,17 +62,32 @@ export type EventDailyAttendance = {
   scannedByName: string;
 };
 
-function getCurrentDayRange() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+function getPanamaDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'America/Panama',
+    year: 'numeric',
+  }).formatToParts(date);
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
 
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  return `${getPart('year')}-${getPart('month')}-${getPart('day')}`;
+}
+
+function getCurrentDayRange() {
+  const start = new Date(`${getPanamaDateKey()}T00:00:00-05:00`);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
 
   return {
     start: start.toISOString(),
     end: end.toISOString(),
   };
+}
+
+export function isTodayInPanama(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return getPanamaDateKey(date) === getPanamaDateKey();
 }
 
 function normalizeAttendancePeriod(value?: string | null): JornadaAsistencia {

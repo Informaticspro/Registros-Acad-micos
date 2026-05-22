@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarDays, ClipboardCheck, Users } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { TarjetaEstadistica } from '@/componentes/interfaz/TarjetaEstadistica';
-import { listAttendance } from '@/servicios/asistencia.servicio';
+import { isTodayInPanama, listAttendance } from '@/servicios/asistencia.servicio';
 import { listEvents } from '@/servicios/eventos.servicio';
 import { listInscripcions, listParticipantes } from '@/servicios/participantes.servicio';
 import { EventoAcademico, Inscripcion, Participante, RegistroAsistencia } from '@/tipos/dominio';
@@ -41,6 +41,7 @@ export function PaginaPanel() {
   }, []);
 
   const activeEvents = events.filter((event) => event.status === 'active');
+  const todayAttendance = attendance.filter((item) => isTodayInPanama(item.checkedInAt));
   const congressEvent =
     events.find((event) => event.eventType === 'congreso' && event.status === 'active') ??
     events.find((event) => event.eventType === 'congreso' && event.status === 'published') ??
@@ -102,8 +103,8 @@ export function PaginaPanel() {
           to="/participantes"
         />
         <TarjetaEstadistica
-          label="Asistencias"
-          value={String(attendance.length)}
+          label="Asistencias de hoy"
+          value={String(todayAttendance.length)}
           trend="Ver asistencia de hoy"
           icon={ClipboardCheck}
           to={attendanceTarget}
