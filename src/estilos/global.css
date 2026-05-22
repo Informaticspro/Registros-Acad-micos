@@ -1048,16 +1048,24 @@ textarea {
 
 .event-participants-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 16px;
 }
 
 .event-participants-card {
   display: grid;
   gap: 18px;
+  min-width: 0;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+}
+
+.event-participants-card .participants-mini-table {
+  max-height: 430px;
+  overscroll-behavior: contain;
 }
 
 .event-participants-header {
@@ -1760,6 +1768,7 @@ textarea {
   .split-grid,
   .detail-grid,
   .scanner-grid,
+  .event-participants-grid,
   .public-register {
     grid-template-columns: 1fr 1fr;
   }
@@ -1993,6 +2002,7 @@ textarea {
   .split-grid,
   .detail-grid,
   .scanner-grid,
+  .event-participants-grid,
   .public-register,
   .form-grid {
     grid-template-columns: 1fr;
