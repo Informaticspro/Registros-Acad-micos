@@ -240,85 +240,6 @@ export function PaginaDetalleEvento() {
       />
       {error ? <p className="form-error">{error}</p> : null}
       <section className="detail-grid">
-        <article className="panel">
-          <h2>Informacion</h2>
-          <dl className="definition-list">
-            <div>
-              <dt>Tipo</dt>
-              <dd>{event.eventType}</dd>
-            </div>
-            <div>
-              <dt>Lugar</dt>
-              <dd>{event.location}</dd>
-            </div>
-            <div>
-              <dt>Inicio</dt>
-              <dd>{formatDateTime(event.startsAt)}</dd>
-            </div>
-            <div>
-              <dt>Cierre</dt>
-              <dd>{formatDateTime(event.endsAt)}</dd>
-            </div>
-            <div>
-              <dt>Capacidad</dt>
-              <dd>{event.capacity} participantes</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="panel qr-event-panel">
-          <div className="qr-event-header">
-            <div>
-              <h2>QR publico de registro</h2>
-              <p>
-                Imprime o pega este codigo en el salon. Los participantes escanean y llenan el formulario sin iniciar
-                sesion.
-              </p>
-            </div>
-            <span className="status-pill">Publico</span>
-          </div>
-
-          <div className="qr-event-content">
-            <div className="qr-event-preview">
-              {qrDataUrl ? <img src={qrDataUrl} alt="QR de registro publico del evento" /> : null}
-            </div>
-            <div className="qr-event-actions">
-              {qrDataUrl ? (
-                <a className="primary-button" href={qrDataUrl} download={getQrDownloadName(event)}>
-                  <Download size={18} />
-                  Descargar QR
-                </a>
-              ) : null}
-              <a className="secondary-button" href={registrationUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={18} />
-                Probar formulario
-              </a>
-              <button className="secondary-button" type="button" onClick={() => void handleCopyRegistrationUrl()}>
-                <Copy size={18} />
-                Copiar enlace
-              </button>
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => navigate(`/eventos/${event.id}/registro`, { state: { fromAdmin: true } })}
-              >
-                <UserPlus size={18} />
-                Registro manual
-              </button>
-            </div>
-          </div>
-
-          <div className="qr-public-url">
-            <span>URL publica</span>
-            <code>{registrationUrl}</code>
-          </div>
-          {qrMessage ? <p className="form-hint">{qrMessage}</p> : null}
-          <Link className="secondary-button qr-lookup-link" to={`/eventos/${event.id}/mi-codigo`}>
-            <ExternalLink size={18} />
-            Consultar QR con cedula
-          </Link>
-        </article>
-
         {event.eventType === 'congreso' ? (
           <article className="panel congress-attendance-panel" id="asistencias-hoy">
             <div className="attendance-panel-header">
@@ -415,6 +336,85 @@ export function PaginaDetalleEvento() {
             ) : null}
           </article>
         ) : null}
+
+        <article className="panel">
+          <h2>Informacion</h2>
+          <dl className="definition-list">
+            <div>
+              <dt>Tipo</dt>
+              <dd>{event.eventType}</dd>
+            </div>
+            <div>
+              <dt>Lugar</dt>
+              <dd>{event.location}</dd>
+            </div>
+            <div>
+              <dt>Inicio</dt>
+              <dd>{formatDateTime(event.startsAt)}</dd>
+            </div>
+            <div>
+              <dt>Cierre</dt>
+              <dd>{formatDateTime(event.endsAt)}</dd>
+            </div>
+            <div>
+              <dt>Capacidad</dt>
+              <dd>{event.capacity} participantes</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article className="panel qr-event-panel">
+          <div className="qr-event-header">
+            <div>
+              <h2>QR publico de registro</h2>
+              <p>
+                Imprime o pega este codigo en el salon. Los participantes escanean y llenan el formulario sin iniciar
+                sesion.
+              </p>
+            </div>
+            <span className="status-pill">Publico</span>
+          </div>
+
+          <div className="qr-event-content">
+            <div className="qr-event-preview">
+              {qrDataUrl ? <img src={qrDataUrl} alt="QR de registro publico del evento" /> : null}
+            </div>
+            <div className="qr-event-actions">
+              {qrDataUrl ? (
+                <a className="primary-button" href={qrDataUrl} download={getQrDownloadName(event)}>
+                  <Download size={18} />
+                  Descargar QR
+                </a>
+              ) : null}
+              <a className="secondary-button" href={registrationUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={18} />
+                Probar formulario
+              </a>
+              <button className="secondary-button" type="button" onClick={() => void handleCopyRegistrationUrl()}>
+                <Copy size={18} />
+                Copiar enlace
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => navigate(`/eventos/${event.id}/registro`, { state: { fromAdmin: true } })}
+              >
+                <UserPlus size={18} />
+                Registro manual
+              </button>
+            </div>
+          </div>
+
+          <div className="qr-public-url">
+            <span>URL publica</span>
+            <code>{registrationUrl}</code>
+          </div>
+          {qrMessage ? <p className="form-hint">{qrMessage}</p> : null}
+          <Link className="secondary-button qr-lookup-link" to={`/eventos/${event.id}/mi-codigo`}>
+            <ExternalLink size={18} />
+            Consultar QR con cedula
+          </Link>
+        </article>
 
         <article className="panel">
           <h2>Operacion</h2>
