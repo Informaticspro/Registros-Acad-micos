@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Bell, CalendarDays, ClipboardCheck, KeyRound, LogOut, Menu, Search, Users } from 'lucide-react';
+import { Bell, CalendarDays, ClipboardCheck, KeyRound, LogOut, Menu, Moon, Search, Sun, Users } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { buscarGlobal, ResultadoBusqueda } from '@/servicios/busqueda.servicio';
@@ -8,6 +8,16 @@ import { getErrorMessage } from '@/utilidades/errores';
 type EncabezadoProps = {
   onToggleMenu: () => void;
 };
+
+type TemaVisual = 'dark' | 'light';
+
+function getInitialTheme(): TemaVisual {
+  try {
+    return localStorage.getItem('acad-theme') === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
 
 export function Encabezado({ onToggleMenu }: EncabezadoProps) {
   const { profile, signOut } = useAutenticacion();
@@ -21,6 +31,16 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('acad-theme', theme);
+    } catch {
+      // No se guarda si el navegador bloquea almacenamiento local.
+    }
+  }, [theme]);
 
   useEffect(() => {
     setIsSearchOpen(false);
@@ -96,6 +116,8 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
     return <Users size={17} />;
   }
 
+  const isLightTheme = theme === 'light';
+
   return (
     <header className="topbar">
       <button className="icon-button menu-button" type="button" aria-label="Mostrar u ocultar menu" onClick={onToggleMenu}>
@@ -140,6 +162,15 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
         ) : null}
       </form>
       <div className="topbar-actions">
+        <button
+          className="icon-button theme-toggle"
+          type="button"
+          aria-label={isLightTheme ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+          title={isLightTheme ? 'Tema oscuro' : 'Tema claro'}
+          onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+        >
+          {isLightTheme ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
         <button className="icon-button" aria-label="Notificaciones">
           <Bell size={18} />
         </button>
