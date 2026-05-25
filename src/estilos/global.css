@@ -748,6 +748,18 @@ p {
   border-top: 1px solid var(--line);
 }
 
+.event-summary {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.event-summary strong,
+.event-summary span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
 .timeline-item > span {
   width: 10px;
   height: 10px;

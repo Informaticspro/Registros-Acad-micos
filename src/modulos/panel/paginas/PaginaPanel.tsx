@@ -119,9 +119,9 @@ export function PaginaPanel() {
           <div className="table-list">
             {events.map((event) => (
               <div className="table-row" key={event.id}>
-                <div>
+                <div className="event-summary">
                   <strong>{event.title}</strong>
-                  <span>{event.location}</span>
+                  {event.location ? <span>{event.location}</span> : null}
                 </div>
                 <small>{formatDateTime(event.startsAt)}</small>
               </div>
