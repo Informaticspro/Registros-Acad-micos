@@ -2,6 +2,9 @@
 
 export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario';
 
+export const SEMINARIO_INFORMATICA_INTERMEDIA_TITULO =
+  'Seminario de Informatica Intermedia como requisito de Posgrado y Maestria';
+
 export function getInscripcionFormKind(
   eventType: EventoAcademico['eventType'] | undefined,
 ): InscripcionFormKind {

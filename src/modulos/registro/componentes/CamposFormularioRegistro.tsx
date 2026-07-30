@@ -5,6 +5,7 @@ import {
   CONGRESO_PARTICIPATION_TYPE_OPTIONS,
   CONGRESO_SEX_OPTIONS,
   InscripcionFormKind,
+  SEMINARIO_INFORMATICA_INTERMEDIA_TITULO,
   SEMINARIO_DATE_OPTIONS,
   SEMINARIO_DISABILITY_OPTIONS,
   SEMINARIO_FACULTY_OPTIONS,
@@ -98,7 +99,7 @@ export function CamposFormularioRegistro({ formKind }: Props) {
             <legend>Fecha de seminario disponible</legend>
             <aside className="seminar-info-card" aria-label="Informacion importante del seminario">
               <p>
-                El seminario de Informatica Intermedia como requisito de la VIP para posgrado y maestria se dictara de
+                El {SEMINARIO_INFORMATICA_INTERMEDIA_TITULO} se dictara de
                 forma virtual, el horario sera de 6:00 a 10:00 p.m., durante una semana y cada facilitador se contactara
                 con el grupo antes de iniciar el curso.
               </p>

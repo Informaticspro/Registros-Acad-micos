@@ -3,7 +3,10 @@ import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
 import { mockParticipantes, mockInscripcions } from '@/datos/datosPrueba';
 import { EventoAcademico } from '@/tipos/dominio';
-import { getInscripcionFormKind } from '@/modulos/registro/configuracion-registro';
+import {
+  getInscripcionFormKind,
+  SEMINARIO_INFORMATICA_INTERMEDIA_TITULO,
+} from '@/modulos/registro/configuracion-registro';
 import { listEvents } from '@/servicios/eventos.servicio';
 import { formatDateTime } from '@/utilidades/formato';
 
@@ -16,6 +19,7 @@ type InscripcionBase = {
   participant_id: string;
   certificate_code: string;
   created_at: string;
+  checked_in_at: string | null;
 };
 
 type ParticipanteBase = {
@@ -32,6 +36,12 @@ type DailyLog = {
   checked_in_at: string;
   scanned_by: string | null;
   attendance_period: string | null;
+};
+
+type AttendanceRecord = {
+  registration_id: string;
+  checked_in_at: string;
+  scanned_by: string | null;
 };
 
 type ExportRowBundle = {
@@ -132,6 +142,26 @@ function applyExcelStyles(worksheet: ReturnType<typeof utils.aoa_to_sheet>, rowC
   }
 }
 
+function getColumnWidth(header: string, rows: Record<string, unknown>[]) {
+  const normalized = header.toLowerCase();
+  const maxContentLength = rows.reduce(
+    (max, row) => Math.max(max, String(row[header] ?? '').length),
+    header.length,
+  );
+
+  if (normalized.includes('correo')) return 24;
+  if (normalized.includes('asistencia')) return 28;
+  if (normalized.includes('fecha')) return 20;
+  if (normalized.includes('codigo')) return 22;
+  if (normalized.includes('discapacidad')) return 18;
+  if (normalized.includes('modalidad') || normalized.includes('motivo')) return 28;
+  if (normalized.includes('facultad') || normalized.includes('centro')) return 24;
+  if (normalized.includes('nombre') || normalized.includes('apellido')) return 18;
+  if (normalized.includes('cedula')) return 14;
+
+  return Math.max(12, Math.min(24, maxContentLength + 2));
+}
+
 async function getInscripcionCounts(): Promise<Record<string, number>> {
   if (!supabase && isDemoMode()) {
     return mockInscripcions.reduce<Record<string, number>>((acc, row) => {
@@ -167,10 +197,10 @@ export async function listExportableEvents(): Promise<ExportableEvent[]> {
     }));
 }
 
-async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[]> {
+async function fetchEventInscripcions(event: EventoAcademico): Promise<ExportRowBundle[]> {
   if (!supabase && isDemoMode()) {
     return mockInscripcions
-      .filter((registration) => registration.eventId === eventId)
+      .filter((registration) => registration.eventId === event.id)
       .map((registration) => {
         const participant = mockParticipantes.find((item) => item.id === registration.participantId);
         if (!participant) return null;
@@ -180,6 +210,7 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
             participant_id: registration.participantId,
             certificate_code: registration.certificateCode,
             created_at: registration.createdAt,
+            checked_in_at: registration.checkedInAt ?? null,
           },
           participant: {
             id: participant.id,
@@ -190,7 +221,13 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
             metadata: participant.metadata ?? null,
           },
           logs: registration.checkedInAt
-            ? [{ checked_in_at: registration.checkedInAt, scanned_by: 'demo-admin', attendance_period: 'matutina' }]
+            ? [
+                {
+                  checked_in_at: registration.checkedInAt,
+                  scanned_by: 'demo-admin',
+                  attendance_period: event.eventType === 'congreso' ? 'matutina' : 'registro',
+                },
+              ]
             : [],
         };
       })
@@ -200,8 +237,8 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
 
   const { data: registrations, error: regError } = await supabase
     .from('registrations')
-    .select('id, participant_id, certificate_code, created_at')
-    .eq('event_id', eventId)
+    .select('id, participant_id, certificate_code, created_at, checked_in_at')
+    .eq('event_id', event.id)
     .order('created_at', { ascending: true })
     .returns<InscripcionBase[]>();
 
@@ -230,7 +267,22 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
     console.warn('No se pudieron cargar asistencias diarias:', logError.message);
   }
 
-  const scannerIds = [...new Set((logs ?? []).map((row) => row.scanned_by).filter(Boolean))] as string[];
+  const { data: attendanceRecords, error: attendanceError } = await supabase
+    .from('attendance_records')
+    .select('registration_id, checked_in_at, scanned_by')
+    .in('registration_id', registrationIds)
+    .returns<AttendanceRecord[]>();
+
+  if (attendanceError) {
+    console.warn('No se pudieron cargar asistencias generales:', attendanceError.message);
+  }
+
+  const scannerIds = [
+    ...new Set([
+      ...(logs ?? []).map((row) => row.scanned_by).filter(Boolean),
+      ...(attendanceRecords ?? []).map((row) => row.scanned_by).filter(Boolean),
+    ]),
+  ] as string[];
   const { data: scanners } =
     scannerIds.length > 0
       ? await supabase.from('profiles').select('id, full_name').in('id', scannerIds)
@@ -249,14 +301,42 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
     return acc;
   }, {});
 
+  const attendanceRecordsByInscripcion = (attendanceRecords ?? []).reduce<Record<string, ExportRowBundle['logs']>>(
+    (acc, row) => {
+      const list = acc[row.registration_id] ?? [];
+      list.push({
+        checked_in_at: row.checked_in_at,
+        scanned_by: row.scanned_by,
+        attendance_period: event.eventType === 'congreso' ? null : 'registro',
+        scanner_name: row.scanned_by ? scannerMap.get(row.scanned_by) : undefined,
+      });
+      acc[row.registration_id] = list;
+      return acc;
+    },
+    {},
+  );
+
   return registrations
     .map((registration) => {
       const participant = participantMap.get(registration.participant_id);
       if (!participant) return null;
+      const fallbackLogs =
+        event.eventType !== 'congreso'
+          ? attendanceRecordsByInscripcion[registration.id] ??
+            (registration.checked_in_at
+              ? [
+                  {
+                    checked_in_at: registration.checked_in_at,
+                    scanned_by: null,
+                    attendance_period: 'registro',
+                  },
+                ]
+              : [])
+          : [];
       return {
         registration,
         participant,
-        logs: logsByInscripcion[registration.id] ?? [],
+        logs: logsByInscripcion[registration.id] ?? fallbackLogs,
       };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -268,7 +348,7 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
   return rows.map(({ registration, participant, logs }) => {
     const metadata = participant.metadata ?? {};
     const attendance = logs
-      .map((log) => `${log.attendance_period ?? 'matutina'} - ${formatDateTime(log.checked_in_at)}`)
+      .map((log) => `${log.attendance_period === 'registro' ? 'registro' : log.attendance_period ?? 'matutina'} - ${formatDateTime(log.checked_in_at)}`)
       .filter(Boolean)
       .join(' | ');
 
@@ -279,7 +359,6 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
       'Correo institucional': participant.email,
       'Fecha registro': formatDateTime(registration.created_at),
       'Codigo certificado': registration.certificate_code,
-      'Asistencias (fecha y hora)': attendance || 'Sin marcajes diarios',
     };
 
     if (formKind === 'seminario') {
@@ -303,6 +382,7 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
 
     return {
       ...base,
+      'Asistencias (fecha y hora)': attendance || 'Sin asistencia registrada',
       Sexo: metadata.sex ?? '',
       'Categoria': metadata.category ?? '',
       'Correo P.': metadata.personalEmail ?? '',
@@ -324,7 +404,7 @@ function buildAttendanceRows(rows: ExportRowBundle[]) {
         Apellido: participant.last_name,
         Cedula: participant.document_id,
         Fecha: date.toLocaleDateString('es-PA'),
-        Jornada: log.attendance_period ?? 'matutina',
+        Jornada: log.attendance_period === 'registro' ? 'Registro' : log.attendance_period ?? 'matutina',
         Hora: date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
         'Fecha y hora': formatDateTime(log.checked_in_at),
         'Registrado por': log.scanner_name ?? log.scanned_by ?? '',
@@ -336,7 +416,11 @@ function buildAttendanceRows(rows: ExportRowBundle[]) {
 function buildStyledWorksheet(event: EventoAcademico, sheetRows: Record<string, unknown>[], subtitle = '') {
   const tableHeaders = Object.keys(sheetRows[0]);
   const columnCount = Math.max(tableHeaders.length, 1);
-  const eventTitle = `${eventTypeLabels[event.eventType]}: ${event.title}${subtitle ? ` - ${subtitle}` : ''}`;
+  const exportTitle =
+    event.eventType === 'seminario' && event.title.toLowerCase().includes('informatica')
+      ? SEMINARIO_INFORMATICA_INTERMEDIA_TITULO
+      : event.title;
+  const eventTitle = `${eventTypeLabels[event.eventType]}: ${exportTitle}${subtitle ? ` - ${subtitle}` : ''}`;
   const generatedAt = `Generado: ${formatDateTime(new Date().toISOString())}`;
   const headerRows = [
     [INSTITUTION_HEADER[0]],
@@ -349,14 +433,15 @@ function buildStyledWorksheet(event: EventoAcademico, sheetRows: Record<string, 
   const worksheet = utils.aoa_to_sheet(headerRows);
   utils.sheet_add_json(worksheet, sheetRows, { origin: `A${headerRows.length + 1}` });
 
+  const headerMergeEnd = columnCount - 1;
   worksheet['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: columnCount - 1 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: columnCount - 1 } },
-    { s: { r: 3, c: 0 }, e: { r: 3, c: columnCount - 1 } },
-    { s: { r: 4, c: 0 }, e: { r: 4, c: columnCount - 1 } },
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headerMergeEnd } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headerMergeEnd } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: headerMergeEnd } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: headerMergeEnd } },
   ];
   worksheet['!cols'] = tableHeaders.map((header) => ({
-    wch: Math.max(18, Math.min(42, header.length + 8)),
+    wch: getColumnWidth(header, sheetRows),
   }));
   worksheet['!rows'] = [
     { hpt: 24 },
@@ -373,9 +458,9 @@ function buildStyledWorksheet(event: EventoAcademico, sheetRows: Record<string, 
 }
 
 export async function exportEventExcel(event: ExportableEvent) {
-  const rows = await fetchEventInscripcions(event.id);
+  const rows = await fetchEventInscripcions(event);
   const sheetRows = buildExportRows(event, rows);
-  const attendanceRows = buildAttendanceRows(rows);
+  const attendanceRows = event.eventType === 'congreso' ? buildAttendanceRows(rows) : [];
 
   if (sheetRows.length === 0) {
     throw new Error(

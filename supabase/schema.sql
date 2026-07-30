@@ -158,7 +158,7 @@ create policy "events_delete_admin_organizer"
 on public.events for delete
 to authenticated
 using (
-  public.current_profile_role() in ('propietario', 'admin')
+  public.current_profile_role() in ('propietario', 'admin', 'organizador')
   and organization_id = public.current_profile_organization_id()
 );
 
