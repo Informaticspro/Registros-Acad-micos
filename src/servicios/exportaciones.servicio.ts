@@ -263,7 +263,7 @@ async function fetchEventInscripcions(eventId: string): Promise<ExportRowBundle[
 }
 
 function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
-  const isCongreso = getInscripcionFormKind(event.eventType) === 'congreso';
+  const formKind = getInscripcionFormKind(event.eventType);
 
   return rows.map(({ registration, participant, logs }) => {
     const metadata = participant.metadata ?? {};
@@ -282,7 +282,24 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
       'Asistencias (fecha y hora)': attendance || 'Sin marcajes diarios',
     };
 
-    if (!isCongreso) return base;
+    if (formKind === 'seminario') {
+      return {
+        ...base,
+        Sexo: metadata.sex ?? '',
+        'Correo personal': metadata.personalEmail ?? '',
+        Discapacidad: metadata.hasDisability ?? '',
+        'Detalle discapacidad': metadata.disabilityDetail ?? '',
+        Celular: metadata.phone ?? '',
+        'Correo aula virtual': metadata.virtualClassEmail ?? '',
+        Facultad: metadata.faculty ?? '',
+        'Centro universitario': metadata.regionalCenter ?? '',
+        'Tipo participante': metadata.participantType ?? '',
+        'Fecha seminario': metadata.seminarDate ?? '',
+        'Motivo seminario': metadata.seminarPurpose ?? '',
+      };
+    }
+
+    if (formKind !== 'congreso') return base;
 
     return {
       ...base,

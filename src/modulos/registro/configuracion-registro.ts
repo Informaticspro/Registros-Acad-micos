@@ -1,17 +1,21 @@
 ﻿import { EventoAcademico } from '@/tipos/dominio';
 
-export type InscripcionFormKind = 'simple' | 'congreso';
+export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario';
 
 export function getInscripcionFormKind(
   eventType: EventoAcademico['eventType'] | undefined,
 ): InscripcionFormKind {
   if (eventType === 'congreso') return 'congreso';
+  if (eventType === 'seminario') return 'seminario';
   return 'simple';
 }
 
 export function getInscripcionFormHint(kind: InscripcionFormKind): string {
   if (kind === 'congreso') {
     return 'Formulario de congreso: datos extendidos para certificado y reportes.';
+  }
+  if (kind === 'seminario') {
+    return 'Formulario de seminario: datos academicos, contacto, fecha disponible y motivo de participacion.';
   }
   return 'Formulario simple: nombre, apellido, cedula y correo institucional.';
 }
@@ -70,4 +74,66 @@ export const CONGRESO_NATIONALITY_OPTIONS = ['Panamena', 'Otra'] as const;
 export const CONGRESO_CATEGORY_OPTIONS = ['Estudiante', 'Docente', 'Funcionario', 'Invitado', 'Egresado'] as const;
 
 export const CONGRESO_PARTICIPATION_TYPE_OPTIONS = ['Interno a la universidad', 'Externo a la universidad'] as const;
+
+export const SEMINARIO_METADATA_FIELDS = [
+  'institutionalEmail',
+  'personalEmail',
+  'sex',
+  'hasDisability',
+  'disabilityDetail',
+  'phone',
+  'virtualClassEmail',
+  'faculty',
+  'regionalCenter',
+  'participantType',
+  'seminarDate',
+  'seminarPurpose',
+] as const;
+
+export type SeminarioMetadataField = (typeof SEMINARIO_METADATA_FIELDS)[number];
+
+export const SEMINARIO_SEX_OPTIONS = ['Mujer', 'Hombre'] as const;
+
+export const SEMINARIO_DISABILITY_OPTIONS = ['SI', 'NO'] as const;
+
+export const SEMINARIO_FACULTY_OPTIONS = [
+  'Economia',
+  'Adm. Publica',
+  'Ciencias de la Educacion',
+  'Adm. de Empresas y Contabilidad',
+  'Derecho y Ciencias Politicas',
+  'Comunicacion Social',
+  'Humanidades',
+  'Enfermeria',
+  'Medicina',
+  'Arquitectura',
+  'VIP',
+] as const;
+
+export const SEMINARIO_REGIONAL_CENTER_OPTIONS = [
+  'Campus Central',
+  'CRUTA',
+  'CRUBA',
+  'CRUCHIO',
+  'BOQUETE',
+] as const;
+
+export const SEMINARIO_PARTICIPANT_TYPE_OPTIONS = ['Docente', 'Estudiante'] as const;
+
+export const SEMINARIO_DATE_OPTIONS = [
+  'Del 10 al 14 de Agosto',
+  'Del 24 al 28 de Agosto',
+  'Del 07 al 11 de Septiembre',
+  'Del 21 al 25 de Septiembre',
+  'Del 12 al 16 de Octubre',
+  'Del 26 al 30 de Octubre',
+  'Del 09 al 13 de Noviembre',
+  'Del 23 al 27 de Noviembre',
+] as const;
+
+export const SEMINARIO_PURPOSE_OPTIONS = [
+  'Requisito de ingreso a posgrado y maestria',
+  'Actualizacion de informatica',
+  'Requisito para terminar posgrado o maestria',
+] as const;
 

@@ -8,8 +8,8 @@ export function PaginaLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn } = useAutenticacion();
-  const [email, setEmail] = useState('admin@academico.local');
-  const [password, setPassword] = useState('demo123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const passwordUpdated = Boolean((location.state as { passwordUpdated?: boolean } | null)?.passwordUpdated);
 
@@ -42,10 +42,17 @@ export function PaginaLogin() {
         <h1>Control profesional de eventos academicos</h1>
         <p>Administra inscripciones, asistencia por QR, certificados y reportes desde una sola consola.</p>
       </div>
-      <form className="stack-form" onSubmit={handleSubmit}>
+      <form className="stack-form" onSubmit={handleSubmit} autoComplete="off">
         <label>
           Correo
-          <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
+          <input
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            required
+            autoComplete="off"
+            placeholder="usuario@unachi.ac.pa"
+          />
         </label>
         <label>
           Contrasena
@@ -54,6 +61,8 @@ export function PaginaLogin() {
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             required
+            autoComplete="current-password"
+            placeholder="Ingrese su contrasena"
           />
         </label>
         <Link className="login-recovery-link" to="/recuperar-contrasena">
@@ -62,7 +71,7 @@ export function PaginaLogin() {
         {error ? <p className="form-error">{error}</p> : null}
         {passwordUpdated ? <p className="form-hint">Contrasena actualizada. Inicie sesion nuevamente.</p> : null}
         {isDemoMode() ? (
-          <p className="form-hint">Modo demo activo hasta configurar Supabase en `.env`.</p>
+          <p className="form-hint">Modo demo activo. Puede usar admin@academico.local / demo123456.</p>
         ) : null}
         {!hasSupabaseConfig() && !isDemoMode() ? (
           <p className="form-error">Supabase no esta configurado en este despliegue.</p>

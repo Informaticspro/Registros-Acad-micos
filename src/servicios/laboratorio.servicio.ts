@@ -3,6 +3,7 @@ import {
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
   EstadoTrabajoLaboratorio,
+  FichaTecnicaLaboratorio,
   PrestamoLaboratorio,
   PrioridadLaboratorio,
 } from '@/tipos/dominio';
@@ -10,10 +11,13 @@ import {
 const STORAGE_KEY = 'acad-laboratorio-v1';
 
 export type LaboratorioState = {
+  fichas: FichaTecnicaLaboratorio[];
   equipos: EquipoLaboratorio[];
   bitacoras: BitacoraLaboratorio[];
   prestamos: PrestamoLaboratorio[];
 };
+
+export type FichaTecnicaLaboratorioInput = Omit<FichaTecnicaLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
 
 export type EquipoLaboratorioInput = Omit<EquipoLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -45,6 +49,7 @@ const prioridadLabels: Record<PrioridadLaboratorio, string> = {
 
 function emptyState(): LaboratorioState {
   return {
+    fichas: [],
     equipos: [],
     bitacoras: [],
     prestamos: [],
@@ -60,6 +65,7 @@ function readState(): LaboratorioState {
   try {
     const parsed = JSON.parse(raw) as Partial<LaboratorioState>;
     return {
+      fichas: Array.isArray(parsed.fichas) ? parsed.fichas : [],
       equipos: Array.isArray(parsed.equipos) ? parsed.equipos : [],
       bitacoras: Array.isArray(parsed.bitacoras) ? parsed.bitacoras : [],
       prestamos: Array.isArray(parsed.prestamos) ? parsed.prestamos : [],
@@ -80,10 +86,55 @@ function createId(prefix: string) {
 export function listLaboratorioData(): LaboratorioState {
   const state = readState();
   return {
+    fichas: [...state.fichas].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
     equipos: [...state.equipos].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
     bitacoras: [...state.bitacoras].sort((first, second) => second.fecha.localeCompare(first.fecha)),
     prestamos: [...state.prestamos].sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo)),
   };
+}
+
+export function createFichaTecnicaLaboratorio(input: FichaTecnicaLaboratorioInput): FichaTecnicaLaboratorio {
+  const state = readState();
+  const now = new Date().toISOString();
+  const ficha: FichaTecnicaLaboratorio = {
+    ...input,
+    id: createId('ficha'),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  writeState({ ...state, fichas: [ficha, ...state.fichas] });
+  return ficha;
+}
+
+export function updateFichaTecnicaLaboratorio(
+  id: string,
+  input: FichaTecnicaLaboratorioInput,
+): FichaTecnicaLaboratorio {
+  const state = readState();
+  const current = state.fichas.find((ficha) => ficha.id === id);
+  if (!current) throw new Error('No se encontro la ficha tecnica.');
+
+  const updated: FichaTecnicaLaboratorio = {
+    ...current,
+    ...input,
+    updatedAt: new Date().toISOString(),
+  };
+
+  writeState({
+    ...state,
+    fichas: state.fichas.map((ficha) => (ficha.id === id ? updated : ficha)),
+  });
+
+  return updated;
+}
+
+export function deleteFichaTecnicaLaboratorio(id: string) {
+  const state = readState();
+  writeState({
+    ...state,
+    fichas: state.fichas.filter((ficha) => ficha.id !== id),
+  });
 }
 
 export function createEquipoLaboratorio(input: EquipoLaboratorioInput): EquipoLaboratorio {
@@ -211,6 +262,11 @@ function csvEscape(value: string | number | null | undefined) {
 export function exportLaboratorioCsv(state: LaboratorioState) {
   const lines = [
     ['TIPO', 'FECHA', 'TITULO/EQUIPO', 'RESPONSABLE', 'ESTADO', 'DETALLE'].map(csvEscape).join(','),
+    ...state.fichas.map((item) =>
+      ['FICHA_TECNICA', item.fecha, item.pc, item.responsable, item.ubicacion, item.observacionGeneral]
+        .map(csvEscape)
+        .join(','),
+    ),
     ...state.bitacoras.map((item) =>
       [
         'BITACORA',
@@ -251,6 +307,7 @@ export function buildLaboratorioReport(state: LaboratorioState) {
     `Generado: ${new Date().toLocaleString('es-PA')}`,
     '',
     `Bitacoras registradas: ${state.bitacoras.length}`,
+    `Fichas tecnicas registradas: ${state.fichas.length}`,
     `Trabajos abiertos: ${abiertas}`,
     `Equipos inventariados: ${state.equipos.length}`,
     `Equipos con atencion pendiente: ${pendientes}`,

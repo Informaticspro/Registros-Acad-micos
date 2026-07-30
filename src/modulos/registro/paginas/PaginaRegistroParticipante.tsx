@@ -20,17 +20,38 @@ function getValue(form: FormData, field: string) {
 }
 
 function collectMetadata(form: FormData, eventType: EventoAcademico['eventType'] | undefined): Record<string, string> {
-  if (getInscripcionFormKind(eventType) !== 'congreso') return {};
+  const formKind = getInscripcionFormKind(eventType);
 
-  return {
-    sex: getValue(form, 'sex'),
-    category: getValue(form, 'category'),
-    personalEmail: getValue(form, 'personalEmail'),
-    nationality: getValue(form, 'nationality'),
-    otherNationality: getValue(form, 'otherNationality'),
-    modality: getValue(form, 'modality'),
-    participationType: getValue(form, 'participationType'),
-  };
+  if (formKind === 'congreso') {
+    return {
+      sex: getValue(form, 'sex'),
+      category: getValue(form, 'category'),
+      personalEmail: getValue(form, 'personalEmail'),
+      nationality: getValue(form, 'nationality'),
+      otherNationality: getValue(form, 'otherNationality'),
+      modality: getValue(form, 'modality'),
+      participationType: getValue(form, 'participationType'),
+    };
+  }
+
+  if (formKind === 'seminario') {
+    return {
+      institutionalEmail: getValue(form, 'email'),
+      personalEmail: getValue(form, 'personalEmail'),
+      sex: getValue(form, 'sex'),
+      hasDisability: getValue(form, 'hasDisability'),
+      disabilityDetail: getValue(form, 'disabilityDetail'),
+      phone: getValue(form, 'phone'),
+      virtualClassEmail: getValue(form, 'virtualClassEmail'),
+      faculty: getValue(form, 'faculty'),
+      regionalCenter: getValue(form, 'regionalCenter'),
+      participantType: getValue(form, 'participantType'),
+      seminarDate: getValue(form, 'seminarDate'),
+      seminarPurpose: getValue(form, 'seminarPurpose'),
+    };
+  }
+
+  return {};
 }
 
 type RegisterLocationState = {

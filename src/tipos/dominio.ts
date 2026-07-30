@@ -83,6 +83,47 @@ export type EquipoLaboratorio = {
   updatedAt: string;
 };
 
+export type AplicacionFichaLaboratorio = {
+  nombre: string;
+  instalada: boolean;
+  observacion: string;
+};
+
+export type CaracteristicaFichaLaboratorio = {
+  nombre: string;
+  valor: string;
+};
+
+export type InventarioFichaLaboratorio = {
+  equipo: string;
+  numero: string;
+};
+
+export type AccionFichaLaboratorio = {
+  fecha: string;
+  accion: string;
+  observacion: string;
+  responsable: string;
+};
+
+export type FichaTecnicaLaboratorio = {
+  id: string;
+  fecha: string;
+  pc: string;
+  direccionIp: string;
+  ubicacion: string;
+  responsable: string;
+  usuarioAsignado: string;
+  referenciaAcceso: string;
+  aplicaciones: AplicacionFichaLaboratorio[];
+  caracteristicas: CaracteristicaFichaLaboratorio[];
+  inventario: InventarioFichaLaboratorio[];
+  acciones: AccionFichaLaboratorio[];
+  observacionGeneral: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type BitacoraLaboratorio = {
   id: string;
   fecha: string;

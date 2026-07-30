@@ -80,6 +80,31 @@ const metadataFields = [
   { key: 'entity', label: 'Entidad' },
 ] as const;
 
+const seminarMetadataFields = [
+  { key: 'personalEmail', label: 'Correo personal' },
+  { key: 'sex', label: 'Sexo' },
+  { key: 'hasDisability', label: 'Discapacidad' },
+  { key: 'disabilityDetail', label: 'Detalle discapacidad' },
+  { key: 'phone', label: 'Celular' },
+  { key: 'virtualClassEmail', label: 'Correo aula virtual' },
+  { key: 'faculty', label: 'Facultad' },
+  { key: 'regionalCenter', label: 'Centro universitario' },
+  { key: 'participantType', label: 'Tipo participante' },
+  { key: 'seminarDate', label: 'Fecha seminario' },
+  { key: 'seminarPurpose', label: 'Motivo seminario' },
+] as const;
+
+function getMetadataFieldsForEvent(eventType?: EventoAcademico['eventType']) {
+  if (eventType === 'seminario') return seminarMetadataFields;
+  return metadataFields;
+}
+
+function getAllMetadataFields() {
+  return [...metadataFields, ...seminarMetadataFields].filter(
+    (field, index, fields) => fields.findIndex((item) => item.key === field.key) === index,
+  );
+}
+
 export function PaginaParticipantes() {
   const { profile } = useAutenticacion();
   const isAdmin = profile?.role === 'propietario' || profile?.role === 'admin';
@@ -150,12 +175,12 @@ export function PaginaParticipantes() {
   }
 
   function getExtraData(participant: Participante, eventType?: EventoAcademico['eventType']) {
-    if (eventType && eventType !== 'congreso') {
+    if (eventType && eventType !== 'congreso' && eventType !== 'seminario') {
       return participant.institution ? `Institucion: ${participant.institution}` : 'Registro simple';
     }
 
     const metadata = participant.metadata ?? {};
-    const values = metadataFields
+    const values = getMetadataFieldsForEvent(eventType)
       .map((field) => (metadata[field.key] ? `${field.label}: ${metadata[field.key]}` : null))
       .filter(Boolean);
 
@@ -165,7 +190,7 @@ export function PaginaParticipantes() {
   async function handleEditParticipant(event: FormEvent<HTMLFormElement>, participant: Participante) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const metadata = metadataFields.reduce<Record<string, string>>((values, field) => {
+    const metadata = getAllMetadataFields().reduce<Record<string, string>>((values, field) => {
       const value = String(form.get(field.key) ?? '').trim();
       if (value) values[field.key] = value;
       return values;
@@ -567,7 +592,11 @@ type EditParticipantRowProps = {
 
 function EditParticipantRow({ eventType, isSaving, onCancel, onSubmit, participant }: EditParticipantRowProps) {
   const metadata = participant.metadata ?? {};
-  const showMetadataFields = !eventType || eventType === 'congreso';
+  const showMetadataFields = !eventType || eventType === 'congreso' || eventType === 'seminario';
+  const visibleMetadataFields = getMetadataFieldsForEvent(eventType);
+  const hiddenMetadataFields = getAllMetadataFields().filter(
+    (field) => !visibleMetadataFields.some((visible) => visible.key === field.key),
+  );
 
   return (
     <form className="participant-edit-form" onSubmit={(event) => void onSubmit(event, participant)}>
@@ -597,15 +626,20 @@ function EditParticipantRow({ eventType, isSaving, onCancel, onSubmit, participa
           <input name="phone" defaultValue={participant.phone ?? ''} />
         </label>
         {showMetadataFields
-          ? metadataFields.map((field) => (
+          ? visibleMetadataFields.map((field) => (
               <label key={field.key}>
                 {field.label}
                 <input name={field.key} defaultValue={metadata[field.key] ?? ''} />
               </label>
             ))
-          : metadataFields.map((field) => (
+          : getAllMetadataFields().map((field) => (
               <input key={field.key} name={field.key} type="hidden" value={metadata[field.key] ?? ''} />
             ))}
+        {showMetadataFields
+          ? hiddenMetadataFields.map((field) => (
+              <input key={field.key} name={field.key} type="hidden" value={metadata[field.key] ?? ''} />
+            ))
+          : null}
       </div>
       <div className="row-actions">
         <button className="primary-button" type="submit" disabled={isSaving}>

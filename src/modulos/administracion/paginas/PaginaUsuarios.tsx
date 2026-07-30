@@ -23,9 +23,9 @@ const roleLabels: Record<RolAplicacion, string> = {
 function readForm(form: HTMLFormElement) {
   const data = new FormData(form);
   return {
-    fullName: String(data.get('fullName') ?? '').trim(),
-    email: String(data.get('email') ?? '').trim(),
-    password: String(data.get('password') ?? ''),
+    fullName: String(data.get('staffFullName') ?? data.get('fullName') ?? '').trim(),
+    email: String(data.get('staffEmail') ?? data.get('email') ?? '').trim(),
+    password: String(data.get('staffTemporaryPassword') ?? data.get('password') ?? ''),
     role: String(data.get('role') ?? 'organizador') as RolAplicacion,
   };
 }
@@ -159,18 +159,25 @@ export function PaginaUsuarios() {
         }
       />
 
-      <form className="panel form-grid" onSubmit={handleCreate}>
+      <form className="panel form-grid" onSubmit={handleCreate} autoComplete="off">
         <label>
           Nombre completo
-          <input name="fullName" required placeholder="Ej. Ana Perez" />
+          <input name="staffFullName" required autoComplete="off" placeholder="Ej. Keyra Marin" />
         </label>
         <label>
           Correo
-          <input name="email" required type="email" placeholder="admin@institucion.edu" />
+          <input name="staffEmail" required type="email" autoComplete="off" placeholder="ejemplo@unachi.ac.pa" />
         </label>
         <label>
           Contrasena temporal
-          <input name="password" required type="password" minLength={8} placeholder="Minimo 8 caracteres" />
+          <input
+            name="staffTemporaryPassword"
+            required
+            type="password"
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="Minimo 8 caracteres"
+          />
         </label>
         <label>
           Rol

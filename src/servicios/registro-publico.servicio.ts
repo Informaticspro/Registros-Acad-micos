@@ -16,6 +16,21 @@ const congresoMetadataSchema = z.object({
   participationType: z.string().min(1, 'Tipo de participacion requerido'),
 });
 
+const seminarioMetadataSchema = z.object({
+  institutionalEmail: z.string().email('Correo institucional invalido'),
+  personalEmail: z.string().email('Correo personal invalido'),
+  sex: z.string().min(1, 'Sexo requerido'),
+  hasDisability: z.string().min(1, 'Indique si posee discapacidad'),
+  disabilityDetail: z.string().optional(),
+  phone: z.string().min(6, 'Celular requerido'),
+  virtualClassEmail: z.string().email('Correo para aula virtual invalido'),
+  faculty: z.string().min(1, 'Facultad requerida'),
+  regionalCenter: z.string().min(1, 'Centro universitario requerido'),
+  participantType: z.string().min(1, 'Tipo de participante requerido'),
+  seminarDate: z.string().min(1, 'Fecha de seminario requerida'),
+  seminarPurpose: z.string().min(1, 'Motivo del seminario requerido'),
+});
+
 export const publicCheckInSchema = z
   .object({
     eventId: z.string().min(1, 'Evento requerido'),
@@ -28,9 +43,12 @@ export const publicCheckInSchema = z
   })
   .superRefine((data, ctx) => {
     const kind = getInscripcionFormKind(data.eventType);
-    if (kind !== 'congreso') return;
+    if (kind !== 'congreso' && kind !== 'seminario') return;
 
-    const parsed = congresoMetadataSchema.safeParse(data.metadata ?? {});
+    const parsed =
+      kind === 'congreso'
+        ? congresoMetadataSchema.safeParse(data.metadata ?? {})
+        : seminarioMetadataSchema.safeParse(data.metadata ?? {});
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         ctx.addIssue({
@@ -64,8 +82,9 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     throw new Error('Este evento no esta disponible para registro en este momento.');
   }
 
+  const formKind = getInscripcionFormKind(parsed.eventType as EventoAcademico['eventType'] | undefined);
   const metadata =
-    getInscripcionFormKind(parsed.eventType as EventoAcademico['eventType'] | undefined) === 'congreso'
+    formKind === 'congreso' || formKind === 'seminario'
       ? Object.fromEntries(
           Object.entries(parsed.metadata ?? {}).filter(([, value]) => value.trim().length > 0),
         )

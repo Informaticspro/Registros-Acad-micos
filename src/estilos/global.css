@@ -909,6 +909,58 @@ textarea {
   line-height: 1.45;
 }
 
+.seminar-info-card {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: none;
+  margin: 6px 0 12px;
+  padding: clamp(22px, 4vw, 42px);
+  border: 4px solid #0f3340;
+  border-radius: 58px;
+  background: #ffffff;
+  color: #1b1f24;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.seminar-info-card p,
+.seminar-warning ul {
+  margin: 0;
+  color: #1b1f24;
+  line-height: 1.55;
+}
+
+.seminar-letter-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 24px;
+  color: #1b1f24;
+  line-height: 1.45;
+}
+
+.seminar-info-card strong {
+  color: #111827;
+  font-weight: 900;
+}
+
+.seminar-warning {
+  display: grid;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.seminar-warning > strong {
+  color: #111827;
+  text-align: center;
+}
+
+.seminar-warning ul {
+  padding-left: 18px;
+}
+
 .data-table {
   display: grid;
   gap: 2px;
@@ -1270,7 +1322,7 @@ textarea {
 
 .lab-workspace-header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(360px, 0.75fr);
   align-items: center;
   gap: 18px;
   padding: 18px;
@@ -1303,6 +1355,7 @@ textarea {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 0 14px;
   border: 1px solid rgba(121, 183, 53, 0.42);
@@ -1312,6 +1365,57 @@ textarea {
   font-weight: 900;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.lab-header-side {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.lab-quick-stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.lab-quick-stats div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(168, 180, 195, 0.18);
+  border-radius: var(--radius);
+  background: rgba(15, 21, 29, 0.72);
+}
+
+:root[data-theme='light'] .lab-quick-stats div {
+  background: rgba(248, 251, 244, 0.88);
+}
+
+.lab-quick-stats svg {
+  color: var(--accent);
+}
+
+.lab-quick-stats span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lab-quick-stats strong {
+  color: var(--text);
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .lab-shell {
@@ -1351,6 +1455,10 @@ textarea {
   align-items: start;
 }
 
+.lab-grid-wide {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+}
+
 .lab-form,
 .lab-list,
 .lab-report-card {
@@ -1368,6 +1476,110 @@ textarea {
 
 .compact-form-grid {
   gap: 12px;
+}
+
+.lab-sheet-form {
+  background:
+    linear-gradient(180deg, rgba(243, 189, 34, 0.06), transparent 120px),
+    var(--surface-deep);
+}
+
+.lab-sheet-title {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 12px;
+  border: 1px solid rgba(243, 189, 34, 0.24);
+  border-radius: var(--radius);
+  background: rgba(121, 183, 53, 0.08);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.lab-sheet-title span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.lab-sheet-title strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.lab-sheet-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 0.8fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.lab-sheet-box {
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab-sheet-box legend {
+  padding: 0 8px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.lab-app-list,
+.lab-simple-list {
+  display: grid;
+  gap: 9px;
+}
+
+.lab-app-row {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 0.7fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.lab-app-row input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.lab-app-row input:not([type='checkbox']),
+.lab-simple-list input,
+.lab-actions-row input {
+  padding: 9px 10px;
+  font-size: 0.92rem;
+}
+
+.lab-actions-table {
+  display: grid;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.lab-actions-head,
+.lab-actions-row {
+  min-width: 780px;
+  display: grid;
+  grid-template-columns: 130px minmax(180px, 1fr) minmax(220px, 1.2fr) 160px;
+  gap: 8px;
+  align-items: center;
+}
+
+.lab-actions-head {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .lab-list {
@@ -2102,6 +2314,8 @@ textarea {
   .participant-type-grid,
   .event-participants-grid,
   .lab-grid,
+  .lab-grid-wide,
+  .lab-sheet-sections,
   .public-register {
     grid-template-columns: 1fr 1fr;
   }
@@ -2350,6 +2564,8 @@ textarea {
   .event-participants-grid,
   .public-register,
   .lab-grid,
+  .lab-grid-wide,
+  .lab-sheet-sections,
   .lab-report-grid,
   .lab-definition-grid,
   .form-grid {
@@ -2569,6 +2785,14 @@ textarea {
     justify-content: center;
   }
 
+  .lab-header-side {
+    justify-items: stretch;
+  }
+
+  .lab-quick-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .lab-workspace-title h1 {
     font-size: 2rem;
   }
@@ -2584,6 +2808,20 @@ textarea {
 
   .lab-list {
     max-height: 68vh;
+  }
+
+  .lab-app-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .lab-app-row input:not([type='checkbox']) {
+    grid-column: 1 / -1;
+  }
+
+  .seminar-info-card {
+    border-width: 3px;
+    border-radius: 34px;
+    padding: 22px 18px;
   }
 
   .page-actions {
