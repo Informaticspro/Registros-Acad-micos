@@ -36,6 +36,13 @@ export type BitacoraLaboratorioInput = Omit<BitacoraLaboratorio, 'id' | 'created
 
 export type PrestamoLaboratorioInput = Omit<PrestamoLaboratorio, 'id' | 'createdAt'>;
 
+export type ImportEquiposLaboratorioResult = {
+  total: number;
+  created: number;
+  updated: number;
+  ignored: number;
+};
+
 const estadoEquipoLabels: Record<EstadoEquipoLaboratorio, string> = {
   operativo: 'Operativo',
   en_reparacion: 'En reparacion',
@@ -432,6 +439,86 @@ export async function deleteEquipoLaboratorio(id: string) {
 
   const { error } = await requireSupabase().from('laboratory_equipment').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function importEquiposLaboratorio(
+  inputs: EquipoLaboratorioInput[],
+  context: LaboratorioSaveContext,
+): Promise<ImportEquiposLaboratorioResult> {
+  const validInputs = inputs.filter((item) => item.codigo && item.nombre);
+  const result: ImportEquiposLaboratorioResult = {
+    total: inputs.length,
+    created: 0,
+    updated: 0,
+    ignored: inputs.length - validInputs.length,
+  };
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const now = new Date().toISOString();
+    const existingByCode = new Map(state.equipos.map((item) => [item.codigo.trim().toLowerCase(), item]));
+    const nextEquipos = [...state.equipos];
+
+    validInputs.forEach((input) => {
+      const key = input.codigo.trim().toLowerCase();
+      const current = existingByCode.get(key);
+
+      if (current) {
+        const updated = { ...current, ...input, updatedAt: now };
+        const index = nextEquipos.findIndex((item) => item.id === current.id);
+        if (index >= 0) nextEquipos[index] = updated;
+        existingByCode.set(key, updated);
+        result.updated += 1;
+        return;
+      }
+
+      const created: EquipoLaboratorio = { ...input, id: createId('equipo'), createdAt: now, updatedAt: now };
+      nextEquipos.unshift(created);
+      existingByCode.set(key, created);
+      result.created += 1;
+    });
+
+    writeState({ ...state, equipos: nextEquipos });
+    return result;
+  }
+
+  requireContext(context);
+  const client = requireSupabase();
+  const { data: existingRows, error } = await client.from('laboratory_equipment').select('*');
+  if (error) throw error;
+
+  const existingByCode = new Map((existingRows ?? []).map((item) => [item.code.trim().toLowerCase(), item]));
+
+  for (const input of validInputs) {
+    const key = input.codigo.trim().toLowerCase();
+    const current = existingByCode.get(key);
+
+    if (current) {
+      await updateEquipoLaboratorio(current.id, input);
+      result.updated += 1;
+      continue;
+    }
+
+    const created = await createEquipoLaboratorio(input, context);
+    existingByCode.set(key, {
+      id: created.id,
+      organization_id: context.organizationId!,
+      code: created.codigo,
+      name: created.nombre,
+      category: created.categoria,
+      brand_model: created.marcaModelo,
+      serial_number: created.serie,
+      location: created.ubicacion,
+      status: created.estado,
+      notes: created.observaciones,
+      created_by: context.userId,
+      created_at: created.createdAt,
+      updated_at: created.updatedAt,
+    });
+    result.created += 1;
+  }
+
+  return result;
 }
 
 export async function createBitacoraLaboratorio(

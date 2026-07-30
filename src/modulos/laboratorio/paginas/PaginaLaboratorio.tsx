@@ -1,14 +1,16 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ClipboardList,
   Download,
+  Eye,
   HardDrive,
   History,
   PackageCheck,
   Pencil,
   Save,
   Trash2,
+  Upload,
   Wrench,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +30,7 @@ import {
   deleteFichaTecnicaLaboratorio,
   deletePrestamoLaboratorio,
   exportLaboratorioCsv,
+  importEquiposLaboratorio,
   listLaboratorioData,
   updateBitacoraLaboratorio,
   updateEquipoLaboratorio,
@@ -109,6 +112,67 @@ function localDateTimeValue(value = new Date()) {
 
 function readString(data: FormData, key: string) {
   return String(data.get(key) ?? '').trim();
+}
+
+function normalizeExcelKey(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function readExcelCell(row: Record<string, unknown>, aliases: string[]) {
+  const normalizedAliases = aliases.map(normalizeExcelKey);
+  const entry = Object.entries(row).find(([key]) => normalizedAliases.includes(normalizeExcelKey(key)));
+  return String(entry?.[1] ?? '').trim();
+}
+
+function normalizeEstadoEquipo(value: string): EstadoEquipoLaboratorio {
+  const normalized = normalizeExcelKey(value);
+
+  if (normalized.includes('repar')) return 'en_reparacion';
+  if (normalized.includes('prest')) return 'prestado';
+  if (normalized.includes('baja') || normalized.includes('descart')) return 'baja';
+  if (normalized.includes('pend') || normalized.includes('revision')) return 'pendiente_revision';
+  return 'operativo';
+}
+
+function splitMarcaModelo(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return { marca: 'S/N', modelo: 'S/N' };
+
+  const separatorMatch = normalized.match(/^(.+?)(?:\s+[-/|]\s+|\s{2,})(.+)$/);
+  if (separatorMatch) {
+    return { marca: separatorMatch[1].trim() || 'S/N', modelo: separatorMatch[2].trim() || 'S/N' };
+  }
+
+  const parts = normalized.split(/\s+/);
+  if (parts.length === 1) return { marca: parts[0], modelo: 'S/N' };
+
+  return { marca: parts[0], modelo: parts.slice(1).join(' ') };
+}
+
+function parseEquipoExcelRow(row: Record<string, unknown>, index: number): EquipoLaboratorioInput {
+  const codigo =
+    readExcelCell(row, ['codigo', 'codigo interno', 'inventario', 'n inventario', 'numero inventario', 'placa', 'asset', 'id']) ||
+    `IMPORT-${index + 1}`;
+  const nombre =
+    readExcelCell(row, ['nombre', 'equipo', 'dispositivo', 'descripcion', 'pc', 'computadora']) || `Equipo ${codigo}`;
+  const marca = readExcelCell(row, ['marca modelo', 'marca/modelo', 'marca', 'brand model']);
+  const modelo = readExcelCell(row, ['modelo']);
+  const marcaModelo = marca && modelo && !marca.toLowerCase().includes(modelo.toLowerCase()) ? `${marca} ${modelo}` : marca;
+
+  return {
+    codigo,
+    nombre,
+    categoria: readExcelCell(row, ['categoria', 'tipo', 'clase']) || 'Computadora',
+    marcaModelo,
+    serie: readExcelCell(row, ['serie', 'serial', 'numero serie', 's/n', 'sn']),
+    ubicacion: readExcelCell(row, ['ubicacion', 'lugar', 'area', 'laboratorio', 'salon']) || 'Sin ubicacion',
+    estado: normalizeEstadoEquipo(readExcelCell(row, ['estado', 'status', 'condicion'])),
+    observaciones: readExcelCell(row, ['observaciones', 'observacion', 'notas', 'nota', 'detalle']),
+  };
 }
 
 function downloadTextFile(content: string, fileName: string, type = 'text/plain;charset=utf-8') {
@@ -213,6 +277,8 @@ export function PaginaLaboratorio() {
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
   const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
+  const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
+  const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -224,6 +290,11 @@ export function PaginaLaboratorio() {
       userId: profile?.id ?? '',
     }),
     [profile?.id, profile?.organizationId],
+  );
+
+  const selectedEquipoFicha = useMemo(
+    () => state.equipos.find((item) => item.id === selectedEquipoFichaId) ?? null,
+    [selectedEquipoFichaId, state.equipos],
   );
 
   async function refresh() {
@@ -241,6 +312,17 @@ export function PaginaLaboratorio() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  useEffect(() => {
+    if (!selectedFicha) return undefined;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setSelectedFicha(null);
+    }
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedFicha]);
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
@@ -260,11 +342,14 @@ export function PaginaLaboratorio() {
     setError(null);
     try {
       if (editingFicha) {
-        await updateFichaTecnicaLaboratorio(editingFicha.id, input);
+        const updated = await updateFichaTecnicaLaboratorio(editingFicha.id, input);
         setEditingFicha(null);
+        setSelectedFicha(updated);
         setMessage('Ficha tecnica actualizada correctamente.');
       } else {
-        await createFichaTecnicaLaboratorio(input, saveContext);
+        const created = await createFichaTecnicaLaboratorio(input, saveContext);
+        setSelectedFicha(created);
+        setSelectedEquipoFichaId('');
         setMessage('Ficha tecnica guardada correctamente.');
         form.reset();
       }
@@ -364,6 +449,7 @@ export function PaginaLaboratorio() {
   async function handleDeleteFicha(item: FichaTecnicaLaboratorio) {
     if (!window.confirm(`Desea eliminar la ficha tecnica de "${item.pc}"?`)) return;
     await deleteFichaTecnicaLaboratorio(item.id);
+    if (selectedFicha?.id === item.id) setSelectedFicha(null);
     await refresh();
   }
 
@@ -377,6 +463,39 @@ export function PaginaLaboratorio() {
     if (!window.confirm(`Desea eliminar el prestamo de "${item.equipo}"?`)) return;
     await deletePrestamoLaboratorio(item.id);
     await refresh();
+  }
+
+  async function handleInventarioExcelUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const { read, utils } = await import('xlsx');
+      const workbook = read(await file.arrayBuffer(), { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      if (!worksheet) throw new Error('El archivo no tiene hojas disponibles.');
+
+      const rows = utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
+      const inputs = rows.map(parseEquipoExcelRow).filter((item) => item.codigo && item.nombre);
+      const result = await importEquiposLaboratorio(inputs, saveContext);
+
+      await refresh();
+      setActiveTab('inventario');
+      setMessage(
+        `Inventario importado: ${result.created} equipos nuevos, ${result.updated} actualizados y ${result.ignored} filas ignoradas.`,
+      );
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'No se pudo importar el inventario.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function exportCsv() {
@@ -454,6 +573,21 @@ export function PaginaLaboratorio() {
                 <span>Universidad Autonoma de Chiriqui</span>
                 <strong>Registro tecnico de equipo y control de mantenimiento</strong>
               </div>
+              <label>
+                Equipo del inventario
+                <select
+                  value={selectedEquipoFichaId}
+                  onChange={(event) => setSelectedEquipoFichaId(event.target.value)}
+                  disabled={Boolean(editingFicha)}
+                >
+                  <option value="">Seleccionar equipo registrado o llenar manualmente</option>
+                  {state.equipos.map((equipo) => (
+                    <option value={equipo.id} key={equipo.id}>
+                      {equipo.codigo} - {equipo.nombre} - {equipo.ubicacion}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="form-grid compact-form-grid">
                 <label>
                   Fecha
@@ -467,7 +601,13 @@ export function PaginaLaboratorio() {
                 </label>
                 <label>
                   PC / Equipo
-                  <input name="pc" required placeholder="Ej. PC Lab 1-08" defaultValue={editingFicha?.pc} />
+                  <input
+                    name="pc"
+                    required
+                    placeholder="Ej. PC Lab 1-08"
+                    defaultValue={editingFicha?.pc ?? selectedEquipoFicha?.nombre}
+                    key={`pc-${editingFicha?.id ?? selectedEquipoFicha?.id ?? 'new'}`}
+                  />
                 </label>
               </div>
               <div className="form-grid compact-form-grid">
@@ -477,7 +617,13 @@ export function PaginaLaboratorio() {
                 </label>
                 <label>
                   Ubicacion
-                  <input name="ubicacion" required placeholder="Laboratorio 1, reparacion..." defaultValue={editingFicha?.ubicacion} />
+                  <input
+                    name="ubicacion"
+                    required
+                    placeholder="Laboratorio 1, reparacion..."
+                    defaultValue={editingFicha?.ubicacion ?? selectedEquipoFicha?.ubicacion}
+                    key={`ubicacion-${editingFicha?.id ?? selectedEquipoFicha?.id ?? 'new'}`}
+                  />
                 </label>
               </div>
               <div className="form-grid compact-form-grid">
@@ -495,7 +641,13 @@ export function PaginaLaboratorio() {
                 <input
                   name="referenciaAcceso"
                   placeholder="No guardar contrasenas reales; use una referencia segura si aplica"
-                  defaultValue={editingFicha?.referenciaAcceso}
+                  defaultValue={
+                    editingFicha?.referenciaAcceso ??
+                    [selectedEquipoFicha?.codigo, selectedEquipoFicha?.marcaModelo, selectedEquipoFicha?.serie]
+                      .filter(Boolean)
+                      .join(' | ')
+                  }
+                  key={`referencia-${editingFicha?.id ?? selectedEquipoFicha?.id ?? 'new'}`}
                 />
               </label>
 
@@ -600,6 +752,9 @@ export function PaginaLaboratorio() {
                       <small>{formatDateTime(item.fecha)} | {item.ubicacion}</small>
                     </div>
                     <div className="row-actions">
+                      <button className="icon-button" type="button" title="Ver detalle" onClick={() => setSelectedFicha(item)}>
+                        <Eye size={16} />
+                      </button>
                       <button className="icon-button" type="button" title="Editar" onClick={() => setEditingFicha(item)}>
                         <Pencil size={16} />
                       </button>
@@ -624,6 +779,122 @@ export function PaginaLaboratorio() {
                 </article>
               ))}
             </div>
+
+            {selectedFicha ? (
+              <div className="modal-backdrop lab-sheet-modal-backdrop" role="presentation" onClick={() => setSelectedFicha(null)}>
+                <article
+                  className="modal-panel lab-sheet-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-sheet-detail-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="lab-sheet-preview-header">
+                    <div>
+                      <p>Universidad Autonoma de Chiriqui</p>
+                      <p>Facultad de Economia</p>
+                      <strong id="lab-sheet-detail-title">Registro tecnico de equipo y control de mantenimiento</strong>
+                    </div>
+                    <button className="secondary-button" type="button" onClick={() => setSelectedFicha(null)}>
+                      Cerrar detalle
+                    </button>
+                  </div>
+
+                  <div className="lab-sheet-preview-meta">
+                    <div><span>Fecha</span><strong>{formatDateTime(selectedFicha.fecha)}</strong></div>
+                    <div><span>PC / Equipo</span><strong>{selectedFicha.pc}</strong></div>
+                    <div><span>Direccion IP</span><strong>{selectedFicha.direccionIp || 'No indicada'}</strong></div>
+                    <div><span>Ubicacion</span><strong>{selectedFicha.ubicacion || 'No indicada'}</strong></div>
+                    <div><span>Responsable</span><strong>{selectedFicha.responsable || 'No indicado'}</strong></div>
+                    <div><span>Usuario asignado</span><strong>{selectedFicha.usuarioAsignado || 'No indicado'}</strong></div>
+                  </div>
+
+                  <div className="lab-sheet-preview-grid">
+                    <section>
+                      <h3>Aplicaciones instaladas</h3>
+                      <div className="lab-sheet-table">
+                        <div className="lab-sheet-table-head two-cols">
+                          <span>Aplicacion</span>
+                          <span>Estado / observacion</span>
+                        </div>
+                        {selectedFicha.aplicaciones.map((app) => (
+                          <div className="lab-sheet-table-row two-cols" key={app.nombre}>
+                            <strong>{app.nombre}</strong>
+                            <span>{app.instalada ? 'Instalada' : 'No marcada'}{app.observacion ? ` - ${app.observacion}` : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section>
+                      <h3>Caracteristicas tecnicas</h3>
+                      <div className="lab-sheet-table">
+                        <div className="lab-sheet-table-head two-cols">
+                          <span>Caracteristica</span>
+                          <span>Valor</span>
+                        </div>
+                        {selectedFicha.caracteristicas.map((item) => (
+                          <div className="lab-sheet-table-row two-cols" key={item.nombre}>
+                            <strong>{item.nombre}</strong>
+                            <span>{item.valor || 'No indicado'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section>
+                      <h3>Inventario</h3>
+                      <div className="lab-sheet-table">
+                        <div className="lab-sheet-table-head two-cols">
+                          <span>Equipo</span>
+                          <span>Numero / serie</span>
+                        </div>
+                        {selectedFicha.inventario.map((item) => (
+                          <div className="lab-sheet-table-row two-cols" key={item.equipo}>
+                            <strong>{item.equipo}</strong>
+                            <span>{item.numero || 'No indicado'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+
+                  <section>
+                    <h3>Acciones realizadas</h3>
+                    <div className="lab-sheet-table scrollable">
+                      <div className="lab-sheet-table-head four-cols">
+                        <span>Fecha</span>
+                        <span>Accion realizada</span>
+                        <span>Observacion</span>
+                        <span>Responsable</span>
+                      </div>
+                      {selectedFicha.acciones.length === 0 ? (
+                        <div className="lab-sheet-table-row four-cols">
+                          <span>Sin acciones registradas</span>
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+                      ) : null}
+                      {selectedFicha.acciones.map((accion, index) => (
+                        <div className="lab-sheet-table-row four-cols" key={`${accion.fecha}-${index}`}>
+                          <span>{accion.fecha || 'No indicada'}</span>
+                          <strong>{accion.accion || 'No indicada'}</strong>
+                          <span>{accion.observacion || 'Sin observacion'}</span>
+                          <span>{accion.responsable || 'No indicado'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="lab-sheet-notes">
+                    <h3>Observacion general</h3>
+                    <p>{selectedFicha.observacionGeneral || 'Sin observacion general.'}</p>
+                    <small>Referencia de acceso: {selectedFicha.referenciaAcceso || 'No indicada'}</small>
+                  </section>
+                </article>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -778,6 +1049,27 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'inventario' ? (
           <div className="lab-grid">
+            <section className="lab-import-panel">
+              <div>
+                <span className="eyebrow">Carga masiva</span>
+                <h2>Importar inventario desde Excel</h2>
+                <p>
+                  Acepta columnas como codigo, inventario, equipo, categoria, marca, modelo, serie, ubicacion,
+                  estado y observaciones. Si el codigo ya existe, el equipo se actualiza.
+                </p>
+              </div>
+              <label className="secondary-button lab-file-button">
+                <Upload size={18} />
+                Cargar Excel
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(event) => void handleInventarioExcelUpload(event)}
+                  disabled={isSaving}
+                />
+              </label>
+            </section>
+
             <form className="stack-form lab-form" onSubmit={handleEquipoSubmit}>
               <h2>{editingEquipo ? 'Editar equipo' : 'Registrar equipo'}</h2>
               <div className="form-grid compact-form-grid">
@@ -846,34 +1138,60 @@ export function PaginaLaboratorio() {
             </form>
 
             <div className="lab-list">
-              <h2>Inventario de equipos</h2>
+              <div className="lab-inventory-sheet-title">
+                <strong>Universidad Autonoma de Chiriqui</strong>
+                <span>Facultad de Economia</span>
+                <h2>Inventario de la facultad</h2>
+                <small>{new Date().toLocaleDateString('es-PA')}</small>
+              </div>
               {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
-              {state.equipos.map((item) => (
-                <article className="lab-record compact" key={item.id}>
-                  <div className="lab-record-header">
-                    <div>
-                      <span className={`status-pill equipment-${item.estado}`}>{estadoEquipoLabels[item.estado]}</span>
-                      <h3>{item.nombre}</h3>
-                      <small>{item.codigo} | {item.ubicacion}</small>
+              {state.equipos.length > 0 ? (
+                <div className="lab-inventory-table-wrap">
+                  <div className="lab-inventory-table">
+                    <div className="lab-inventory-head">
+                      <span>Fila</span>
+                      <span>Equipo</span>
+                      <span>Marca</span>
+                      <span>Modelo</span>
+                      <span>Inventario</span>
+                      <span>Serie</span>
+                      <span>Ubicacion</span>
+                      <span>Estado</span>
+                      <span>Acciones</span>
                     </div>
-                    <div className="row-actions">
-                      <button className="icon-button" type="button" title="Editar" onClick={() => setEditingEquipo(item)}>
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        className="icon-button danger-button"
-                        type="button"
-                        title="Eliminar"
-                        onClick={() => void handleDeleteEquipo(item)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    {state.equipos.map((item, index) => {
+                      const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
+                      return (
+                        <div className="lab-inventory-row" key={item.id}>
+                          <span>{index + 1}</span>
+                          <strong>{item.categoria || item.nombre}</strong>
+                          <span>{marca}</span>
+                          <span>{modelo}</span>
+                          <span>{item.codigo || 'S/N'}</span>
+                          <span>{item.serie || 'S/N'}</span>
+                          <span>{item.ubicacion || 'Sin ubicacion'}</span>
+                          <span>
+                            <em className={`inventory-status equipment-${item.estado}`}>{estadoEquipoLabels[item.estado]}</em>
+                          </span>
+                          <span className="row-actions inventory-actions">
+                            <button className="icon-button" type="button" title="Editar" onClick={() => setEditingEquipo(item)}>
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="icon-button danger-button"
+                              type="button"
+                              title="Eliminar"
+                              onClick={() => void handleDeleteEquipo(item)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p>{item.marcaModelo || 'Sin marca/modelo'} | Serie: {item.serie || 'No indicada'}</p>
-                  <small>{item.observaciones || 'Sin observaciones'}</small>
-                </article>
-              ))}
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
