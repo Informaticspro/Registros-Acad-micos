@@ -71,6 +71,7 @@ export function PaginaRegistroParticipante() {
   const [result, setResult] = useState<PublicCheckInResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessNotice, setShowSuccessNotice] = useState(false);
 
   useEffect(() => {
     if (!eventId) {
@@ -96,6 +97,20 @@ export function PaginaRegistroParticipante() {
       })
       .finally(() => setIsLoadingEvent(false));
   }, [eventId]);
+
+  useEffect(() => {
+    if (!result) return undefined;
+
+    setShowSuccessNotice(true);
+    const timeout = window.setTimeout(() => {
+      setShowSuccessNotice(false);
+      if (fromAdmin) {
+        navigate('/dashboard', { replace: true });
+      }
+    }, 2600);
+
+    return () => window.clearTimeout(timeout);
+  }, [fromAdmin, navigate, result]);
 
   const formKind = getInscripcionFormKind(event?.eventType);
   const registrationOpen = event ? isPublicRegistrationOpen(event) : false;
@@ -147,6 +162,21 @@ export function PaginaRegistroParticipante() {
     const shouldGenerateParticipantQr = event.eventType === 'congreso';
     return (
       <section className={shellClass}>
+        {showSuccessNotice ? (
+          <div className="success-popover" role="status" aria-live="polite">
+            <div className="success-popover-icon">
+              <CheckCircle2 size={30} />
+            </div>
+            <strong>Registro exitoso</strong>
+            <span>
+              {fromAdmin
+                ? 'Volviendo al panel de control...'
+                : shouldGenerateParticipantQr
+                ? 'Su QR personal esta listo.'
+                : 'Gracias por completar su registro.'}
+            </span>
+          </div>
+        ) : null}
         {fromAdmin && eventId ? (
           <Link className="secondary-button register-back-link" to={`/eventos/${eventId}`}>
             <ArrowLeft size={18} />
@@ -190,24 +220,34 @@ export function PaginaRegistroParticipante() {
               />
             </>
           ) : (
-            <dl className="definition-list compact">
-              <div>
-                <dt>Participante</dt>
-                <dd>{fullName}</dd>
-              </div>
-              <div>
-                <dt>Cedula</dt>
-                <dd>{result.documentId}</dd>
-              </div>
-              <div>
-                <dt>Evento</dt>
-                <dd>{event.title}</dd>
-              </div>
-              <div>
-                <dt>Estado</dt>
-                <dd>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Asistencia registrada'}</dd>
-              </div>
-            </dl>
+            <>
+              {fromAdmin ? (
+                <dl className="definition-list compact">
+                  <div>
+                    <dt>Participante</dt>
+                    <dd>{fullName}</dd>
+                  </div>
+                  <div>
+                    <dt>Cedula</dt>
+                    <dd>{result.documentId}</dd>
+                  </div>
+                  <div>
+                    <dt>Evento</dt>
+                    <dd>{event.title}</dd>
+                  </div>
+                  <div>
+                    <dt>Estado</dt>
+                    <dd>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Asistencia registrada'}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <div className="public-logo-success">
+                  <img src="/logo-registros-academicos.png" alt="Registros Academicos" />
+                  <strong>Registro realizado exitosamente</strong>
+                  <span>{event.title}</span>
+                </div>
+              )}
+            </>
           )}
           <div className="register-success-actions">
             {fromAdmin ? (

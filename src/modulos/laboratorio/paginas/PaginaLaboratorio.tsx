@@ -278,6 +278,7 @@ export function PaginaLaboratorio() {
   const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -314,15 +315,17 @@ export function PaginaLaboratorio() {
   }, []);
 
   useEffect(() => {
-    if (!selectedFicha) return undefined;
+    if (!selectedFicha && !showInventoryModal) return undefined;
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setSelectedFicha(null);
+      if (event.key !== 'Escape') return;
+      setSelectedFicha(null);
+      setShowInventoryModal(false);
     }
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [selectedFicha]);
+  }, [selectedFicha, showInventoryModal]);
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
@@ -1058,16 +1061,22 @@ export function PaginaLaboratorio() {
                   estado y observaciones. Si el codigo ya existe, el equipo se actualiza.
                 </p>
               </div>
-              <label className="secondary-button lab-file-button">
-                <Upload size={18} />
-                Cargar Excel
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(event) => void handleInventarioExcelUpload(event)}
-                  disabled={isSaving}
-                />
-              </label>
+              <div className="lab-import-actions">
+                <label className="secondary-button lab-file-button">
+                  <Upload size={18} />
+                  Cargar Excel
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={(event) => void handleInventarioExcelUpload(event)}
+                    disabled={isSaving}
+                  />
+                </label>
+                <button className="primary-button" type="button" onClick={() => setShowInventoryModal(true)}>
+                  <Eye size={18} />
+                  Ver inventario
+                </button>
+              </div>
             </section>
 
             <form className="stack-form lab-form" onSubmit={handleEquipoSubmit}>
@@ -1137,62 +1146,93 @@ export function PaginaLaboratorio() {
               </div>
             </form>
 
-            <div className="lab-list">
-              <div className="lab-inventory-sheet-title">
-                <strong>Universidad Autonoma de Chiriqui</strong>
-                <span>Facultad de Economia</span>
-                <h2>Inventario de la facultad</h2>
-                <small>{new Date().toLocaleDateString('es-PA')}</small>
-              </div>
-              {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
-              {state.equipos.length > 0 ? (
-                <div className="lab-inventory-table-wrap">
-                  <div className="lab-inventory-table">
-                    <div className="lab-inventory-head">
-                      <span>Fila</span>
-                      <span>Equipo</span>
-                      <span>Marca</span>
-                      <span>Modelo</span>
-                      <span>Inventario</span>
-                      <span>Serie</span>
-                      <span>Ubicacion</span>
-                      <span>Estado</span>
-                      <span>Acciones</span>
-                    </div>
-                    {state.equipos.map((item, index) => {
-                      const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
-                      return (
-                        <div className="lab-inventory-row" key={item.id}>
-                          <span>{index + 1}</span>
-                          <strong>{item.categoria || item.nombre}</strong>
-                          <span>{marca}</span>
-                          <span>{modelo}</span>
-                          <span>{item.codigo || 'S/N'}</span>
-                          <span>{item.serie || 'S/N'}</span>
-                          <span>{item.ubicacion || 'Sin ubicacion'}</span>
-                          <span>
-                            <em className={`inventory-status equipment-${item.estado}`}>{estadoEquipoLabels[item.estado]}</em>
-                          </span>
-                          <span className="row-actions inventory-actions">
-                            <button className="icon-button" type="button" title="Editar" onClick={() => setEditingEquipo(item)}>
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              className="icon-button danger-button"
-                              type="button"
-                              title="Eliminar"
-                              onClick={() => void handleDeleteEquipo(item)}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </span>
-                        </div>
-                      );
-                    })}
+            <aside className="lab-inventory-summary-card">
+              <span className="eyebrow">Inventario registrado</span>
+              <strong>{state.equipos.length}</strong>
+              <p>Equipos disponibles en la base de datos del laboratorio.</p>
+              <button className="secondary-button" type="button" onClick={() => setShowInventoryModal(true)}>
+                <Eye size={18} />
+                Ver inventario completo
+              </button>
+            </aside>
+
+            {showInventoryModal ? (
+              <div className="modal-backdrop lab-inventory-modal-backdrop" role="presentation" onClick={() => setShowInventoryModal(false)}>
+                <article
+                  className="modal-panel lab-inventory-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-inventory-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="lab-inventory-sheet-title">
+                    <strong>Universidad Autonoma de Chiriqui</strong>
+                    <span>Facultad de Economia</span>
+                    <h2 id="lab-inventory-title">Inventario de la facultad</h2>
+                    <small>{new Date().toLocaleDateString('es-PA')}</small>
                   </div>
-                </div>
-              ) : null}
-            </div>
+                  {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
+                  {state.equipos.length > 0 ? (
+                    <div className="lab-inventory-table-wrap">
+                      <div className="lab-inventory-table">
+                        <div className="lab-inventory-head">
+                          <span>Fila</span>
+                          <span>Equipo</span>
+                          <span>Marca</span>
+                          <span>Modelo</span>
+                          <span>Inventario</span>
+                          <span>Serie</span>
+                          <span>Ubicacion</span>
+                          <span>Estado</span>
+                          <span>Acciones</span>
+                        </div>
+                        {state.equipos.map((item, index) => {
+                          const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
+                          return (
+                            <div className="lab-inventory-row" key={item.id}>
+                              <span>{index + 1}</span>
+                              <strong>{item.categoria || item.nombre}</strong>
+                              <span>{marca}</span>
+                              <span>{modelo}</span>
+                              <span>{item.codigo || 'S/N'}</span>
+                              <span>{item.serie || 'S/N'}</span>
+                              <span>{item.ubicacion || 'Sin ubicacion'}</span>
+                              <span>
+                                <em className={`inventory-status equipment-${item.estado}`}>{estadoEquipoLabels[item.estado]}</em>
+                              </span>
+                              <span className="row-actions inventory-actions">
+                                <button
+                                  className="icon-button"
+                                  type="button"
+                                  title="Editar"
+                                  onClick={() => {
+                                    setEditingEquipo(item);
+                                    setShowInventoryModal(false);
+                                  }}
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button
+                                  className="icon-button danger-button"
+                                  type="button"
+                                  title="Eliminar"
+                                  onClick={() => void handleDeleteEquipo(item)}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                  <button className="secondary-button" type="button" onClick={() => setShowInventoryModal(false)}>
+                    Cerrar inventario
+                  </button>
+                </article>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

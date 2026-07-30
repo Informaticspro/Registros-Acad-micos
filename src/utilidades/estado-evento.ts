@@ -44,6 +44,9 @@ export function getEstadoEventoClassName(status: EstadoEvento) {
 }
 
 export function isPublicRegistrationOpen(event: EventoAcademico) {
-  if (event.eventType === 'congreso') return event.status === 'published' || event.status === 'active';
+  if (event.eventType === 'congreso' || event.eventType === 'seminario') {
+    return event.status === 'published' || event.status === 'active';
+  }
+
   return event.status === 'active';
 }
