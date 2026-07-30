@@ -147,6 +147,35 @@ export type BaseDatos = {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      laboratory_sections: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          description: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      laboratory_catalogs: {
+        Row: {
+          id: string;
+          organization_id: string;
+          catalog_type: 'categoria_equipo' | 'estado_equipo';
+          name: string;
+          description: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       laboratory_logs: {
         Row: {
           id: string;

@@ -58,12 +58,7 @@ export type RegistroAsistencia = {
   checkedInAt: string;
 };
 
-export type EstadoEquipoLaboratorio =
-  | 'operativo'
-  | 'en_reparacion'
-  | 'prestado'
-  | 'baja'
-  | 'pendiente_revision';
+export type EstadoEquipoLaboratorio = string;
 
 export type PrioridadLaboratorio = 'baja' | 'media' | 'alta' | 'critica';
 
@@ -79,6 +74,23 @@ export type EquipoLaboratorio = {
   ubicacion: string;
   estado: EstadoEquipoLaboratorio;
   observaciones: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SeccionLaboratorio = {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CatalogoLaboratorio = {
+  id: string;
+  tipo: 'categoria_equipo' | 'estado_equipo';
+  nombre: string;
+  descripcion: string;
   createdAt: string;
   updatedAt: string;
 };

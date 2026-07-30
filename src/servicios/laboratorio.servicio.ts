@@ -3,6 +3,7 @@ import { supabase } from '@/infraestructura/supabase';
 import {
   AplicacionFichaLaboratorio,
   BitacoraLaboratorio,
+  CatalogoLaboratorio,
   CaracteristicaFichaLaboratorio,
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
@@ -11,6 +12,7 @@ import {
   InventarioFichaLaboratorio,
   PrestamoLaboratorio,
   PrioridadLaboratorio,
+  SeccionLaboratorio,
 } from '@/tipos/dominio';
 import { Json } from '@/tipos/supabase';
 
@@ -19,6 +21,9 @@ const STORAGE_KEY = 'acad-laboratorio-v1';
 export type LaboratorioState = {
   fichas: FichaTecnicaLaboratorio[];
   equipos: EquipoLaboratorio[];
+  secciones: SeccionLaboratorio[];
+  categoriasEquipo: CatalogoLaboratorio[];
+  estadosEquipo: CatalogoLaboratorio[];
   bitacoras: BitacoraLaboratorio[];
   prestamos: PrestamoLaboratorio[];
 };
@@ -32,6 +37,10 @@ export type FichaTecnicaLaboratorioInput = Omit<FichaTecnicaLaboratorio, 'id' | 
 
 export type EquipoLaboratorioInput = Omit<EquipoLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
 
+export type SeccionLaboratorioInput = Omit<SeccionLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type CatalogoLaboratorioInput = Omit<CatalogoLaboratorio, 'id' | 'tipo' | 'createdAt' | 'updatedAt'>;
+
 export type BitacoraLaboratorioInput = Omit<BitacoraLaboratorio, 'id' | 'createdAt'>;
 
 export type PrestamoLaboratorioInput = Omit<PrestamoLaboratorio, 'id' | 'createdAt'>;
@@ -43,7 +52,7 @@ export type ImportEquiposLaboratorioResult = {
   ignored: number;
 };
 
-const estadoEquipoLabels: Record<EstadoEquipoLaboratorio, string> = {
+const estadoEquipoLabels: Record<string, string> = {
   operativo: 'Operativo',
   en_reparacion: 'En reparacion',
   prestado: 'Prestado',
@@ -65,10 +74,62 @@ const prioridadLabels: Record<PrioridadLaboratorio, string> = {
   critica: 'Critica',
 };
 
+const seccionesBaseLaboratorio = [
+  'ORD',
+  'Biblioteca',
+  'Laboratorio 1',
+  'Laboratorio 2',
+  'Decanato',
+  'Reparacion',
+  'Deposito',
+  'Seccion de Tecnologia',
+] as const;
+
+const categoriasBaseEquipo = ['Computadora', 'Laptop', 'Monitor', 'Proyector', 'Impresora', 'Redes', 'Accesorio'] as const;
+
+const estadosBaseEquipo = [
+  { nombre: 'operativo', descripcion: 'Operativo' },
+  { nombre: 'en_reparacion', descripcion: 'En reparacion' },
+  { nombre: 'prestado', descripcion: 'Prestado' },
+  { nombre: 'pendiente_revision', descripcion: 'Pendiente de revision' },
+  { nombre: 'baja', descripcion: 'Baja' },
+] as const;
+
+function defaultSecciones(): SeccionLaboratorio[] {
+  const now = new Date().toISOString();
+  return seccionesBaseLaboratorio.map((nombre, index) => ({
+    id: `base-${index + 1}`,
+    nombre,
+    descripcion: '',
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
+function defaultCatalogos(tipo: CatalogoLaboratorio['tipo']): CatalogoLaboratorio[] {
+  const now = new Date().toISOString();
+  const items =
+    tipo === 'categoria_equipo'
+      ? categoriasBaseEquipo.map((nombre) => ({ nombre, descripcion: '' }))
+      : estadosBaseEquipo;
+
+  return items.map((item, index) => ({
+    id: `base-${tipo}-${index + 1}`,
+    tipo,
+    nombre: item.nombre,
+    descripcion: item.descripcion,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
 function emptyState(): LaboratorioState {
   return {
     fichas: [],
     equipos: [],
+    secciones: defaultSecciones(),
+    categoriasEquipo: defaultCatalogos('categoria_equipo'),
+    estadosEquipo: defaultCatalogos('estado_equipo'),
     bitacoras: [],
     prestamos: [],
   };
@@ -89,6 +150,13 @@ function readState(): LaboratorioState {
     return {
       fichas: Array.isArray(parsed.fichas) ? parsed.fichas : [],
       equipos: Array.isArray(parsed.equipos) ? parsed.equipos : [],
+      secciones: Array.isArray(parsed.secciones) ? parsed.secciones : defaultSecciones(),
+      categoriasEquipo: Array.isArray(parsed.categoriasEquipo)
+        ? parsed.categoriasEquipo
+        : defaultCatalogos('categoria_equipo'),
+      estadosEquipo: Array.isArray(parsed.estadosEquipo)
+        ? parsed.estadosEquipo
+        : defaultCatalogos('estado_equipo'),
       bitacoras: Array.isArray(parsed.bitacoras) ? parsed.bitacoras : [],
       prestamos: Array.isArray(parsed.prestamos) ? parsed.prestamos : [],
     };
@@ -184,6 +252,40 @@ function mapEquipo(row: {
   };
 }
 
+function mapSeccion(row: {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}): SeccionLaboratorio {
+  return {
+    id: row.id,
+    nombre: row.name,
+    descripcion: row.description,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapCatalogo(row: {
+  id: string;
+  catalog_type: CatalogoLaboratorio['tipo'];
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}): CatalogoLaboratorio {
+  return {
+    id: row.id,
+    tipo: row.catalog_type,
+    nombre: row.name,
+    descripcion: row.description,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 function mapBitacora(row: {
   id: string;
   work_date: string;
@@ -252,27 +354,39 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
     return {
       fichas: [...state.fichas].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
       equipos: [...state.equipos].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
+      secciones: [...state.secciones].sort((first, second) => first.nombre.localeCompare(second.nombre)),
+      categoriasEquipo: [...state.categoriasEquipo].sort((first, second) => first.nombre.localeCompare(second.nombre)),
+      estadosEquipo: [...state.estadosEquipo].sort((first, second) => first.nombre.localeCompare(second.nombre)),
       bitacoras: [...state.bitacoras].sort((first, second) => second.fecha.localeCompare(first.fecha)),
       prestamos: [...state.prestamos].sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo)),
     };
   }
 
   const client = requireSupabase();
-  const [fichas, equipos, bitacoras, prestamos] = await Promise.all([
+  const [fichas, equipos, secciones, catalogos, bitacoras, prestamos] = await Promise.all([
     client.from('laboratory_technical_sheets').select('*').order('updated_at', { ascending: false }),
     client.from('laboratory_equipment').select('*').order('updated_at', { ascending: false }),
+    client.from('laboratory_sections').select('*').order('name', { ascending: true }),
+    client.from('laboratory_catalogs').select('*').order('name', { ascending: true }),
     client.from('laboratory_logs').select('*').order('work_date', { ascending: false }),
     client.from('laboratory_loans').select('*').order('loaned_at', { ascending: false }),
   ]);
 
   if (fichas.error) throw fichas.error;
   if (equipos.error) throw equipos.error;
+  const seccionesData = secciones.error ? defaultSecciones() : (secciones.data ?? []).map(mapSeccion);
+  const catalogosData = catalogos.error ? [] : (catalogos.data ?? []).map(mapCatalogo);
+  const categoriasEquipo = catalogosData.filter((item) => item.tipo === 'categoria_equipo');
+  const estadosEquipo = catalogosData.filter((item) => item.tipo === 'estado_equipo');
   if (bitacoras.error) throw bitacoras.error;
   if (prestamos.error) throw prestamos.error;
 
   return {
     fichas: (fichas.data ?? []).map(mapFicha),
     equipos: (equipos.data ?? []).map(mapEquipo),
+    secciones: seccionesData.length > 0 ? seccionesData : defaultSecciones(),
+    categoriasEquipo: categoriasEquipo.length > 0 ? categoriasEquipo : defaultCatalogos('categoria_equipo'),
+    estadosEquipo: estadosEquipo.length > 0 ? estadosEquipo : defaultCatalogos('estado_equipo'),
     bitacoras: (bitacoras.data ?? []).map(mapBitacora),
     prestamos: (prestamos.data ?? []).map(mapPrestamo),
   };
@@ -438,6 +552,248 @@ export async function deleteEquipoLaboratorio(id: string) {
   }
 
   const { error } = await requireSupabase().from('laboratory_equipment').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function createSeccionLaboratorio(
+  input: SeccionLaboratorioInput,
+  context: LaboratorioSaveContext,
+): Promise<SeccionLaboratorio> {
+  const nombre = input.nombre.trim();
+  if (!nombre) throw new Error('Ingrese el nombre de la seccion.');
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const exists = state.secciones.some((item) => item.nombre.trim().toLowerCase() === nombre.toLowerCase());
+    if (exists) throw new Error('Ya existe una seccion con ese nombre.');
+    const now = new Date().toISOString();
+    const seccion: SeccionLaboratorio = {
+      id: createId('seccion'),
+      nombre,
+      descripcion: input.descripcion.trim(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    writeState({ ...state, secciones: [seccion, ...state.secciones] });
+    return seccion;
+  }
+
+  requireContext(context);
+  const { data, error } = await requireSupabase()
+    .from('laboratory_sections')
+    .insert({
+      organization_id: context.organizationId,
+      name: nombre,
+      description: input.descripcion.trim(),
+      created_by: context.userId,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapSeccion(data);
+}
+
+export async function updateSeccionLaboratorio(
+  id: string,
+  input: SeccionLaboratorioInput,
+): Promise<SeccionLaboratorio> {
+  const nombre = input.nombre.trim();
+  if (!nombre) throw new Error('Ingrese el nombre de la seccion.');
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const current = state.secciones.find((seccion) => seccion.id === id);
+    if (!current) throw new Error('No se encontro la seccion.');
+    const exists = state.secciones.some(
+      (item) => item.id !== id && item.nombre.trim().toLowerCase() === nombre.toLowerCase(),
+    );
+    if (exists) throw new Error('Ya existe una seccion con ese nombre.');
+    const updated: SeccionLaboratorio = {
+      ...current,
+      nombre,
+      descripcion: input.descripcion.trim(),
+      updatedAt: new Date().toISOString(),
+    };
+    writeState({
+      ...state,
+      secciones: state.secciones.map((seccion) => (seccion.id === id ? updated : seccion)),
+    });
+    return updated;
+  }
+
+  const { data, error } = await requireSupabase()
+    .from('laboratory_sections')
+    .update({
+      name: nombre,
+      description: input.descripcion.trim(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapSeccion(data);
+}
+
+export async function deleteSeccionLaboratorio(id: string) {
+  if (id.startsWith('base-')) {
+    throw new Error('Esta seccion base no se puede eliminar. Puede crear otra seccion personalizada.');
+  }
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const current = state.secciones.find((seccion) => seccion.id === id);
+    if (!current) throw new Error('No se encontro la seccion.');
+    const hasEquipment = state.equipos.some((equipo) => equipo.ubicacion === current.nombre);
+    if (hasEquipment) throw new Error('No se puede eliminar una seccion que tiene equipos asignados.');
+    writeState({ ...state, secciones: state.secciones.filter((seccion) => seccion.id !== id) });
+    return;
+  }
+
+  const client = requireSupabase();
+  const { data: current, error: currentError } = await client
+    .from('laboratory_sections')
+    .select('name')
+    .eq('id', id)
+    .single();
+  if (currentError) throw currentError;
+
+  const { count, error: countError } = await client
+    .from('laboratory_equipment')
+    .select('id', { count: 'exact', head: true })
+    .eq('location', current.name as string);
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) throw new Error('No se puede eliminar una seccion que tiene equipos asignados.');
+
+  const { error } = await client.from('laboratory_sections').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function createCatalogoLaboratorio(
+  tipo: CatalogoLaboratorio['tipo'],
+  input: CatalogoLaboratorioInput,
+  context: LaboratorioSaveContext,
+): Promise<CatalogoLaboratorio> {
+  const nombre = input.nombre.trim();
+  if (!nombre) throw new Error('Ingrese el nombre de la opcion.');
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const listKey = tipo === 'categoria_equipo' ? 'categoriasEquipo' : 'estadosEquipo';
+    const exists = state[listKey].some((item) => item.nombre.trim().toLowerCase() === nombre.toLowerCase());
+    if (exists) throw new Error('Ya existe una opcion con ese nombre.');
+    const now = new Date().toISOString();
+    const catalogo: CatalogoLaboratorio = {
+      id: createId('catalogo'),
+      tipo,
+      nombre,
+      descripcion: input.descripcion.trim(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    writeState({ ...state, [listKey]: [catalogo, ...state[listKey]] });
+    return catalogo;
+  }
+
+  requireContext(context);
+  const { data, error } = await requireSupabase()
+    .from('laboratory_catalogs')
+    .insert({
+      organization_id: context.organizationId,
+      catalog_type: tipo,
+      name: nombre,
+      description: input.descripcion.trim(),
+      created_by: context.userId,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapCatalogo(data);
+}
+
+export async function updateCatalogoLaboratorio(
+  id: string,
+  tipo: CatalogoLaboratorio['tipo'],
+  input: CatalogoLaboratorioInput,
+): Promise<CatalogoLaboratorio> {
+  const nombre = input.nombre.trim();
+  if (!nombre) throw new Error('Ingrese el nombre de la opcion.');
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const listKey = tipo === 'categoria_equipo' ? 'categoriasEquipo' : 'estadosEquipo';
+    const current = state[listKey].find((item) => item.id === id);
+    if (!current) throw new Error('No se encontro la opcion.');
+    const exists = state[listKey].some(
+      (item) => item.id !== id && item.nombre.trim().toLowerCase() === nombre.toLowerCase(),
+    );
+    if (exists) throw new Error('Ya existe una opcion con ese nombre.');
+    const updated: CatalogoLaboratorio = {
+      ...current,
+      nombre,
+      descripcion: input.descripcion.trim(),
+      updatedAt: new Date().toISOString(),
+    };
+    writeState({ ...state, [listKey]: state[listKey].map((item) => (item.id === id ? updated : item)) });
+    return updated;
+  }
+
+  const { data, error } = await requireSupabase()
+    .from('laboratory_catalogs')
+    .update({
+      name: nombre,
+      description: input.descripcion.trim(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('catalog_type', tipo)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapCatalogo(data);
+}
+
+export async function deleteCatalogoLaboratorio(id: string, tipo: CatalogoLaboratorio['tipo']) {
+  if (id.startsWith('base-')) {
+    throw new Error('Esta opcion base no se puede eliminar. Puede crear otra opcion personalizada.');
+  }
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const listKey = tipo === 'categoria_equipo' ? 'categoriasEquipo' : 'estadosEquipo';
+    const current = state[listKey].find((item) => item.id === id);
+    if (!current) throw new Error('No se encontro la opcion.');
+    const hasEquipment =
+      tipo === 'categoria_equipo'
+        ? state.equipos.some((equipo) => equipo.categoria === current.nombre)
+        : state.equipos.some((equipo) => equipo.estado === current.nombre);
+    if (hasEquipment) throw new Error('No se puede eliminar una opcion que tiene equipos asignados.');
+    writeState({ ...state, [listKey]: state[listKey].filter((item) => item.id !== id) });
+    return;
+  }
+
+  const client = requireSupabase();
+  const { data: current, error: currentError } = await client
+    .from('laboratory_catalogs')
+    .select('name')
+    .eq('id', id)
+    .eq('catalog_type', tipo)
+    .single();
+  if (currentError) throw currentError;
+
+  const field = tipo === 'categoria_equipo' ? 'category' : 'status';
+  const { count, error: countError } = await client
+    .from('laboratory_equipment')
+    .select('id', { count: 'exact', head: true })
+    .eq(field, current.name as string);
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) throw new Error('No se puede eliminar una opcion que tiene equipos asignados.');
+
+  const { error } = await client.from('laboratory_catalogs').delete().eq('id', id).eq('catalog_type', tipo);
   if (error) throw error;
 }
 
@@ -698,7 +1054,7 @@ export function exportLaboratorioCsv(state: LaboratorioState) {
         .join(','),
     ),
     ...state.equipos.map((item) =>
-      ['EQUIPO', item.updatedAt, item.nombre, item.ubicacion, estadoEquipoLabels[item.estado], item.observaciones]
+      ['EQUIPO', item.updatedAt, item.nombre, item.ubicacion, estadoEquipoLabels[item.estado] ?? item.estado, item.observaciones]
         .map(csvEscape)
         .join(','),
     ),

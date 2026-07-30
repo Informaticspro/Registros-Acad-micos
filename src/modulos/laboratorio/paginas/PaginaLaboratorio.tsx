@@ -10,6 +10,7 @@ import {
   PackageCheck,
   Pencil,
   Save,
+  Settings2,
   Trash2,
   Upload,
   Wrench,
@@ -24,38 +25,50 @@ import {
   PrestamoLaboratorioInput,
   buildLaboratorioReport,
   createBitacoraLaboratorio,
+  createCatalogoLaboratorio,
   createEquipoLaboratorio,
   createFichaTecnicaLaboratorio,
   createPrestamoLaboratorio,
+  createSeccionLaboratorio,
   deleteBitacoraLaboratorio,
+  deleteCatalogoLaboratorio,
   deleteEquipoLaboratorio,
   deleteFichaTecnicaLaboratorio,
   deletePrestamoLaboratorio,
+  deleteSeccionLaboratorio,
   exportLaboratorioCsv,
   importEquiposLaboratorio,
   listLaboratorioData,
   updateBitacoraLaboratorio,
+  updateCatalogoLaboratorio,
   updateEquipoLaboratorio,
   updateFichaTecnicaLaboratorio,
   updatePrestamoLaboratorio,
+  updateSeccionLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import {
   BitacoraLaboratorio,
+  CatalogoLaboratorio,
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
   EstadoTrabajoLaboratorio,
   FichaTecnicaLaboratorio,
   PrestamoLaboratorio,
   PrioridadLaboratorio,
+  SeccionLaboratorio,
 } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { formatDateTime } from '@/utilidades/formato';
 
 type LabTab = 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
+type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
 
 const emptyState: LaboratorioState = {
   fichas: [],
   equipos: [],
+  secciones: [],
+  categoriasEquipo: [],
+  estadosEquipo: [],
   bitacoras: [],
   prestamos: [],
 };
@@ -85,17 +98,7 @@ const caracteristicasBase = ['Tarjeta madre', 'Memoria', 'Procesador', 'Disco du
 
 const inventarioBase = ['Torre', 'Monitor', 'Teclado', 'Mouse', 'UPS', 'Impresora'] as const;
 
-const ubicacionesLaboratorioBase = [
-  'ORD',
-  'Biblioteca',
-  'Laboratorio 1',
-  'Laboratorio 2',
-  'Reparacion',
-  'Deposito',
-  'Seccion de Tecnologia',
-] as const;
-
-const estadoEquipoLabels: Record<EstadoEquipoLaboratorio, string> = {
+const estadoEquipoLabels: Record<string, string> = {
   operativo: 'Operativo',
   en_reparacion: 'En reparacion',
   prestado: 'Prestado',
@@ -132,6 +135,20 @@ function normalizeExcelKey(value: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
+}
+
+function getEstadoEquipoLabel(value: string) {
+  return estadoEquipoLabels[value] ?? value;
+}
+
+function getEstadoEquipoClass(value: string) {
+  const normalized = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+  return normalized || 'personalizado';
 }
 
 function readExcelCell(row: Record<string, unknown>, aliases: string[]) {
@@ -185,6 +202,22 @@ function parseEquipoExcelRow(row: Record<string, unknown>, index: number): Equip
     estado: normalizeEstadoEquipo(readExcelCell(row, ['estado', 'status', 'condicion'])),
     observaciones: readExcelCell(row, ['observaciones', 'observacion', 'notas', 'nota', 'detalle']),
   };
+}
+
+function shouldImportEquipoRow(input: EquipoLaboratorioInput) {
+  const normalizedName = normalizeExcelKey(input.nombre);
+  const normalizedText = normalizeExcelKey(
+    [input.codigo, input.nombre, input.marcaModelo, input.observaciones].join(' '),
+  );
+  const hasLongNoteAsModel = input.marcaModelo.length > 70;
+  const looksLikeNote =
+    normalizedText.includes('nota') &&
+    (normalizedText.includes('ajustesrealizados') ||
+      normalizedText.includes('ordenfisico') ||
+      normalizedText.includes('numeracionsecuencial'));
+  const isGenericEquipmentName = normalizedName === 'computadora' || normalizedName.startsWith('equipo');
+
+  return Boolean(input.codigo && input.nombre) && !looksLikeNote && !(isGenericEquipmentName && hasLongNoteAsModel);
 }
 
 function downloadTextFile(content: string, fileName: string, type = 'text/plain;charset=utf-8') {
@@ -263,6 +296,14 @@ function buildEquipoInput(form: HTMLFormElement): EquipoLaboratorioInput {
   };
 }
 
+function buildSeccionInput(form: HTMLFormElement) {
+  const data = new FormData(form);
+  return {
+    nombre: readString(data, 'nombre'),
+    descripcion: readString(data, 'descripcion'),
+  };
+}
+
 function buildPrestamoInput(form: HTMLFormElement): PrestamoLaboratorioInput {
   const data = new FormData(form);
   const fechaDevolucion = readString(data, 'fechaDevolucion');
@@ -288,9 +329,13 @@ export function PaginaLaboratorio() {
   const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
   const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
+  const [editingSeccion, setEditingSeccion] = useState<SeccionLaboratorio | null>(null);
+  const [editingCategoria, setEditingCategoria] = useState<CatalogoLaboratorio | null>(null);
+  const [editingEstadoEquipo, setEditingEstadoEquipo] = useState<CatalogoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
   const [message, setMessage] = useState<string | null>(null);
@@ -312,16 +357,48 @@ export function PaginaLaboratorio() {
   );
 
   const ubicacionesInventario = useMemo(() => {
+    const catalogLocations = state.secciones
+      .map((item) => item.nombre.trim())
+      .filter((value): value is string => Boolean(value));
     const importedLocations = state.equipos
       .map((item) => item.ubicacion?.trim())
       .filter((value): value is string => Boolean(value));
-    return ['Todas', ...Array.from(new Set([...ubicacionesLaboratorioBase, ...importedLocations]))];
-  }, [state.equipos]);
+    return ['Todas', ...Array.from(new Set([...catalogLocations, ...importedLocations]))];
+  }, [state.equipos, state.secciones]);
 
   const equiposInventarioFiltrados = useMemo(() => {
     if (selectedInventoryLocation === 'Todas') return state.equipos;
     return state.equipos.filter((item) => item.ubicacion === selectedInventoryLocation);
   }, [selectedInventoryLocation, state.equipos]);
+
+  const categoriasEquipo = useMemo(() => {
+    const catalogItems = state.categoriasEquipo
+      .map((item) => item.nombre.trim())
+      .filter((value): value is string => Boolean(value));
+    const importedItems = state.equipos
+      .map((item) => item.categoria?.trim())
+      .filter((value): value is string => Boolean(value));
+    return Array.from(new Set([...catalogItems, ...importedItems]));
+  }, [state.categoriasEquipo, state.equipos]);
+
+  const estadosEquipo = useMemo(() => {
+    const catalogItems = state.estadosEquipo
+      .map((item) => item.nombre.trim())
+      .filter((value): value is string => Boolean(value));
+    const importedItems = state.equipos
+      .map((item) => item.estado?.trim())
+      .filter((value): value is string => Boolean(value));
+    return Array.from(new Set([...catalogItems, ...importedItems]));
+  }, [state.equipos, state.estadosEquipo]);
+
+  const estadoEquipoNombre = useMemo(
+    () =>
+      state.estadosEquipo.reduce<Record<string, string>>((acc, item) => {
+        acc[item.nombre] = item.descripcion || getEstadoEquipoLabel(item.nombre);
+        return acc;
+      }, {}),
+    [state.estadosEquipo],
+  );
 
   async function refresh() {
     setIsLoading(true);
@@ -351,17 +428,18 @@ export function PaginaLaboratorio() {
   }, [message, error]);
 
   useEffect(() => {
-    if (!selectedFicha && !showInventoryModal) return undefined;
+    if (!selectedFicha && !showInventoryModal && !activeCatalogManager) return undefined;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
       setSelectedFicha(null);
       setShowInventoryModal(false);
+      closeCatalogManager();
     }
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [selectedFicha, showInventoryModal]);
+  }, [activeCatalogManager, selectedFicha, showInventoryModal]);
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
@@ -456,6 +534,65 @@ export function PaginaLaboratorio() {
     }
   }
 
+  async function handleSeccionSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = buildSeccionInput(form);
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      if (editingSeccion) {
+        await updateSeccionLaboratorio(editingSeccion.id, input);
+        setEditingSeccion(null);
+        setMessage('Seccion actualizada correctamente.');
+      } else {
+        await createSeccionLaboratorio(input, saveContext);
+        setMessage('Seccion agregada correctamente.');
+        form.reset();
+      }
+
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la seccion.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleCatalogoSubmit(
+    event: FormEvent<HTMLFormElement>,
+    tipo: CatalogoLaboratorio['tipo'],
+    editingItem: CatalogoLaboratorio | null,
+  ) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = buildSeccionInput(form);
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      if (editingItem) {
+        await updateCatalogoLaboratorio(editingItem.id, tipo, input);
+        if (tipo === 'categoria_equipo') setEditingCategoria(null);
+        else setEditingEstadoEquipo(null);
+        setMessage(tipo === 'categoria_equipo' ? 'Categoria actualizada correctamente.' : 'Estado actualizado correctamente.');
+      } else {
+        await createCatalogoLaboratorio(tipo, input, saveContext);
+        setMessage(tipo === 'categoria_equipo' ? 'Categoria agregada correctamente.' : 'Estado agregado correctamente.');
+        form.reset();
+      }
+
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la opcion.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function handlePrestamoSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -502,6 +639,35 @@ export function PaginaLaboratorio() {
     await refresh();
   }
 
+  async function handleDeleteSeccion(item: SeccionLaboratorio) {
+    if (!window.confirm(`Desea eliminar la seccion "${item.nombre}"?`)) return;
+    setError(null);
+    setMessage(null);
+    try {
+      await deleteSeccionLaboratorio(item.id);
+      if (editingSeccion?.id === item.id) setEditingSeccion(null);
+      setMessage('Seccion eliminada correctamente.');
+      await refresh();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la seccion.');
+    }
+  }
+
+  async function handleDeleteCatalogo(item: CatalogoLaboratorio) {
+    if (!window.confirm(`Desea eliminar "${item.nombre}"?`)) return;
+    setError(null);
+    setMessage(null);
+    try {
+      await deleteCatalogoLaboratorio(item.id, item.tipo);
+      if (editingCategoria?.id === item.id) setEditingCategoria(null);
+      if (editingEstadoEquipo?.id === item.id) setEditingEstadoEquipo(null);
+      setMessage('Opcion eliminada correctamente.');
+      await refresh();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la opcion.');
+    }
+  }
+
   async function handleDeletePrestamo(item: PrestamoLaboratorio) {
     if (!window.confirm(`Desea eliminar el prestamo de "${item.equipo}"?`)) return;
     await deletePrestamoLaboratorio(item.id);
@@ -526,7 +692,7 @@ export function PaginaLaboratorio() {
       if (!worksheet) throw new Error('El archivo no tiene hojas disponibles.');
 
       const rows = utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
-      const inputs = rows.map(parseEquipoExcelRow).filter((item) => item.codigo && item.nombre);
+      const inputs = rows.map(parseEquipoExcelRow).filter(shouldImportEquipoRow);
       const result = await importEquiposLaboratorio(inputs, saveContext);
 
       await refresh();
@@ -547,6 +713,13 @@ export function PaginaLaboratorio() {
 
   function exportReport() {
     downloadTextFile(buildLaboratorioReport(state), 'informe-laboratorio.txt');
+  }
+
+  function closeCatalogManager() {
+    setActiveCatalogManager(null);
+    setEditingSeccion(null);
+    setEditingCategoria(null);
+    setEditingEstadoEquipo(null);
   }
 
   return (
@@ -942,6 +1115,7 @@ export function PaginaLaboratorio() {
                 </article>
               </div>
             ) : null}
+
           </div>
         ) : null}
 
@@ -1136,28 +1310,46 @@ export function PaginaLaboratorio() {
                 </label>
               </div>
               <div className="form-grid compact-form-grid">
-                <label>
-                  Categoria
-                  <select name="categoria" defaultValue={editingEquipo?.categoria ?? 'Computadora'} required>
-                    <option>Computadora</option>
-                    <option>Laptop</option>
-                    <option>Monitor</option>
-                    <option>Proyector</option>
-                    <option>Impresora</option>
-                    <option>Redes</option>
-                    <option>Accesorio</option>
-                  </select>
-                </label>
-                <label>
-                  Estado
-                  <select name="estado" defaultValue={editingEquipo?.estado ?? 'operativo'} required>
-                    <option value="operativo">Operativo</option>
-                    <option value="en_reparacion">En reparacion</option>
-                    <option value="prestado">Prestado</option>
-                    <option value="pendiente_revision">Pendiente de revision</option>
-                    <option value="baja">Baja</option>
-                  </select>
-                </label>
+                <div className="catalog-field">
+                  <label>
+                    Categoria
+                    <select name="categoria" defaultValue={editingEquipo?.categoria ?? 'Computadora'} required>
+                      {categoriasEquipo.map((categoria) => (
+                        <option key={categoria} value={categoria}>
+                          {categoria}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    className="icon-button catalog-manage-button"
+                    type="button"
+                    title="Administrar categorias"
+                    onClick={() => setActiveCatalogManager('categorias')}
+                  >
+                    <Settings2 size={16} />
+                  </button>
+                </div>
+                <div className="catalog-field">
+                  <label>
+                    Estado
+                    <select name="estado" defaultValue={editingEquipo?.estado ?? 'operativo'} required>
+                      {estadosEquipo.map((estado) => (
+                        <option key={estado} value={estado}>
+                          {estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    className="icon-button catalog-manage-button"
+                    type="button"
+                    title="Administrar estados"
+                    onClick={() => setActiveCatalogManager('estados')}
+                  >
+                    <Settings2 size={16} />
+                  </button>
+                </div>
               </div>
               <div className="form-grid compact-form-grid">
                 <label>
@@ -1169,18 +1361,28 @@ export function PaginaLaboratorio() {
                   <input name="serie" defaultValue={editingEquipo?.serie} />
                 </label>
               </div>
-              <label>
-                Ubicacion
-                <select name="ubicacion" required defaultValue={editingEquipo?.ubicacion ?? 'Laboratorio 1'}>
-                  {ubicacionesInventario
-                    .filter((ubicacion) => ubicacion !== 'Todas')
-                    .map((ubicacion) => (
-                      <option key={ubicacion} value={ubicacion}>
-                        {ubicacion}
-                      </option>
-                    ))}
-                </select>
-              </label>
+              <div className="catalog-field">
+                <label>
+                  Ubicacion
+                  <select name="ubicacion" required defaultValue={editingEquipo?.ubicacion ?? 'Laboratorio 1'}>
+                    {ubicacionesInventario
+                      .filter((ubicacion) => ubicacion !== 'Todas')
+                      .map((ubicacion) => (
+                        <option key={ubicacion} value={ubicacion}>
+                          {ubicacion}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <button
+                  className="icon-button catalog-manage-button"
+                  type="button"
+                  title="Administrar ubicaciones"
+                  onClick={() => setActiveCatalogManager('secciones')}
+                >
+                  <Settings2 size={16} />
+                </button>
+              </div>
               <label>
                 Observaciones
                 <textarea name="observaciones" rows={4} defaultValue={editingEquipo?.observaciones} />
@@ -1198,15 +1400,18 @@ export function PaginaLaboratorio() {
               </div>
             </form>
 
-            <aside className="lab-inventory-summary-card">
-              <span className="eyebrow">Inventario registrado</span>
-              <strong>{state.equipos.length}</strong>
-              <p>Equipos disponibles en la base de datos del laboratorio.</p>
-              <button className="secondary-button" type="button" onClick={() => setShowInventoryModal(true)}>
-                <Eye size={18} />
-                Ver inventario completo
-              </button>
-            </aside>
+            <div className="lab-inventory-side">
+              <aside className="lab-inventory-summary-card">
+                <span className="eyebrow">Inventario registrado</span>
+                <strong>{state.equipos.length}</strong>
+                <p>Equipos disponibles en la base de datos del laboratorio.</p>
+                <button className="secondary-button" type="button" onClick={() => setShowInventoryModal(true)}>
+                  <Eye size={18} />
+                  Ver inventario completo
+                </button>
+              </aside>
+
+            </div>
 
             {showInventoryModal ? (
               <div className="modal-backdrop lab-inventory-modal-backdrop" role="presentation" onClick={() => setShowInventoryModal(false)}>
@@ -1272,7 +1477,9 @@ export function PaginaLaboratorio() {
                               <span>{item.serie || 'S/N'}</span>
                               <span>{item.ubicacion || 'Sin ubicacion'}</span>
                               <span>
-                                <em className={`inventory-status equipment-${item.estado}`}>{estadoEquipoLabels[item.estado]}</em>
+                                <em className={`inventory-status equipment-${getEstadoEquipoClass(item.estado)}`}>
+                                  {estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}
+                                </em>
                               </span>
                               <span className="row-actions inventory-actions">
                                 <button
@@ -1451,6 +1658,215 @@ export function PaginaLaboratorio() {
             </article>
           </div>
         ) : null}
+
+
+            {activeCatalogManager === 'categorias' ? (
+              <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>
+                <article
+                  className="modal-panel lab-catalog-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-category-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <header className="lab-catalog-modal-header">
+                    <div>
+                      <span className="eyebrow">Categorias</span>
+                      <h2 id="lab-category-title">{editingCategoria ? 'Editar categoria' : 'Agregar categoria'}</h2>
+                    </div>
+                    <button className="secondary-button" type="button" onClick={closeCatalogManager}>
+                      Cerrar
+                    </button>
+                  </header>
+                  <form
+                    className="stack-form"
+                    onSubmit={(event) => void handleCatalogoSubmit(event, 'categoria_equipo', editingCategoria)}
+                    key={editingCategoria?.id ?? 'new-category-modal'}
+                  >
+                    <div className="form-grid compact-form-grid">
+                      <label>
+                        Nombre
+                        <input name="nombre" required placeholder="Ej. Tablet" defaultValue={editingCategoria?.nombre} />
+                      </label>
+                      <label>
+                        Descripcion
+                        <input name="descripcion" placeholder="Opcional" defaultValue={editingCategoria?.descripcion} />
+                      </label>
+                    </div>
+                    <div className="page-actions">
+                      <button className="primary-button" type="submit" disabled={isSaving}>
+                        <Save size={18} />
+                        {editingCategoria ? 'Actualizar categoria' : 'Guardar categoria'}
+                      </button>
+                      {editingCategoria ? (
+                        <button className="secondary-button" type="button" onClick={() => setEditingCategoria(null)}>
+                          Cancelar
+                        </button>
+                      ) : null}
+                    </div>
+                  </form>
+                  <div className="lab-section-list">
+                    {state.categoriasEquipo.map((categoria) => (
+                      <article key={categoria.id}>
+                        <div>
+                          <strong>{categoria.nombre}</strong>
+                          {categoria.descripcion ? <small>{categoria.descripcion}</small> : null}
+                        </div>
+                        <span>{state.equipos.filter((equipo) => equipo.categoria === categoria.nombre).length}</span>
+                        <button className="icon-button" type="button" title="Editar categoria" onClick={() => setEditingCategoria(categoria)}>
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          className="icon-button danger-button"
+                          type="button"
+                          title="Eliminar categoria"
+                          onClick={() => void handleDeleteCatalogo(categoria)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </article>
+              </div>
+            ) : null}
+
+            {activeCatalogManager === 'estados' ? (
+              <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>
+                <article
+                  className="modal-panel lab-catalog-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-status-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <header className="lab-catalog-modal-header">
+                    <div>
+                      <span className="eyebrow">Estados</span>
+                      <h2 id="lab-status-title">{editingEstadoEquipo ? 'Editar estado' : 'Agregar estado'}</h2>
+                    </div>
+                    <button className="secondary-button" type="button" onClick={closeCatalogManager}>
+                      Cerrar
+                    </button>
+                  </header>
+                  <form
+                    className="stack-form"
+                    onSubmit={(event) => void handleCatalogoSubmit(event, 'estado_equipo', editingEstadoEquipo)}
+                    key={editingEstadoEquipo?.id ?? 'new-status-modal'}
+                  >
+                    <div className="form-grid compact-form-grid">
+                      <label>
+                        Valor interno
+                        <input name="nombre" required placeholder="Ej. mantenimiento_preventivo" defaultValue={editingEstadoEquipo?.nombre} />
+                      </label>
+                      <label>
+                        Nombre visible
+                        <input name="descripcion" placeholder="Ej. Mantenimiento preventivo" defaultValue={editingEstadoEquipo?.descripcion} />
+                      </label>
+                    </div>
+                    <div className="page-actions">
+                      <button className="primary-button" type="submit" disabled={isSaving}>
+                        <Save size={18} />
+                        {editingEstadoEquipo ? 'Actualizar estado' : 'Guardar estado'}
+                      </button>
+                      {editingEstadoEquipo ? (
+                        <button className="secondary-button" type="button" onClick={() => setEditingEstadoEquipo(null)}>
+                          Cancelar
+                        </button>
+                      ) : null}
+                    </div>
+                  </form>
+                  <div className="lab-section-list">
+                    {state.estadosEquipo.map((estado) => (
+                      <article key={estado.id}>
+                        <div>
+                          <strong>{estado.descripcion || getEstadoEquipoLabel(estado.nombre)}</strong>
+                          <small>{estado.nombre}</small>
+                        </div>
+                        <span>{state.equipos.filter((equipo) => equipo.estado === estado.nombre).length}</span>
+                        <button className="icon-button" type="button" title="Editar estado" onClick={() => setEditingEstadoEquipo(estado)}>
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          className="icon-button danger-button"
+                          type="button"
+                          title="Eliminar estado"
+                          onClick={() => void handleDeleteCatalogo(estado)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </article>
+              </div>
+            ) : null}
+            {activeCatalogManager === 'secciones' ? (
+              <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>
+                <article
+                  className="modal-panel lab-catalog-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-catalog-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <header className="lab-catalog-modal-header">
+                    <div>
+                      <span className="eyebrow">Ubicaciones</span>
+                      <h2 id="lab-catalog-title">{editingSeccion ? 'Editar ubicacion' : 'Agregar ubicacion'}</h2>
+                    </div>
+                    <button className="secondary-button" type="button" onClick={closeCatalogManager}>
+                      Cerrar
+                    </button>
+                  </header>
+                  <form className="stack-form" onSubmit={handleSeccionSubmit} key={editingSeccion?.id ?? 'new-section-modal'}>
+                    <div className="form-grid compact-form-grid">
+                      <label>
+                        Nombre
+                        <input name="nombre" required placeholder="Ej. Decanato" defaultValue={editingSeccion?.nombre} />
+                      </label>
+                      <label>
+                        Descripcion
+                        <input name="descripcion" placeholder="Opcional" defaultValue={editingSeccion?.descripcion} />
+                      </label>
+                    </div>
+                    <div className="page-actions">
+                      <button className="primary-button" type="submit" disabled={isSaving}>
+                        <Save size={18} />
+                        {editingSeccion ? 'Actualizar ubicacion' : 'Guardar ubicacion'}
+                      </button>
+                      {editingSeccion ? (
+                        <button className="secondary-button" type="button" onClick={() => setEditingSeccion(null)}>
+                          Cancelar
+                        </button>
+                      ) : null}
+                    </div>
+                  </form>
+                  <div className="lab-section-list">
+                    {state.secciones.map((seccion) => (
+                      <article key={seccion.id}>
+                        <div>
+                          <strong>{seccion.nombre}</strong>
+                          {seccion.descripcion ? <small>{seccion.descripcion}</small> : null}
+                        </div>
+                        <span>{state.equipos.filter((equipo) => equipo.ubicacion === seccion.nombre).length}</span>
+                        <button className="icon-button" type="button" title="Editar ubicacion" onClick={() => setEditingSeccion(seccion)}>
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          className="icon-button danger-button"
+                          type="button"
+                          title="Eliminar ubicacion"
+                          onClick={() => void handleDeleteSeccion(seccion)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </article>
+              </div>
+            ) : null}
       </section>
     </div>
   );

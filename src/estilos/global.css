@@ -1311,9 +1311,9 @@ textarea {
   min-width: 320px;
   overflow: auto;
   display: grid;
-  gap: 22px;
+  gap: 14px;
   align-content: start;
-  padding: 24px;
+  padding: 18px 22px;
   background:
     linear-gradient(140deg, rgba(243, 189, 34, 0.1), transparent 34%),
     radial-gradient(circle at top right, rgba(121, 183, 53, 0.16), transparent 30%),
@@ -1324,8 +1324,8 @@ textarea {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(360px, 0.75fr);
   align-items: center;
-  gap: 18px;
-  padding: 18px;
+  gap: 14px;
+  padding: 14px 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(18, 24, 33, 0.92);
@@ -1341,8 +1341,8 @@ textarea {
 }
 
 .lab-workspace-title h1 {
-  margin-bottom: 8px;
-  font-size: clamp(2rem, 4vw, 3.1rem);
+  margin-bottom: 6px;
+  font-size: clamp(1.85rem, 3.2vw, 2.6rem);
   line-height: 1;
 }
 
@@ -1352,7 +1352,7 @@ textarea {
 }
 
 .lab-workspace-badge {
-  min-height: 44px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1370,7 +1370,7 @@ textarea {
 .lab-header-side {
   min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   justify-items: end;
 }
 
@@ -1387,7 +1387,7 @@ textarea {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 7px;
-  padding: 10px;
+  padding: 8px 10px;
   border: 1px solid rgba(168, 180, 195, 0.18);
   border-radius: var(--radius);
   background: rgba(15, 21, 29, 0.72);
@@ -1420,18 +1420,19 @@ textarea {
 
 .lab-shell {
   display: grid;
-  gap: 20px;
+  gap: 14px;
+  padding: 16px 20px 18px;
 }
 
 .lab-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .lab-tabs button {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 13px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-deep);
@@ -1489,7 +1490,7 @@ textarea {
 .lab-grid {
   display: grid;
   grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
-  gap: 18px;
+  gap: 14px;
   align-items: start;
 }
 
@@ -1500,7 +1501,7 @@ textarea {
 .lab-form,
 .lab-list,
 .lab-report-card {
-  padding: 18px;
+  padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-deep);
@@ -1517,8 +1518,8 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 18px;
+  gap: 14px;
+  padding: 14px 18px;
   border: 1px solid rgba(243, 189, 34, 0.32);
   border-radius: var(--radius);
   background:
@@ -1527,7 +1528,7 @@ textarea {
 }
 
 .lab-import-panel p {
-  margin-top: 6px;
+  margin-top: 4px;
   max-width: 840px;
   color: var(--muted);
 }
@@ -1536,6 +1537,11 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.lab-import-panel h2 {
+  margin-bottom: 0;
+  font-size: 1.35rem;
 }
 
 .lab-file-button {
@@ -1553,12 +1559,27 @@ textarea {
   pointer-events: none;
 }
 
+.catalog-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: end;
+  gap: 8px;
+}
+
+.catalog-field label {
+  min-width: 0;
+}
+
+.catalog-manage-button {
+  margin-bottom: 0;
+}
+
 .lab-inventory-summary-card {
   display: grid;
-  align-content: center;
-  gap: 12px;
-  min-height: 280px;
-  padding: 22px;
+  align-content: start;
+  gap: 10px;
+  min-height: 190px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
@@ -1568,13 +1589,110 @@ textarea {
 
 .lab-inventory-summary-card strong {
   color: var(--text);
-  font-size: 3.1rem;
+  font-size: 2.65rem;
   line-height: 1;
 }
 
 .lab-inventory-summary-card p {
   margin: 0;
   color: var(--muted);
+}
+
+.lab-inventory-side {
+  grid-column: 2;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}
+
+.lab-section-manager {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+}
+
+.lab-section-manager h2 {
+  margin-bottom: 0;
+  font-size: 1.25rem;
+}
+
+.lab-section-list {
+  display: grid;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.lab-section-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lab-section-list article:last-child {
+  border-bottom: 0;
+}
+
+.lab-section-list article > div {
+  display: grid;
+  min-width: 0;
+}
+
+.lab-section-list strong,
+.lab-section-list small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lab-section-list small {
+  color: var(--muted);
+}
+
+.lab-section-list article > span {
+  min-width: 28px;
+  min-height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(121, 183, 53, 0.14);
+  color: var(--green);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.modal-panel.lab-catalog-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  background: var(--surface-deep);
+}
+
+.lab-catalog-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.lab-catalog-modal-header h2 {
+  margin-bottom: 0;
+}
+
+.lab-catalog-modal .lab-section-list {
+  max-height: min(360px, 42vh);
 }
 
 .modal-panel.lab-inventory-modal {
@@ -3122,10 +3240,25 @@ textarea {
     padding: 16px;
   }
 
+  .modal-panel.lab-catalog-modal {
+    width: calc(100vw - 28px);
+    max-height: calc(100vh - 28px);
+    padding: 16px;
+  }
+
+  .lab-catalog-modal-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .lab-toast {
     right: 14px;
     bottom: 14px;
     width: calc(100vw - 28px);
+  }
+
+  .lab-inventory-side {
+    grid-column: auto;
   }
 
   .lab-sheet-preview-header {
