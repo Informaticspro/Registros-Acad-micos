@@ -25,7 +25,6 @@ const navItems = [
   { to: '/dashboard', label: 'Panel de control', icon: LayoutDashboard },
   { to: '/eventos', label: 'Eventos', icon: CalendarDays },
   { to: '/participantes', label: 'Participantes', icon: Users },
-  { to: '/laboratorio', label: 'Laboratorio', icon: HardHat },
   { to: '/asistencia/escanear', label: 'Escanear QR', icon: QrCode },
   { to: '/certificados', label: 'Certificados', icon: ClipboardCheck },
   { to: '/exportaciones', label: 'Exportaciones', icon: FileSpreadsheet },
@@ -34,6 +33,7 @@ const navItems = [
 ];
 
 const adminNavItem = { to: '/usuarios', label: 'Usuarios', icon: UserCog };
+const supportNavItem = { to: '/laboratorio', label: 'Soporte tecnico', icon: HardHat };
 
 export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateralProps) {
   const { profile } = useAutenticacion();
@@ -41,7 +41,7 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
     profile?.role === 'scanner'
       ? navItems.filter((item) => item.to === '/asistencia/escanear')
       : profile?.role === 'soporte'
-        ? navItems.filter((item) => item.to === '/laboratorio')
+        ? [supportNavItem]
       : profile?.role === 'admin' || profile?.role === 'propietario'
         ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)]
         : navItems;

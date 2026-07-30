@@ -249,6 +249,31 @@ textarea {
   flex: 0 0 auto;
 }
 
+.lab-entry-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 15px;
+  border: 1px solid rgba(243, 189, 34, 0.5);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(243, 189, 34, 0.22), rgba(121, 183, 53, 0.18));
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 10px 26px rgba(243, 189, 34, 0.1);
+}
+
+.lab-entry-button svg {
+  color: var(--gold);
+}
+
+.lab-entry-button:hover {
+  border-color: rgba(243, 189, 34, 0.78);
+  background: linear-gradient(135deg, rgba(243, 189, 34, 0.32), rgba(121, 183, 53, 0.24));
+}
+
 .global-search {
   position: relative;
   width: min(520px, 100%);
@@ -1227,6 +1252,68 @@ textarea {
   color: var(--danger);
 }
 
+.lab-workspace {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  min-width: 320px;
+  overflow: auto;
+  display: grid;
+  gap: 22px;
+  align-content: start;
+  padding: 24px;
+  background:
+    linear-gradient(140deg, rgba(243, 189, 34, 0.1), transparent 34%),
+    radial-gradient(circle at top right, rgba(121, 183, 53, 0.16), transparent 30%),
+    var(--bg);
+}
+
+.lab-workspace-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(18, 24, 33, 0.92);
+  backdrop-filter: blur(14px);
+}
+
+:root[data-theme='light'] .lab-workspace-header {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.lab-workspace-title {
+  min-width: 0;
+}
+
+.lab-workspace-title h1 {
+  margin-bottom: 8px;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 1;
+}
+
+.lab-workspace-title p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lab-workspace-badge {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid rgba(121, 183, 53, 0.42);
+  border-radius: var(--radius);
+  background: rgba(121, 183, 53, 0.14);
+  color: var(--accent);
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .lab-shell {
   display: grid;
   gap: 20px;
@@ -2056,11 +2143,22 @@ textarea {
     top: 0;
     height: 66px;
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: 44px 44px minmax(0, 1fr) auto;
     align-items: center;
     padding: 12px 14px;
     gap: 10px;
     z-index: 30;
+  }
+
+  .lab-entry-button {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .lab-entry-button span {
+    display: none;
   }
 
   .search-box {
@@ -2450,6 +2548,29 @@ textarea {
 
   .lab-record-header {
     flex-direction: column;
+  }
+
+  .lab-workspace {
+    padding: 14px;
+    gap: 16px;
+  }
+
+  .lab-workspace-header {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .lab-workspace-header .secondary-button {
+    width: 100%;
+  }
+
+  .lab-workspace-badge {
+    justify-content: center;
+  }
+
+  .lab-workspace-title h1 {
+    font-size: 2rem;
   }
 
   .lab-tabs {

@@ -1,5 +1,17 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Bell, CalendarDays, ClipboardCheck, KeyRound, LogOut, Menu, Moon, Search, Sun, Users } from 'lucide-react';
+import {
+  Bell,
+  CalendarDays,
+  ClipboardCheck,
+  HardHat,
+  KeyRound,
+  LogOut,
+  Menu,
+  Moon,
+  Search,
+  Sun,
+  Users,
+} from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { buscarGlobal, ResultadoBusqueda } from '@/servicios/busqueda.servicio';
@@ -117,12 +129,19 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
   }
 
   const isLightTheme = theme === 'light';
+  const canAccessLab = profile?.role === 'propietario' || profile?.role === 'admin' || profile?.role === 'soporte';
 
   return (
     <header className="topbar">
       <button className="icon-button menu-button" type="button" aria-label="Mostrar u ocultar menu" onClick={onToggleMenu}>
         <Menu size={19} />
       </button>
+      {canAccessLab ? (
+        <button className="lab-entry-button" type="button" onClick={() => navigate('/laboratorio')}>
+          <HardHat size={18} />
+          <span>Soporte tecnico</span>
+        </button>
+      ) : null}
       <form className="global-search" onSubmit={handleSearchSubmit} ref={searchRef}>
         <div className="search-box">
           <Search size={18} />

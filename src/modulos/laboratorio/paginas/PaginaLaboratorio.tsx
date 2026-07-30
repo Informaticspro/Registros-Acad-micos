@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
+  ArrowLeft,
   ClipboardList,
   Download,
   HardDrive,
@@ -10,7 +11,7 @@ import {
   Trash2,
   Wrench,
 } from 'lucide-react';
-import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
+import { useNavigate } from 'react-router-dom';
 import { TarjetaEstadistica } from '@/componentes/interfaz/TarjetaEstadistica';
 import {
   BitacoraLaboratorioInput,
@@ -146,6 +147,7 @@ function buildPrestamoInput(form: HTMLFormElement): PrestamoLaboratorioInput {
 }
 
 export function PaginaLaboratorio() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<LabTab>('bitacoras');
   const [state, setState] = useState<LaboratorioState>(emptyState);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
@@ -248,12 +250,22 @@ export function PaginaLaboratorio() {
   }
 
   return (
-    <div className="page-stack">
-      <PageEncabezado
-        eyebrow="Gestion interna"
-        title="Laboratorio de informatica"
-        description="Bitacoras tecnicas, inventario, evidencias, prestamos e informes del area de soporte."
-      />
+    <div className="lab-workspace">
+      <header className="lab-workspace-header">
+        <button className="secondary-button" type="button" onClick={() => navigate('/dashboard')}>
+          <ArrowLeft size={18} />
+          Volver al sistema
+        </button>
+        <div className="lab-workspace-title">
+          <span className="eyebrow">Area exclusiva de soporte</span>
+          <h1>Mantenimiento tecnico</h1>
+          <p>Bitacoras, inventario, evidencias, prestamos e informes del laboratorio de informatica.</p>
+        </div>
+        <div className="lab-workspace-badge">
+          <Wrench size={18} />
+          Modo tecnico
+        </div>
+      </header>
 
       <section className="stats-grid">
         <TarjetaEstadistica
