@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
+  CheckCircle2,
   ClipboardList,
   Download,
   Eye,
@@ -12,6 +13,7 @@ import {
   Trash2,
   Upload,
   Wrench,
+  XCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -82,6 +84,16 @@ const aplicacionesBase = [
 const caracteristicasBase = ['Tarjeta madre', 'Memoria', 'Procesador', 'Disco duro', 'Sistema operativo'] as const;
 
 const inventarioBase = ['Torre', 'Monitor', 'Teclado', 'Mouse', 'UPS', 'Impresora'] as const;
+
+const ubicacionesLaboratorioBase = [
+  'ORD',
+  'Biblioteca',
+  'Laboratorio 1',
+  'Laboratorio 2',
+  'Reparacion',
+  'Deposito',
+  'Seccion de Tecnologia',
+] as const;
 
 const estadoEquipoLabels: Record<EstadoEquipoLaboratorio, string> = {
   operativo: 'Operativo',
@@ -280,6 +292,7 @@ export function PaginaLaboratorio() {
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
+  const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -298,6 +311,18 @@ export function PaginaLaboratorio() {
     [selectedEquipoFichaId, state.equipos],
   );
 
+  const ubicacionesInventario = useMemo(() => {
+    const importedLocations = state.equipos
+      .map((item) => item.ubicacion?.trim())
+      .filter((value): value is string => Boolean(value));
+    return ['Todas', ...Array.from(new Set([...ubicacionesLaboratorioBase, ...importedLocations]))];
+  }, [state.equipos]);
+
+  const equiposInventarioFiltrados = useMemo(() => {
+    if (selectedInventoryLocation === 'Todas') return state.equipos;
+    return state.equipos.filter((item) => item.ubicacion === selectedInventoryLocation);
+  }, [selectedInventoryLocation, state.equipos]);
+
   async function refresh() {
     setIsLoading(true);
     setError(null);
@@ -313,6 +338,17 @@ export function PaginaLaboratorio() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  useEffect(() => {
+    if (!message && !error) return undefined;
+
+    const timeout = window.setTimeout(() => {
+      setMessage(null);
+      setError(null);
+    }, 4500);
+
+    return () => window.clearTimeout(timeout);
+  }, [message, error]);
 
   useEffect(() => {
     if (!selectedFicha && !showInventoryModal) return undefined;
@@ -343,6 +379,7 @@ export function PaginaLaboratorio() {
 
     setIsSaving(true);
     setError(null);
+    setMessage(null);
     try {
       if (editingFicha) {
         const updated = await updateFichaTecnicaLaboratorio(editingFicha.id, input);
@@ -372,6 +409,7 @@ export function PaginaLaboratorio() {
 
     setIsSaving(true);
     setError(null);
+    setMessage(null);
     try {
       if (editingBitacora) {
         await updateBitacoraLaboratorio(editingBitacora.id, input);
@@ -398,6 +436,7 @@ export function PaginaLaboratorio() {
 
     setIsSaving(true);
     setError(null);
+    setMessage(null);
     try {
       if (editingEquipo) {
         await updateEquipoLaboratorio(editingEquipo.id, input);
@@ -424,6 +463,7 @@ export function PaginaLaboratorio() {
 
     setIsSaving(true);
     setError(null);
+    setMessage(null);
     try {
       if (editingPrestamo) {
         await updatePrestamoLaboratorio(editingPrestamo.id, input);
@@ -565,8 +605,12 @@ export function PaginaLaboratorio() {
           ))}
         </div>
 
-        {message ? <p className="form-hint">{message}</p> : null}
-        {error ? <p className="form-error">{error}</p> : null}
+        {message || error ? (
+          <div className={`lab-toast ${error ? 'error' : 'success'}`} role="status" aria-live="polite">
+            {error ? <XCircle size={20} /> : <CheckCircle2 size={20} />}
+            <span>{error ?? message}</span>
+          </div>
+        ) : null}
         {isLoading ? <p className="form-hint">Cargando informacion del laboratorio...</p> : null}
 
         {activeTab === 'fichas' ? (
@@ -1127,7 +1171,15 @@ export function PaginaLaboratorio() {
               </div>
               <label>
                 Ubicacion
-                <input name="ubicacion" required placeholder="Laboratorio 1, reparacion, deposito..." defaultValue={editingEquipo?.ubicacion} />
+                <select name="ubicacion" required defaultValue={editingEquipo?.ubicacion ?? 'Laboratorio 1'}>
+                  {ubicacionesInventario
+                    .filter((ubicacion) => ubicacion !== 'Todas')
+                    .map((ubicacion) => (
+                      <option key={ubicacion} value={ubicacion}>
+                        {ubicacion}
+                      </option>
+                    ))}
+                </select>
               </label>
               <label>
                 Observaciones
@@ -1171,6 +1223,23 @@ export function PaginaLaboratorio() {
                     <h2 id="lab-inventory-title">Inventario de la facultad</h2>
                     <small>{new Date().toLocaleDateString('es-PA')}</small>
                   </div>
+                  <div className="lab-inventory-filter" aria-label="Filtrar inventario por ubicacion">
+                    {ubicacionesInventario.map((ubicacion) => (
+                      <button
+                        className={selectedInventoryLocation === ubicacion ? 'active' : ''}
+                        key={ubicacion}
+                        type="button"
+                        onClick={() => setSelectedInventoryLocation(ubicacion)}
+                      >
+                        {ubicacion}
+                        <span>
+                          {ubicacion === 'Todas'
+                            ? state.equipos.length
+                            : state.equipos.filter((item) => item.ubicacion === ubicacion).length}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                   {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
                   {state.equipos.length > 0 ? (
                     <div className="lab-inventory-table-wrap">
@@ -1186,7 +1255,12 @@ export function PaginaLaboratorio() {
                           <span>Estado</span>
                           <span>Acciones</span>
                         </div>
-                        {state.equipos.map((item, index) => {
+                        {equiposInventarioFiltrados.length === 0 ? (
+                          <div className="lab-inventory-row lab-inventory-empty-row">
+                            <span>No hay equipos registrados en esta ubicacion.</span>
+                          </div>
+                        ) : null}
+                        {equiposInventarioFiltrados.map((item, index) => {
                           const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
                           return (
                             <div className="lab-inventory-row" key={item.id}>
