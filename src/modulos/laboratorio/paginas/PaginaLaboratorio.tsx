@@ -60,7 +60,7 @@ import {
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { formatDateTime } from '@/utilidades/formato';
 
-type LabTab = 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
+type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
 type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
 
 const emptyState: LaboratorioState = {
@@ -74,6 +74,7 @@ const emptyState: LaboratorioState = {
 };
 
 const tabLabels: Record<LabTab, string> = {
+  inicio: 'Inicio',
   fichas: 'Ficha tecnica',
   bitacoras: 'Bitacoras',
   inventario: 'Inventario',
@@ -324,7 +325,7 @@ function buildPrestamoInput(form: HTMLFormElement): PrestamoLaboratorioInput {
 export function PaginaLaboratorio() {
   const navigate = useNavigate();
   const { profile } = useAutenticacion();
-  const [activeTab, setActiveTab] = useState<LabTab>('fichas');
+  const [activeTab, setActiveTab] = useState<LabTab>('inicio');
   const [state, setState] = useState<LaboratorioState>(emptyState);
   const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
@@ -449,6 +450,37 @@ export function PaginaLaboratorio() {
 
     return { trabajosAbiertos, equiposPendientes, prestamosActivos, evidencias };
   }, [state]);
+
+  const actividadReciente = useMemo(() => {
+    const bitacoras = state.bitacoras.map((item) => ({
+      id: `bitacora-${item.id}`,
+      fecha: item.fecha,
+      tipo: 'Bitacora',
+      titulo: item.titulo,
+      detalle: `${item.responsable || 'Sin responsable'} | ${estadoTrabajoLabels[item.estado]}`,
+      tab: 'bitacoras' as LabTab,
+    }));
+    const fichas = state.fichas.map((item) => ({
+      id: `ficha-${item.id}`,
+      fecha: item.updatedAt,
+      tipo: 'Ficha tecnica',
+      titulo: item.pc,
+      detalle: `${item.ubicacion || 'Sin ubicacion'} | ${item.responsable || 'Sin responsable'}`,
+      tab: 'fichas' as LabTab,
+    }));
+    const prestamos = state.prestamos.map((item) => ({
+      id: `prestamo-${item.id}`,
+      fecha: item.fechaPrestamo,
+      tipo: 'Prestamo',
+      titulo: item.equipo,
+      detalle: `${item.entregadoA} | ${item.estado}`,
+      tab: 'prestamos' as LabTab,
+    }));
+
+    return [...bitacoras, ...fichas, ...prestamos]
+      .sort((first, second) => second.fecha.localeCompare(first.fecha))
+      .slice(0, 8);
+  }, [state.bitacoras, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -785,6 +817,80 @@ export function PaginaLaboratorio() {
           </div>
         ) : null}
         {isLoading ? <p className="form-hint">Cargando informacion del laboratorio...</p> : null}
+
+        {activeTab === 'inicio' ? (
+          <div className="lab-home">
+            <section className="lab-home-panel lab-home-hero">
+              <div>
+                <span className="eyebrow">Inicio tecnico</span>
+                <h2>Centro de operaciones del laboratorio</h2>
+                <p>
+                  Revise el movimiento reciente y elija la tarea que desea realizar sin entrar directo a un formulario.
+                </p>
+              </div>
+              <div className="lab-home-actions">
+                <button className="primary-button" type="button" onClick={() => setActiveTab('bitacoras')}>
+                  <Wrench size={18} />
+                  Nueva bitacora
+                </button>
+                <button className="secondary-button" type="button" onClick={() => setActiveTab('fichas')}>
+                  <ClipboardList size={18} />
+                  Ficha tecnica
+                </button>
+                <button className="secondary-button" type="button" onClick={() => setActiveTab('inventario')}>
+                  <HardDrive size={18} />
+                  Inventario
+                </button>
+              </div>
+            </section>
+
+            <section className="lab-home-metrics">
+              <button type="button" onClick={() => setActiveTab('bitacoras')}>
+                <span>Trabajos abiertos</span>
+                <strong>{indicadores.trabajosAbiertos}</strong>
+                <small>Bitacoras pendientes o en proceso</small>
+              </button>
+              <button type="button" onClick={() => setActiveTab('inventario')}>
+                <span>Equipos registrados</span>
+                <strong>{state.equipos.length}</strong>
+                <small>Inventario total del laboratorio</small>
+              </button>
+              <button type="button" onClick={() => setActiveTab('prestamos')}>
+                <span>Prestamos activos</span>
+                <strong>{indicadores.prestamosActivos}</strong>
+                <small>Dispositivos por devolver</small>
+              </button>
+              <button type="button" onClick={() => setActiveTab('fichas')}>
+                <span>Fichas tecnicas</span>
+                <strong>{state.fichas.length}</strong>
+                <small>Registros de mantenimiento</small>
+              </button>
+            </section>
+
+            <section className="lab-home-panel lab-recent-activity">
+              <div className="lab-home-section-header">
+                <div>
+                  <span className="eyebrow">Actividad reciente</span>
+                  <h2>Ultimas acciones registradas</h2>
+                </div>
+                <small>Maximo 8 registros</small>
+              </div>
+              {actividadReciente.length === 0 ? (
+                <p className="form-hint">Todavia no hay acciones recientes registradas.</p>
+              ) : null}
+              <div className="lab-activity-list">
+                {actividadReciente.map((item) => (
+                  <button type="button" key={item.id} onClick={() => setActiveTab(item.tab)}>
+                    <span>{item.tipo}</span>
+                    <strong>{item.titulo}</strong>
+                    <small>{item.detalle}</small>
+                    <time>{formatDateTime(item.fecha)}</time>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        ) : null}
 
         {activeTab === 'fichas' ? (
           <div className="lab-grid lab-grid-wide">
