@@ -11,7 +11,9 @@ export function GuardaRol({ roles, children }: GuardaRolProps) {
   const { profile } = useAutenticacion();
 
   if (!profile || !roles.includes(profile.role)) {
-    return <Navigate to={profile?.role === 'scanner' ? '/asistencia/escanear' : '/dashboard'} replace />;
+    const target =
+      profile?.role === 'scanner' ? '/asistencia/escanear' : profile?.role === 'soporte' ? '/laboratorio' : '/dashboard';
+    return <Navigate to={target} replace />;
   }
 
   return children;

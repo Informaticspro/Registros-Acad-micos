@@ -1,4 +1,4 @@
-export type RolAplicacion = 'propietario' | 'admin' | 'organizador' | 'scanner';
+export type RolAplicacion = 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte';
 
 export type EstadoEvento = 'draft' | 'published' | 'active' | 'closed' | 'archived';
 
@@ -56,4 +56,60 @@ export type RegistroAsistencia = {
   scannedBy: string;
   status: EstadoAsistencia;
   checkedInAt: string;
+};
+
+export type EstadoEquipoLaboratorio =
+  | 'operativo'
+  | 'en_reparacion'
+  | 'prestado'
+  | 'baja'
+  | 'pendiente_revision';
+
+export type PrioridadLaboratorio = 'baja' | 'media' | 'alta' | 'critica';
+
+export type EstadoTrabajoLaboratorio = 'pendiente' | 'en_proceso' | 'resuelto' | 'cerrado';
+
+export type EquipoLaboratorio = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  categoria: string;
+  marcaModelo: string;
+  serie: string;
+  ubicacion: string;
+  estado: EstadoEquipoLaboratorio;
+  observaciones: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BitacoraLaboratorio = {
+  id: string;
+  fecha: string;
+  tipoTrabajo: string;
+  titulo: string;
+  descripcion: string;
+  responsable: string;
+  prioridad: PrioridadLaboratorio;
+  estado: EstadoTrabajoLaboratorio;
+  equipoOrigen: string;
+  equipoDestino: string;
+  ubicacion: string;
+  evidenciaTitulo: string;
+  evidenciaUrl: string;
+  createdAt: string;
+};
+
+export type PrestamoLaboratorio = {
+  id: string;
+  equipo: string;
+  entregadoA: string;
+  tipoBeneficiario: 'estudiante' | 'docente' | 'administrativo' | 'externo';
+  documento: string;
+  responsableEntrega: string;
+  fechaPrestamo: string;
+  fechaDevolucion: string | null;
+  estado: 'activo' | 'devuelto' | 'vencido';
+  observaciones: string;
+  createdAt: string;
 };

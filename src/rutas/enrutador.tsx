@@ -20,6 +20,7 @@ import { PaginaExportaciones } from '@/modulos/exportaciones/paginas/PaginaExpor
 import { PaginaHistorial } from '@/modulos/historial/paginas/PaginaHistorial';
 import { PaginaUsuarios } from '@/modulos/administracion/paginas/PaginaUsuarios';
 import { PaginaMiCuenta } from '@/modulos/autenticacion/paginas/PaginaMiCuenta';
+import { PaginaLaboratorio } from '@/modulos/laboratorio/paginas/PaginaLaboratorio';
 import { PaginaNoEncontrada } from '@/paginas/PaginaNoEncontrada';
 
 export const enrutador = createBrowserRouter([
@@ -89,6 +90,14 @@ export const enrutador = createBrowserRouter([
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
             <PaginaParticipantes />
+          </GuardaRol>
+        ),
+      },
+      {
+        path: '/laboratorio',
+        element: (
+          <GuardaRol roles={['propietario', 'admin', 'soporte']}>
+            <PaginaLaboratorio />
           </GuardaRol>
         ),
       },

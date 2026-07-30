@@ -17,6 +17,7 @@ const roleLabels: Record<RolAplicacion, string> = {
   admin: 'Administrador',
   organizador: 'Organizador',
   scanner: 'Escaner',
+  soporte: 'Soporte',
 };
 
 function readForm(form: HTMLFormElement) {
@@ -177,6 +178,7 @@ export function PaginaUsuarios() {
             <option value="admin">Administrador</option>
             <option value="organizador">Organizador</option>
             <option value="scanner">Escaner</option>
+            <option value="soporte">Soporte laboratorio</option>
           </select>
         </label>
         <p className="form-hint full-field">
@@ -206,6 +208,7 @@ export function PaginaUsuarios() {
                   <option value="admin">Administrador</option>
                   <option value="organizador">Organizador</option>
                   <option value="scanner">Escaner</option>
+                  <option value="soporte">Soporte laboratorio</option>
                 </select>
                 <button className="icon-button" type="submit" aria-label="Guardar usuario" disabled={isSaving}>
                   <Save size={18} />

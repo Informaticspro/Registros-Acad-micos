@@ -1195,6 +1195,190 @@ textarea {
   color: #c9b8ff;
 }
 
+.priority-baja,
+.equipment-operativo,
+.loan-devuelto {
+  background: rgba(121, 183, 53, 0.16);
+  border-color: rgba(121, 183, 53, 0.42);
+  color: var(--accent);
+}
+
+.priority-media,
+.equipment-pendiente_revision,
+.loan-activo {
+  background: rgba(243, 189, 34, 0.16);
+  border-color: rgba(243, 189, 34, 0.42);
+  color: var(--gold);
+}
+
+.priority-alta,
+.equipment-en_reparacion,
+.equipment-prestado,
+.loan-vencido {
+  background: rgba(43, 103, 199, 0.16);
+  border-color: rgba(43, 103, 199, 0.42);
+  color: #9fc2ff;
+}
+
+.priority-critica,
+.equipment-baja {
+  background: rgba(255, 107, 107, 0.16);
+  border-color: rgba(255, 107, 107, 0.42);
+  color: var(--danger);
+}
+
+.lab-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.lab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lab-tabs button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.lab-tabs button.active,
+.lab-tabs button:hover {
+  border-color: rgba(243, 189, 34, 0.48);
+  background: var(--surface-soft);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--gold);
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.lab-form,
+.lab-list,
+.lab-report-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+}
+
+.lab-form h2,
+.lab-list h2,
+.lab-report-card h2 {
+  margin-bottom: 2px;
+}
+
+.compact-form-grid {
+  gap: 12px;
+}
+
+.lab-list {
+  max-height: 760px;
+  display: grid;
+  gap: 14px;
+  overflow: auto;
+}
+
+.lab-record {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab-record.compact {
+  gap: 10px;
+}
+
+.lab-record h3 {
+  margin: 8px 0 4px;
+  font-size: 1rem;
+}
+
+.lab-record p,
+.lab-record small {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.lab-record-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lab-definition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.lab-definition-grid div {
+  padding: 10px;
+  border: 1px solid rgba(168, 180, 195, 0.14);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+}
+
+.lab-definition-grid dt {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lab-definition-grid dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.lab-report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.lab-report-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.lab-report-card svg {
+  color: var(--accent);
+}
+
+.lab-report-card.full {
+  grid-column: 1 / -1;
+}
+
+.lab-report-card pre {
+  max-height: 360px;
+  margin: 0;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 .event-card-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1830,6 +2014,7 @@ textarea {
   .scanner-grid,
   .participant-type-grid,
   .event-participants-grid,
+  .lab-grid,
   .public-register {
     grid-template-columns: 1fr 1fr;
   }
@@ -2066,6 +2251,9 @@ textarea {
   .participant-type-grid,
   .event-participants-grid,
   .public-register,
+  .lab-grid,
+  .lab-report-grid,
+  .lab-definition-grid,
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -2258,6 +2446,23 @@ textarea {
 
   .row-actions .icon-button {
     flex: 0 0 44px;
+  }
+
+  .lab-record-header {
+    flex-direction: column;
+  }
+
+  .lab-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lab-tabs button {
+    width: 100%;
+  }
+
+  .lab-list {
+    max-height: 68vh;
   }
 
   .page-actions {

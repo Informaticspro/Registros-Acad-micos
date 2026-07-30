@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileArchive,
   FileSpreadsheet,
+  HardHat,
   LayoutDashboard,
   QrCode,
   Users,
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/dashboard', label: 'Panel de control', icon: LayoutDashboard },
   { to: '/eventos', label: 'Eventos', icon: CalendarDays },
   { to: '/participantes', label: 'Participantes', icon: Users },
+  { to: '/laboratorio', label: 'Laboratorio', icon: HardHat },
   { to: '/asistencia/escanear', label: 'Escanear QR', icon: QrCode },
   { to: '/certificados', label: 'Certificados', icon: ClipboardCheck },
   { to: '/exportaciones', label: 'Exportaciones', icon: FileSpreadsheet },
@@ -38,6 +40,8 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
   const items =
     profile?.role === 'scanner'
       ? navItems.filter((item) => item.to === '/asistencia/escanear')
+      : profile?.role === 'soporte'
+        ? navItems.filter((item) => item.to === '/laboratorio')
       : profile?.role === 'admin' || profile?.role === 'propietario'
         ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)]
         : navItems;
