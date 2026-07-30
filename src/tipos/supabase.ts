@@ -103,6 +103,93 @@ export type BaseDatos = {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      laboratory_technical_sheets: {
+        Row: {
+          id: string;
+          organization_id: string;
+          sheet_date: string;
+          pc: string;
+          ip_address: string;
+          location: string;
+          responsible: string;
+          assigned_user: string;
+          access_reference: string;
+          applications: Json;
+          technical_specs: Json;
+          inventory: Json;
+          actions: Json;
+          general_notes: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      laboratory_equipment: {
+        Row: {
+          id: string;
+          organization_id: string;
+          code: string;
+          name: string;
+          category: string;
+          brand_model: string;
+          serial_number: string;
+          location: string;
+          status: string;
+          notes: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      laboratory_logs: {
+        Row: {
+          id: string;
+          organization_id: string;
+          work_date: string;
+          work_type: string;
+          title: string;
+          description: string;
+          responsible: string;
+          priority: string;
+          status: string;
+          source_equipment: string;
+          target_equipment: string;
+          location: string;
+          evidence_title: string;
+          evidence_url: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      laboratory_loans: {
+        Row: {
+          id: string;
+          organization_id: string;
+          equipment: string;
+          delivered_to: string;
+          beneficiary_type: string;
+          document_id: string;
+          delivered_by: string;
+          loaned_at: string;
+          returned_at: string | null;
+          status: string;
+          notes: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

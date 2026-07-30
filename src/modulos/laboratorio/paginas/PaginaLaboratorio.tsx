@@ -43,6 +43,7 @@ import {
   PrestamoLaboratorio,
   PrioridadLaboratorio,
 } from '@/tipos/dominio';
+import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { formatDateTime } from '@/utilidades/formato';
 
 type LabTab = 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
@@ -205,6 +206,7 @@ function buildPrestamoInput(form: HTMLFormElement): PrestamoLaboratorioInput {
 
 export function PaginaLaboratorio() {
   const navigate = useNavigate();
+  const { profile } = useAutenticacion();
   const [activeTab, setActiveTab] = useState<LabTab>('fichas');
   const [state, setState] = useState<LaboratorioState>(emptyState);
   const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
@@ -212,13 +214,32 @@ export function PaginaLaboratorio() {
   const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  function refresh() {
-    setState(listLaboratorioData());
+  const saveContext = useMemo(
+    () => ({
+      organizationId: profile?.organizationId ?? null,
+      userId: profile?.id ?? '',
+    }),
+    [profile?.id, profile?.organizationId],
+  );
+
+  async function refresh() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      setState(await listLaboratorioData());
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la informacion del laboratorio.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, []);
 
   const indicadores = useMemo(() => {
@@ -230,96 +251,132 @@ export function PaginaLaboratorio() {
     return { trabajosAbiertos, equiposPendientes, prestamosActivos, evidencias };
   }, [state]);
 
-  function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const input = buildFichaTecnicaInput(event.currentTarget);
+    const form = event.currentTarget;
+    const input = buildFichaTecnicaInput(form);
 
-    if (editingFicha) {
-      updateFichaTecnicaLaboratorio(editingFicha.id, input);
-      setEditingFicha(null);
-      setMessage('Ficha tecnica actualizada correctamente.');
-    } else {
-      createFichaTecnicaLaboratorio(input);
-      setMessage('Ficha tecnica guardada correctamente.');
-      event.currentTarget.reset();
+    setIsSaving(true);
+    setError(null);
+    try {
+      if (editingFicha) {
+        await updateFichaTecnicaLaboratorio(editingFicha.id, input);
+        setEditingFicha(null);
+        setMessage('Ficha tecnica actualizada correctamente.');
+      } else {
+        await createFichaTecnicaLaboratorio(input, saveContext);
+        setMessage('Ficha tecnica guardada correctamente.');
+        form.reset();
+      }
+
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la ficha tecnica.');
+    } finally {
+      setIsSaving(false);
     }
-
-    refresh();
   }
 
-  function handleBitacoraSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleBitacoraSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const input = buildBitacoraInput(event.currentTarget);
+    const form = event.currentTarget;
+    const input = buildBitacoraInput(form);
 
-    if (editingBitacora) {
-      updateBitacoraLaboratorio(editingBitacora.id, input);
-      setEditingBitacora(null);
-      setMessage('Bitacora actualizada correctamente.');
-    } else {
-      createBitacoraLaboratorio(input);
-      setMessage('Bitacora registrada correctamente.');
-      event.currentTarget.reset();
+    setIsSaving(true);
+    setError(null);
+    try {
+      if (editingBitacora) {
+        await updateBitacoraLaboratorio(editingBitacora.id, input);
+        setEditingBitacora(null);
+        setMessage('Bitacora actualizada correctamente.');
+      } else {
+        await createBitacoraLaboratorio(input, saveContext);
+        setMessage('Bitacora registrada correctamente.');
+        form.reset();
+      }
+
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la bitacora.');
+    } finally {
+      setIsSaving(false);
     }
-
-    refresh();
   }
 
-  function handleEquipoSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleEquipoSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const input = buildEquipoInput(event.currentTarget);
+    const form = event.currentTarget;
+    const input = buildEquipoInput(form);
 
-    if (editingEquipo) {
-      updateEquipoLaboratorio(editingEquipo.id, input);
-      setEditingEquipo(null);
-      setMessage('Equipo actualizado correctamente.');
-    } else {
-      createEquipoLaboratorio(input);
-      setMessage('Equipo agregado al inventario.');
-      event.currentTarget.reset();
+    setIsSaving(true);
+    setError(null);
+    try {
+      if (editingEquipo) {
+        await updateEquipoLaboratorio(editingEquipo.id, input);
+        setEditingEquipo(null);
+        setMessage('Equipo actualizado correctamente.');
+      } else {
+        await createEquipoLaboratorio(input, saveContext);
+        setMessage('Equipo agregado al inventario.');
+        form.reset();
+      }
+
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el equipo.');
+    } finally {
+      setIsSaving(false);
     }
-
-    refresh();
   }
 
-  function handlePrestamoSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handlePrestamoSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const input = buildPrestamoInput(event.currentTarget);
+    const form = event.currentTarget;
+    const input = buildPrestamoInput(form);
 
-    if (editingPrestamo) {
-      updatePrestamoLaboratorio(editingPrestamo.id, input);
-      setEditingPrestamo(null);
-      setMessage('Prestamo actualizado correctamente.');
-    } else {
-      createPrestamoLaboratorio(input);
-      setMessage('Prestamo registrado correctamente.');
-      event.currentTarget.reset();
+    setIsSaving(true);
+    setError(null);
+    try {
+      if (editingPrestamo) {
+        await updatePrestamoLaboratorio(editingPrestamo.id, input);
+        setEditingPrestamo(null);
+        setMessage('Prestamo actualizado correctamente.');
+      } else {
+        await createPrestamoLaboratorio(input, saveContext);
+        setMessage('Prestamo registrado correctamente.');
+        form.reset();
+      }
+
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el prestamo.');
+    } finally {
+      setIsSaving(false);
     }
-
-    refresh();
   }
 
-  function handleDeleteBitacora(item: BitacoraLaboratorio) {
+  async function handleDeleteBitacora(item: BitacoraLaboratorio) {
     if (!window.confirm(`Desea eliminar la bitacora "${item.titulo}"?`)) return;
-    deleteBitacoraLaboratorio(item.id);
-    refresh();
+    await deleteBitacoraLaboratorio(item.id);
+    await refresh();
   }
 
-  function handleDeleteFicha(item: FichaTecnicaLaboratorio) {
+  async function handleDeleteFicha(item: FichaTecnicaLaboratorio) {
     if (!window.confirm(`Desea eliminar la ficha tecnica de "${item.pc}"?`)) return;
-    deleteFichaTecnicaLaboratorio(item.id);
-    refresh();
+    await deleteFichaTecnicaLaboratorio(item.id);
+    await refresh();
   }
 
-  function handleDeleteEquipo(item: EquipoLaboratorio) {
+  async function handleDeleteEquipo(item: EquipoLaboratorio) {
     if (!window.confirm(`Desea eliminar el equipo "${item.nombre}"?`)) return;
-    deleteEquipoLaboratorio(item.id);
-    refresh();
+    await deleteEquipoLaboratorio(item.id);
+    await refresh();
   }
 
-  function handleDeletePrestamo(item: PrestamoLaboratorio) {
+  async function handleDeletePrestamo(item: PrestamoLaboratorio) {
     if (!window.confirm(`Desea eliminar el prestamo de "${item.equipo}"?`)) return;
-    deletePrestamoLaboratorio(item.id);
-    refresh();
+    await deletePrestamoLaboratorio(item.id);
+    await refresh();
   }
 
   function exportCsv() {
@@ -387,6 +444,8 @@ export function PaginaLaboratorio() {
         </div>
 
         {message ? <p className="form-hint">{message}</p> : null}
+        {error ? <p className="form-error">{error}</p> : null}
+        {isLoading ? <p className="form-hint">Cargando informacion del laboratorio...</p> : null}
 
         {activeTab === 'fichas' ? (
           <div className="lab-grid lab-grid-wide">
@@ -517,7 +576,7 @@ export function PaginaLaboratorio() {
               </label>
 
               <div className="page-actions">
-                <button className="primary-button" type="submit">
+                <button className="primary-button" type="submit" disabled={isSaving}>
                   <Save size={18} />
                   {editingFicha ? 'Actualizar ficha' : 'Guardar ficha tecnica'}
                 </button>
@@ -544,7 +603,12 @@ export function PaginaLaboratorio() {
                       <button className="icon-button" type="button" title="Editar" onClick={() => setEditingFicha(item)}>
                         <Pencil size={16} />
                       </button>
-                      <button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => handleDeleteFicha(item)}>
+                      <button
+                        className="icon-button danger-button"
+                        type="button"
+                        title="Eliminar"
+                        onClick={() => void handleDeleteFicha(item)}
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -660,7 +724,7 @@ export function PaginaLaboratorio() {
                 <input name="evidenciaUrl" placeholder="URL, carpeta, nombre del archivo o referencia fisica" defaultValue={editingBitacora?.evidenciaUrl} />
               </label>
               <div className="page-actions">
-                <button className="primary-button" type="submit">
+                <button className="primary-button" type="submit" disabled={isSaving}>
                   <Save size={18} />
                   {editingBitacora ? 'Actualizar bitacora' : 'Guardar bitacora'}
                 </button>
@@ -687,7 +751,12 @@ export function PaginaLaboratorio() {
                       <button className="icon-button" type="button" title="Editar" onClick={() => setEditingBitacora(item)}>
                         <Pencil size={16} />
                       </button>
-                      <button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => handleDeleteBitacora(item)}>
+                      <button
+                        className="icon-button danger-button"
+                        type="button"
+                        title="Eliminar"
+                        onClick={() => void handleDeleteBitacora(item)}
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -764,7 +833,7 @@ export function PaginaLaboratorio() {
                 <textarea name="observaciones" rows={4} defaultValue={editingEquipo?.observaciones} />
               </label>
               <div className="page-actions">
-                <button className="primary-button" type="submit">
+                <button className="primary-button" type="submit" disabled={isSaving}>
                   <Save size={18} />
                   {editingEquipo ? 'Actualizar equipo' : 'Guardar equipo'}
                 </button>
@@ -791,7 +860,12 @@ export function PaginaLaboratorio() {
                       <button className="icon-button" type="button" title="Editar" onClick={() => setEditingEquipo(item)}>
                         <Pencil size={16} />
                       </button>
-                      <button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => handleDeleteEquipo(item)}>
+                      <button
+                        className="icon-button danger-button"
+                        type="button"
+                        title="Eliminar"
+                        onClick={() => void handleDeleteEquipo(item)}
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -871,7 +945,7 @@ export function PaginaLaboratorio() {
                 <textarea name="observaciones" rows={4} defaultValue={editingPrestamo?.observaciones} />
               </label>
               <div className="page-actions">
-                <button className="primary-button" type="submit">
+                <button className="primary-button" type="submit" disabled={isSaving}>
                   <Save size={18} />
                   {editingPrestamo ? 'Actualizar prestamo' : 'Guardar prestamo'}
                 </button>
@@ -898,7 +972,12 @@ export function PaginaLaboratorio() {
                       <button className="icon-button" type="button" title="Editar" onClick={() => setEditingPrestamo(item)}>
                         <Pencil size={16} />
                       </button>
-                      <button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => handleDeletePrestamo(item)}>
+                      <button
+                        className="icon-button danger-button"
+                        type="button"
+                        title="Eliminar"
+                        onClick={() => void handleDeletePrestamo(item)}
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
