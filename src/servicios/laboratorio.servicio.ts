@@ -55,6 +55,7 @@ export type ImportEquiposLaboratorioResult = {
 
 const estadoEquipoLabels: Record<string, string> = {
   operativo: 'Operativo',
+  mantenimiento: 'Mantenimiento',
   en_reparacion: 'En reparacion',
   prestado: 'Prestado',
   baja: 'Baja',
@@ -135,6 +136,7 @@ const categoriasBaseEquipo = ['Computadora', 'Laptop', 'Monitor', 'Proyector', '
 
 const estadosBaseEquipo = [
   { nombre: 'operativo', descripcion: 'Operativo' },
+  { nombre: 'mantenimiento', descripcion: 'Mantenimiento' },
   { nombre: 'en_reparacion', descripcion: 'En reparacion' },
   { nombre: 'prestado', descripcion: 'Prestado' },
   { nombre: 'pendiente_revision', descripcion: 'Pendiente de revision' },

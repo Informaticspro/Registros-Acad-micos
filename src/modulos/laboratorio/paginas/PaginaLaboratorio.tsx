@@ -106,6 +106,7 @@ const inventarioBase = ['Torre', 'Monitor', 'Teclado', 'Mouse', 'UPS', 'Impresor
 
 const estadoEquipoLabels: Record<string, string> = {
   operativo: 'Operativo',
+  mantenimiento: 'Mantenimiento',
   en_reparacion: 'En reparacion',
   prestado: 'Prestado',
   baja: 'Baja',
@@ -424,13 +425,14 @@ export function PaginaLaboratorio() {
   }, [state.categoriasEquipo, state.equipos]);
 
   const estadosEquipo = useMemo(() => {
+    const defaultItems = ['operativo', 'mantenimiento', 'en_reparacion', 'prestado', 'pendiente_revision', 'baja'];
     const catalogItems = state.estadosEquipo
       .map((item) => item.nombre.trim())
       .filter((value): value is string => Boolean(value));
     const importedItems = state.equipos
       .map((item) => item.estado?.trim())
       .filter((value): value is string => Boolean(value));
-    return Array.from(new Set([...catalogItems, ...importedItems]));
+    return Array.from(new Set([...defaultItems, ...catalogItems, ...importedItems]));
   }, [state.equipos, state.estadosEquipo]);
 
   const estadoEquipoNombre = useMemo(
@@ -611,6 +613,7 @@ export function PaginaLaboratorio() {
 
   async function handleQuickEstadoEquipo(item: EquipoLaboratorio, estado: EstadoEquipoLaboratorio) {
     if (item.estado === estado) return;
+    const nextUbicacion = estado === 'baja' ? 'Deposito' : item.ubicacion;
 
     setIsSaving(true);
     setError(null);
@@ -622,11 +625,15 @@ export function PaginaLaboratorio() {
         categoria: item.categoria,
         marcaModelo: item.marcaModelo,
         serie: item.serie,
-        ubicacion: item.ubicacion,
+        ubicacion: nextUbicacion,
         estado,
         observaciones: item.observaciones,
       });
-      setMessage(`Estado actualizado a ${estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}.`);
+      setMessage(
+        estado === 'baja'
+          ? 'Equipo marcado como baja y movido a Deposito.'
+          : `Estado actualizado a ${estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}.`,
+      );
       await refresh();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo actualizar el estado del equipo.');
