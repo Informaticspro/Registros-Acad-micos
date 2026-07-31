@@ -1742,6 +1742,78 @@ textarea {
   align-self: start;
 }
 
+.lab-inventory-focus {
+  display: grid;
+  gap: 14px;
+}
+
+.lab-inventory-hero,
+.lab-inventory-workspace {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+}
+
+.lab-inventory-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  background:
+    linear-gradient(90deg, rgba(121, 183, 53, 0.12), transparent 62%),
+    var(--surface-deep);
+}
+
+.lab-inventory-hero h2 {
+  margin-bottom: 4px;
+}
+
+.lab-inventory-hero p {
+  max-width: 720px;
+  color: var(--muted);
+}
+
+.lab-inventory-hero-actions {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px 10px;
+  min-width: min(380px, 100%);
+}
+
+.lab-inventory-hero-actions strong {
+  color: var(--text);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.lab-inventory-hero-actions > span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.lab-inventory-hero-actions .primary-button,
+.lab-inventory-hero-actions .secondary-button {
+  grid-column: span 2;
+}
+
+.modal-panel.lab-equipment-modal {
+  width: min(900px, calc(100vw - 32px));
+  max-height: min(860px, calc(100vh - 32px));
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  background: var(--surface-deep);
+}
+
+.lab-modal-form {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .lab-section-manager {
   display: grid;
   gap: 12px;
@@ -3411,6 +3483,127 @@ textarea {
 
   .lab-home-actions {
     justify-content: stretch;
+  }
+
+  .lab-inventory-hero {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    padding: 14px;
+  }
+
+  .lab-inventory-hero-actions {
+    grid-template-columns: 1fr auto;
+    min-width: 0;
+  }
+
+  .lab-inventory-hero-actions .primary-button,
+  .lab-inventory-hero-actions .secondary-button {
+    grid-column: 1 / -1;
+  }
+
+  .lab-inventory-workspace {
+    padding: 12px;
+  }
+
+  .lab-inventory-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px;
+  }
+
+  .lab-inventory-filter button {
+    flex: 0 0 auto;
+  }
+
+  .lab-inventory-table-wrap {
+    max-height: 68vh;
+    border-radius: var(--radius);
+  }
+
+  .lab-inventory-table {
+    min-width: 0;
+  }
+
+  .lab-inventory-head {
+    display: none;
+  }
+
+  .lab-inventory-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin: 10px;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .lab-inventory-row span,
+  .lab-inventory-row strong {
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 42px;
+    border-right: 0;
+    text-align: right;
+  }
+
+  .lab-inventory-row span::before,
+  .lab-inventory-row strong::before {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .lab-inventory-row span:nth-child(1)::before {
+    content: "Fila";
+  }
+
+  .lab-inventory-row strong:nth-child(2)::before {
+    content: "Equipo";
+  }
+
+  .lab-inventory-row span:nth-child(3)::before {
+    content: "Marca";
+  }
+
+  .lab-inventory-row span:nth-child(4)::before {
+    content: "Modelo";
+  }
+
+  .lab-inventory-row span:nth-child(5)::before {
+    content: "Inventario";
+  }
+
+  .lab-inventory-row span:nth-child(6)::before {
+    content: "Serie";
+  }
+
+  .lab-inventory-row span:nth-child(7)::before {
+    content: "Ubicacion";
+  }
+
+  .lab-inventory-row span:nth-child(8)::before {
+    content: "Estado";
+  }
+
+  .lab-inventory-row span:nth-child(9)::before {
+    content: "Acciones";
+  }
+
+  .lab-inventory-empty-row span {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .lab-inventory-empty-row span::before {
+    content: none;
+  }
+
+  .inventory-actions {
+    justify-content: flex-end;
   }
 
   .lab-home-metrics {

@@ -294,11 +294,13 @@ function buildFichaTecnicaInput(form: HTMLFormElement): FichaTecnicaLaboratorioI
 
 function buildEquipoInput(form: HTMLFormElement): EquipoLaboratorioInput {
   const data = new FormData(form);
+  const marca = readString(data, 'marca');
+  const modelo = readString(data, 'modelo');
   return {
     codigo: readString(data, 'codigo'),
     nombre: readString(data, 'nombre'),
     categoria: readString(data, 'categoria'),
-    marcaModelo: readString(data, 'marcaModelo'),
+    marcaModelo: [marca, modelo].filter(Boolean).join(' '),
     serie: readString(data, 'serie'),
     ubicacion: readString(data, 'ubicacion'),
     estado: readString(data, 'estado') as EstadoEquipoLaboratorio,
@@ -344,7 +346,7 @@ export function PaginaLaboratorio() {
   const [editingEstadoEquipo, setEditingEstadoEquipo] = useState<CatalogoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
-  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
@@ -441,18 +443,19 @@ export function PaginaLaboratorio() {
   }, [message, error]);
 
   useEffect(() => {
-    if (!selectedFicha && !showInventoryModal && !activeCatalogManager) return undefined;
+    if (!selectedFicha && !showEquipoFormModal && !activeCatalogManager) return undefined;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
       setSelectedFicha(null);
-      setShowInventoryModal(false);
+      setShowEquipoFormModal(false);
+      setEditingEquipo(null);
       closeCatalogManager();
     }
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [activeCatalogManager, selectedFicha, showInventoryModal]);
+  }, [activeCatalogManager, selectedFicha, showEquipoFormModal]);
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
@@ -570,6 +573,7 @@ export function PaginaLaboratorio() {
         form.reset();
       }
 
+      setShowEquipoFormModal(false);
       await refresh();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el equipo.');
@@ -1420,17 +1424,29 @@ export function PaginaLaboratorio() {
         ) : null}
 
         {activeTab === 'inventario' ? (
-          <div className="lab-grid">
-            <section className="lab-import-panel">
+          <div className="lab-inventory-focus">
+            <section className="lab-inventory-hero">
               <div>
-                <span className="eyebrow">Carga masiva</span>
-                <h2>Importar inventario desde Excel</h2>
+                <span className="eyebrow">Inventario tecnico</span>
+                <h2>Inventario de la facultad</h2>
                 <p>
-                  Acepta columnas como codigo, inventario, equipo, categoria, marca, modelo, serie, ubicacion,
-                  estado y observaciones. Si el codigo ya existe, el equipo se actualiza.
+                  Consulte, filtre, edite y registre equipos desde una vista concentrada para trabajar comodo en PC y celular.
                 </p>
               </div>
-              <div className="lab-import-actions">
+              <div className="lab-inventory-hero-actions">
+                <strong>{state.equipos.length}</strong>
+                <span>equipos registrados</span>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => {
+                    setEditingEquipo(null);
+                    setShowEquipoFormModal(true);
+                  }}
+                >
+                  <Save size={18} />
+                  Nuevo equipo
+                </button>
                 <label className="secondary-button lab-file-button">
                   <Upload size={18} />
                   Cargar Excel
@@ -1441,227 +1457,242 @@ export function PaginaLaboratorio() {
                     disabled={isSaving}
                   />
                 </label>
-                <button className="primary-button" type="button" onClick={() => setShowInventoryModal(true)}>
-                  <Eye size={18} />
-                  Ver inventario
-                </button>
               </div>
             </section>
 
-            <form className="stack-form lab-form" onSubmit={handleEquipoSubmit}>
-              <h2>{editingEquipo ? 'Editar equipo' : 'Registrar equipo'}</h2>
-              <div className="form-grid compact-form-grid">
-                <label>
-                  Codigo interno
-                  <input name="codigo" required defaultValue={editingEquipo?.codigo} />
-                </label>
-                <label>
-                  Nombre del equipo
-                  <input name="nombre" required placeholder="PC Lab 1-08, Laptop soporte..." defaultValue={editingEquipo?.nombre} />
-                </label>
+            <section className="lab-inventory-workspace">
+              <div className="lab-inventory-sheet-title">
+                <strong>Universidad Autonoma de Chiriqui</strong>
+                <span>Facultad de Economia</span>
+                <h2>Inventario de la facultad</h2>
+                <small>{new Date().toLocaleDateString('es-PA')}</small>
               </div>
-              <div className="form-grid compact-form-grid">
-                <div className="catalog-field">
-                  <label>
-                    Categoria
-                    <select name="categoria" defaultValue={editingEquipo?.categoria ?? 'Computadora'} required>
-                      {categoriasEquipo.map((categoria) => (
-                        <option key={categoria} value={categoria}>
-                          {categoria}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+              <div className="lab-inventory-filter" aria-label="Filtrar inventario por ubicacion">
+                {ubicacionesInventario.map((ubicacion) => (
                   <button
-                    className="icon-button catalog-manage-button"
+                    className={selectedInventoryLocation === ubicacion ? 'active' : ''}
+                    key={ubicacion}
                     type="button"
-                    title="Administrar categorias"
-                    onClick={() => setActiveCatalogManager('categorias')}
+                    onClick={() => setSelectedInventoryLocation(ubicacion)}
                   >
-                    <Settings2 size={16} />
+                    {ubicacion}
+                    <span>
+                      {ubicacion === 'Todas'
+                        ? state.equipos.length
+                        : state.equipos.filter((item) => item.ubicacion === ubicacion).length}
+                    </span>
                   </button>
+                ))}
+              </div>
+              {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
+              {state.equipos.length > 0 ? (
+                <div className="lab-inventory-table-wrap">
+                  <div className="lab-inventory-table">
+                    <div className="lab-inventory-head">
+                      <span>Fila</span>
+                      <span>Equipo</span>
+                      <span>Marca</span>
+                      <span>Modelo</span>
+                      <span>Inventario</span>
+                      <span>Serie</span>
+                      <span>Ubicacion</span>
+                      <span>Estado</span>
+                      <span>Acciones</span>
+                    </div>
+                    {equiposInventarioFiltrados.length === 0 ? (
+                      <div className="lab-inventory-row lab-inventory-empty-row">
+                        <span>No hay equipos registrados en esta ubicacion.</span>
+                      </div>
+                    ) : null}
+                    {equiposInventarioFiltrados.map((item, index) => {
+                      const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
+                      return (
+                        <div className="lab-inventory-row" key={item.id}>
+                          <span>{index + 1}</span>
+                          <strong>{item.categoria || item.nombre}</strong>
+                          <span>{marca}</span>
+                          <span>{modelo}</span>
+                          <span>{item.codigo || 'S/N'}</span>
+                          <span>{item.serie || 'S/N'}</span>
+                          <span>{item.ubicacion || 'Sin ubicacion'}</span>
+                          <span>
+                            <em className={`inventory-status equipment-${getEstadoEquipoClass(item.estado)}`}>
+                              {estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}
+                            </em>
+                          </span>
+                          <span className="row-actions inventory-actions">
+                            <button
+                              className="icon-button"
+                              type="button"
+                              title="Editar"
+                              onClick={() => {
+                                setEditingEquipo(item);
+                                setShowEquipoFormModal(true);
+                              }}
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="icon-button danger-button"
+                              type="button"
+                              title="Eliminar"
+                              onClick={() => void handleDeleteEquipo(item)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="catalog-field">
-                  <label>
-                    Estado
-                    <select name="estado" defaultValue={editingEquipo?.estado ?? 'operativo'} required>
-                      {estadosEquipo.map((estado) => (
-                        <option key={estado} value={estado}>
-                          {estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    className="icon-button catalog-manage-button"
-                    type="button"
-                    title="Administrar estados"
-                    onClick={() => setActiveCatalogManager('estados')}
-                  >
-                    <Settings2 size={16} />
-                  </button>
-                </div>
-              </div>
-              <div className="form-grid compact-form-grid">
-                <label>
-                  Marca / modelo
-                  <input name="marcaModelo" defaultValue={editingEquipo?.marcaModelo} />
-                </label>
-                <label>
-                  Serie
-                  <input name="serie" defaultValue={editingEquipo?.serie} />
-                </label>
-              </div>
-              <div className="catalog-field">
-                <label>
-                  Ubicacion
-                  <select name="ubicacion" required defaultValue={editingEquipo?.ubicacion ?? 'Laboratorio 1'}>
-                    {ubicacionesInventario
-                      .filter((ubicacion) => ubicacion !== 'Todas')
-                      .map((ubicacion) => (
-                        <option key={ubicacion} value={ubicacion}>
-                          {ubicacion}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <button
-                  className="icon-button catalog-manage-button"
-                  type="button"
-                  title="Administrar ubicaciones"
-                  onClick={() => setActiveCatalogManager('secciones')}
-                >
-                  <Settings2 size={16} />
-                </button>
-              </div>
-              <label>
-                Observaciones
-                <textarea name="observaciones" rows={4} defaultValue={editingEquipo?.observaciones} />
-              </label>
-              <div className="page-actions">
-                <button className="primary-button" type="submit" disabled={isSaving}>
-                  <Save size={18} />
-                  {editingEquipo ? 'Actualizar equipo' : 'Guardar equipo'}
-                </button>
-                {editingEquipo ? (
-                  <button className="secondary-button" type="button" onClick={() => setEditingEquipo(null)}>
-                    Cancelar
-                  </button>
-                ) : null}
-              </div>
-            </form>
+              ) : null}
+            </section>
 
-            <div className="lab-inventory-side">
-              <aside className="lab-inventory-summary-card">
-                <span className="eyebrow">Inventario registrado</span>
-                <strong>{state.equipos.length}</strong>
-                <p>Equipos disponibles en la base de datos del laboratorio.</p>
-                <button className="secondary-button" type="button" onClick={() => setShowInventoryModal(true)}>
-                  <Eye size={18} />
-                  Ver inventario completo
-                </button>
-              </aside>
-
-            </div>
-
-            {showInventoryModal ? (
-              <div className="modal-backdrop lab-inventory-modal-backdrop" role="presentation" onClick={() => setShowInventoryModal(false)}>
+            {showEquipoFormModal ? (
+              <div
+                className="modal-backdrop"
+                role="presentation"
+                onClick={() => {
+                  setShowEquipoFormModal(false);
+                  setEditingEquipo(null);
+                }}
+              >
                 <article
-                  className="modal-panel lab-inventory-modal"
+                  className="modal-panel lab-equipment-modal"
                   role="dialog"
                   aria-modal="true"
-                  aria-labelledby="lab-inventory-title"
+                  aria-labelledby="lab-equipment-form-title"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="lab-inventory-sheet-title">
-                    <strong>Universidad Autonoma de Chiriqui</strong>
-                    <span>Facultad de Economia</span>
-                    <h2 id="lab-inventory-title">Inventario de la facultad</h2>
-                    <small>{new Date().toLocaleDateString('es-PA')}</small>
-                  </div>
-                  <div className="lab-inventory-filter" aria-label="Filtrar inventario por ubicacion">
-                    {ubicacionesInventario.map((ubicacion) => (
-                      <button
-                        className={selectedInventoryLocation === ubicacion ? 'active' : ''}
-                        key={ubicacion}
-                        type="button"
-                        onClick={() => setSelectedInventoryLocation(ubicacion)}
-                      >
-                        {ubicacion}
-                        <span>
-                          {ubicacion === 'Todas'
-                            ? state.equipos.length
-                            : state.equipos.filter((item) => item.ubicacion === ubicacion).length}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
-                  {state.equipos.length > 0 ? (
-                    <div className="lab-inventory-table-wrap">
-                      <div className="lab-inventory-table">
-                        <div className="lab-inventory-head">
-                          <span>Fila</span>
-                          <span>Equipo</span>
-                          <span>Marca</span>
-                          <span>Modelo</span>
-                          <span>Inventario</span>
-                          <span>Serie</span>
-                          <span>Ubicacion</span>
-                          <span>Estado</span>
-                          <span>Acciones</span>
-                        </div>
-                        {equiposInventarioFiltrados.length === 0 ? (
-                          <div className="lab-inventory-row lab-inventory-empty-row">
-                            <span>No hay equipos registrados en esta ubicacion.</span>
-                          </div>
-                        ) : null}
-                        {equiposInventarioFiltrados.map((item, index) => {
-                          const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
-                          return (
-                            <div className="lab-inventory-row" key={item.id}>
-                              <span>{index + 1}</span>
-                              <strong>{item.categoria || item.nombre}</strong>
-                              <span>{marca}</span>
-                              <span>{modelo}</span>
-                              <span>{item.codigo || 'S/N'}</span>
-                              <span>{item.serie || 'S/N'}</span>
-                              <span>{item.ubicacion || 'Sin ubicacion'}</span>
-                              <span>
-                                <em className={`inventory-status equipment-${getEstadoEquipoClass(item.estado)}`}>
-                                  {estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}
-                                </em>
-                              </span>
-                              <span className="row-actions inventory-actions">
-                                <button
-                                  className="icon-button"
-                                  type="button"
-                                  title="Editar"
-                                  onClick={() => {
-                                    setEditingEquipo(item);
-                                    setShowInventoryModal(false);
-                                  }}
-                                >
-                                  <Pencil size={16} />
-                                </button>
-                                <button
-                                  className="icon-button danger-button"
-                                  type="button"
-                                  title="Eliminar"
-                                  onClick={() => void handleDeleteEquipo(item)}
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </span>
-                            </div>
-                          );
-                        })}
+                  <header className="lab-catalog-modal-header">
+                    <div>
+                      <span className="eyebrow">Inventario</span>
+                      <h2 id="lab-equipment-form-title">{editingEquipo ? 'Editar equipo' : 'Registrar equipo'}</h2>
+                    </div>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => {
+                        setShowEquipoFormModal(false);
+                        setEditingEquipo(null);
+                      }}
+                    >
+                      Cerrar
+                    </button>
+                  </header>
+                  <form className="stack-form lab-form lab-modal-form" onSubmit={handleEquipoSubmit}>
+                    <div className="form-grid compact-form-grid">
+                      <label>
+                        Codigo interno
+                        <input name="codigo" required defaultValue={editingEquipo?.codigo} />
+                      </label>
+                      <label>
+                        Nombre del equipo
+                        <input
+                          name="nombre"
+                          required
+                          placeholder="PC Lab 1-08, Laptop soporte..."
+                          defaultValue={editingEquipo?.nombre}
+                        />
+                      </label>
+                    </div>
+                    <div className="form-grid compact-form-grid">
+                      <div className="catalog-field">
+                        <label>
+                          Categoria
+                          <select name="categoria" defaultValue={editingEquipo?.categoria ?? 'Computadora'} required>
+                            {categoriasEquipo.map((categoria) => (
+                              <option key={categoria} value={categoria}>
+                                {categoria}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          className="icon-button catalog-manage-button"
+                          type="button"
+                          title="Administrar categorias"
+                          onClick={() => setActiveCatalogManager('categorias')}
+                        >
+                          <Settings2 size={16} />
+                        </button>
+                      </div>
+                      <div className="catalog-field">
+                        <label>
+                          Estado
+                          <select name="estado" defaultValue={editingEquipo?.estado ?? 'operativo'} required>
+                            {estadosEquipo.map((estado) => (
+                              <option key={estado} value={estado}>
+                                {estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          className="icon-button catalog-manage-button"
+                          type="button"
+                          title="Administrar estados"
+                          onClick={() => setActiveCatalogManager('estados')}
+                        >
+                          <Settings2 size={16} />
+                        </button>
                       </div>
                     </div>
-                  ) : null}
-                  <button className="secondary-button" type="button" onClick={() => setShowInventoryModal(false)}>
-                    Cerrar inventario
-                  </button>
+                    <div className="form-grid compact-form-grid">
+                      {(() => {
+                        const { marca, modelo } = splitMarcaModelo(editingEquipo?.marcaModelo ?? '');
+                        return (
+                          <>
+                            <label>
+                              Marca
+                              <input name="marca" defaultValue={editingEquipo ? marca : ''} placeholder="Ej. HP, Dell, Lenovo" />
+                            </label>
+                            <label>
+                              Modelo
+                              <input name="modelo" defaultValue={editingEquipo ? modelo : ''} placeholder="Ej. EliteDesk 705 G4" />
+                            </label>
+                          </>
+                        );
+                      })()}
+                      <label>
+                        Serie
+                        <input name="serie" defaultValue={editingEquipo?.serie} />
+                      </label>
+                    </div>
+                    <div className="catalog-field">
+                      <label>
+                        Ubicacion
+                        <select name="ubicacion" required defaultValue={editingEquipo?.ubicacion ?? 'Laboratorio 1'}>
+                          {ubicacionesInventario
+                            .filter((ubicacion) => ubicacion !== 'Todas')
+                            .map((ubicacion) => (
+                              <option key={ubicacion} value={ubicacion}>
+                                {ubicacion}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <button
+                        className="icon-button catalog-manage-button"
+                        type="button"
+                        title="Administrar ubicaciones"
+                        onClick={() => setActiveCatalogManager('secciones')}
+                      >
+                        <Settings2 size={16} />
+                      </button>
+                    </div>
+                    <label>
+                      Observaciones
+                      <textarea name="observaciones" rows={4} defaultValue={editingEquipo?.observaciones} />
+                    </label>
+                    <div className="page-actions">
+                      <button className="primary-button" type="submit" disabled={isSaving}>
+                        <Save size={18} />
+                        {editingEquipo ? 'Actualizar equipo' : 'Guardar equipo'}
+                      </button>
+                    </div>
+                  </form>
                 </article>
               </div>
             ) : null}

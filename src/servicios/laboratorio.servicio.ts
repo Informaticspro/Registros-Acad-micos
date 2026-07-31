@@ -1106,6 +1106,21 @@ function formatExcelDate(value: string | null | undefined) {
   });
 }
 
+function splitMarcaModeloReporte(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return { marca: 'S/N', modelo: 'S/N' };
+
+  const separatorMatch = normalized.match(/^(.+?)(?:\s+[-/|]\s+|\s{2,})(.+)$/);
+  if (separatorMatch) {
+    return { marca: separatorMatch[1].trim() || 'S/N', modelo: separatorMatch[2].trim() || 'S/N' };
+  }
+
+  const parts = normalized.split(/\s+/);
+  if (parts.length === 1) return { marca: parts[0], modelo: 'S/N' };
+
+  return { marca: parts[0], modelo: parts.slice(1).join(' ') };
+}
+
 function applyInventoryWorksheetStyles(
   worksheet: ReturnType<typeof utils.aoa_to_sheet>,
   dataRowCount: number,
@@ -1235,7 +1250,8 @@ export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
     'Codigo interno',
     'Equipo',
     'Categoria',
-    'Marca / modelo',
+    'Marca',
+    'Modelo',
     'Serie',
     'Ubicacion',
     'Estado',
@@ -1243,18 +1259,22 @@ export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
     'Actualizado',
   ];
 
-  const rows = sortedEquipos.map((item, index) => [
-    index + 1,
-    item.codigo,
-    item.nombre,
-    item.categoria,
-    item.marcaModelo,
-    item.serie,
-    item.ubicacion,
-    estadoEquipoLabels[item.estado] ?? item.estado,
-    item.observaciones,
-    formatExcelDate(item.updatedAt),
-  ]);
+  const rows = sortedEquipos.map((item, index) => {
+    const { marca, modelo } = splitMarcaModeloReporte(item.marcaModelo);
+    return [
+      index + 1,
+      item.codigo,
+      item.nombre,
+      item.categoria,
+      marca,
+      modelo,
+      item.serie,
+      item.ubicacion,
+      estadoEquipoLabels[item.estado] ?? item.estado,
+      item.observaciones,
+      formatExcelDate(item.updatedAt),
+    ];
+  });
 
   const generatedAt = new Date().toLocaleString('es-PA', {
     day: '2-digit',
@@ -1288,7 +1308,8 @@ export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
     { wch: 18 },
     { wch: 24 },
     { wch: 18 },
-    { wch: 28 },
+    { wch: 18 },
+    { wch: 24 },
     { wch: 24 },
     { wch: 22 },
     { wch: 18 },
@@ -1296,7 +1317,7 @@ export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
     { wch: 20 },
   ];
   inventoryWorksheet['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 18 }, { hpt: 8 }];
-  inventoryWorksheet['!autofilter'] = { ref: `A7:J${Math.max(7, rows.length + 7)}` };
+  inventoryWorksheet['!autofilter'] = { ref: `A7:K${Math.max(7, rows.length + 7)}` };
   applyInventoryWorksheetStyles(inventoryWorksheet, rows.length, headers.length);
   utils.book_append_sheet(workbook, inventoryWorksheet, 'Inventario');
 
@@ -1416,17 +1437,21 @@ export function exportInformeUbicacionLaboratorioExcel(state: LaboratorioState, 
     workbook,
     createFormalWorksheet(
       `INFORME POR UBICACION: ${selectedLocation.toUpperCase()}`,
-      ['Fila', 'Equipo', 'Categoria', 'Marca / modelo', 'Serie', 'Estado', 'Observaciones'],
-      equipos.map((item, index) => [
-        index + 1,
-        item.nombre,
-        item.categoria,
-        item.marcaModelo,
-        item.serie,
-        estadoEquipoLabels[item.estado] ?? item.estado,
-        item.observaciones,
-      ]),
-      [8, 24, 18, 30, 24, 18, 44],
+      ['Fila', 'Equipo', 'Categoria', 'Marca', 'Modelo', 'Serie', 'Estado', 'Observaciones'],
+      equipos.map((item, index) => {
+        const { marca, modelo } = splitMarcaModeloReporte(item.marcaModelo);
+        return [
+          index + 1,
+          item.nombre,
+          item.categoria,
+          marca,
+          modelo,
+          item.serie,
+          estadoEquipoLabels[item.estado] ?? item.estado,
+          item.observaciones,
+        ];
+      }),
+      [8, 24, 18, 18, 24, 24, 18, 44],
     ),
     'Equipos',
   );
@@ -1557,7 +1582,8 @@ export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, e
         ['Codigo interno', equipo.codigo],
         ['Equipo', equipo.nombre],
         ['Categoria', equipo.categoria],
-        ['Marca / modelo', equipo.marcaModelo],
+        ['Marca', splitMarcaModeloReporte(equipo.marcaModelo).marca],
+        ['Modelo', splitMarcaModeloReporte(equipo.marcaModelo).modelo],
         ['Serie', equipo.serie],
         ['Ubicacion', equipo.ubicacion],
         ['Estado', estadoEquipoLabels[equipo.estado] ?? equipo.estado],
