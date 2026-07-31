@@ -34,7 +34,7 @@ export function PaginaFormularioEvento() {
     () => ({
       title: eventToEdit?.title ?? '',
       eventType: eventToEdit?.eventType ?? 'congreso',
-      registrationFormType: eventToEdit?.registrationFormType ?? 'educacion_continua',
+      registrationFormType: eventToEdit?.registrationFormType ?? 'seminario_general',
       location: eventToEdit?.location ?? '',
       capacity: eventToEdit?.capacity ?? '',
       startsAt: toDateTimeLocal(eventToEdit?.startsAt ?? null),
@@ -100,7 +100,7 @@ export function PaginaFormularioEvento() {
         eventType,
         registrationFormType:
           eventType === 'seminario'
-            ? (String(form.get('registrationFormType') ?? 'educacion_continua') as EventoAcademico['registrationFormType'])
+            ? (String(form.get('registrationFormType') ?? 'seminario_general') as EventoAcademico['registrationFormType'])
             : null,
         description: String(form.get('description') ?? '').trim(),
         location: getRequiredText(form, 'location', 'El lugar'),
@@ -158,11 +158,11 @@ export function PaginaFormularioEvento() {
             Formulario del seminario
             <select
               name="registrationFormType"
-              defaultValue={initialValues.registrationFormType ?? 'educacion_continua'}
-              key={`seminar-form-${initialValues.registrationFormType ?? 'educacion_continua'}`}
+              defaultValue={initialValues.registrationFormType ?? 'seminario_general'}
+              key={`seminar-form-${initialValues.registrationFormType ?? 'seminario_general'}`}
             >
-              <option value="educacion_continua">Educacion continua / Informatica intermedia</option>
               <option value="seminario_general">Seminario general UNACHI</option>
+              <option value="educacion_continua">Educacion continua / Informatica intermedia</option>
             </select>
             <span className="field-hint">
               Educacion continua usa fechas, aula virtual y motivo. General UNACHI usa un formulario mas corto.

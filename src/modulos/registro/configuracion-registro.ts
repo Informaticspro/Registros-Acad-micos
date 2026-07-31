@@ -14,7 +14,7 @@ export function getInscripcionFormKind(
   if (eventType === 'congreso') return 'congreso';
   if (eventType === 'seminario') {
     const registrationFormType = typeof eventOrType === 'string' ? null : eventOrType?.registrationFormType;
-    return registrationFormType === 'seminario_general' ? 'seminario_general' : 'seminario';
+    return registrationFormType === 'educacion_continua' ? 'seminario' : 'seminario_general';
   }
   return 'simple';
 }

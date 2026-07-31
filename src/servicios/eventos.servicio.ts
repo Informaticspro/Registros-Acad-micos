@@ -190,7 +190,7 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
     organizer_id: input.organizerId,
     title: input.title,
     event_type: input.eventType,
-    registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'educacion_continua' : null,
+    registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'seminario_general' : null,
     description: input.description,
     location: input.location,
     starts_at: input.startsAt,
@@ -239,7 +239,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
   const updatePayload = {
     title: input.title,
     event_type: input.eventType,
-    registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'educacion_continua' : null,
+    registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'seminario_general' : null,
     description: input.description,
     location: input.location,
     starts_at: input.startsAt,

@@ -2,7 +2,16 @@ alter table public.events
   add column if not exists registration_form_type text;
 
 update public.events
-set registration_form_type = 'educacion_continua'
+set registration_form_type =
+  case
+    when lower(title) like '%informatica intermedia%'
+      or lower(title) like '%informática intermedia%'
+      or lower(title) like '%posgrado%'
+      or lower(title) like '%maestria%'
+      or lower(title) like '%maestría%'
+      then 'educacion_continua'
+    else 'seminario_general'
+  end
 where event_type = 'seminario'
   and registration_form_type is null;
 
