@@ -1587,6 +1587,19 @@ textarea {
   color: var(--muted);
 }
 
+.lab-section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.compact-button {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+}
+
 .lab-activity-list {
   display: grid;
   max-height: 360px;
@@ -3511,6 +3524,11 @@ textarea {
   .lab-home-section-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .lab-section-actions {
+    align-items: stretch;
+    justify-content: flex-start;
   }
 
   .lab-home-hero {

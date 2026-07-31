@@ -434,6 +434,7 @@ export function PaginaLaboratorio() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [profileNamesById, setProfileNamesById] = useState<Record<string, string>>({});
+  const [showMoreActivity, setShowMoreActivity] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -618,8 +619,8 @@ export function PaginaLaboratorio() {
 
     return [...bitacoras, ...fichas, ...prestamos, ...equipos]
       .sort((first, second) => second.fecha.localeCompare(first.fecha))
-      .slice(0, 8);
-  }, [estadoEquipoNombre, profile?.fullName, profile?.id, profileNamesById, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
+      .slice(0, showMoreActivity ? 20 : 8);
+  }, [estadoEquipoNombre, profile?.fullName, profile?.id, profileNamesById, showMoreActivity, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1178,7 +1179,12 @@ export function PaginaLaboratorio() {
                   <span className="eyebrow">Actividad reciente</span>
                   <h2>Ultimas acciones registradas</h2>
                 </div>
-                <small>Maximo 8 registros</small>
+                <div className="lab-section-actions">
+                  <small>{showMoreActivity ? 'Ultimos 20 registros' : 'Maximo 8 registros'}</small>
+                  <button className="secondary-button compact-button" type="button" onClick={() => setShowMoreActivity((current) => !current)}>
+                    {showMoreActivity ? 'Ver menos' : 'Ver ultimos 20'}
+                  </button>
+                </div>
               </div>
               {actividadReciente.length === 0 ? (
                 <p className="form-hint">Todavia no hay acciones recientes registradas.</p>
