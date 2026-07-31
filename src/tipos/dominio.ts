@@ -76,6 +76,7 @@ export type EquipoLaboratorio = {
   ubicacion: string;
   estado: EstadoEquipoLaboratorio;
   observaciones: string;
+  registradoPor: string;
   createdAt: string;
   updatedAt: string;
 };

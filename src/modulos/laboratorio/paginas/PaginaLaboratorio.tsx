@@ -569,11 +569,22 @@ export function PaginaLaboratorio() {
       detalle: `${item.entregadoA} | ${item.estado}`,
       tab: 'prestamos' as LabTab,
     }));
+    const equipos = state.equipos.map((item) => {
+      const isCreation = Math.abs(new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime()) < 2000;
+      return {
+        id: `equipo-${item.id}`,
+        fecha: item.updatedAt || item.createdAt,
+        tipo: isCreation ? 'Equipo registrado' : 'Equipo actualizado',
+        titulo: item.nombre,
+        detalle: `${item.registradoPor || 'Inventario'} | ${item.ubicacion || 'Sin ubicacion'} | ${estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}`,
+        tab: 'inventario' as LabTab,
+      };
+    });
 
-    return [...bitacoras, ...fichas, ...prestamos]
+    return [...bitacoras, ...fichas, ...prestamos, ...equipos]
       .sort((first, second) => second.fecha.localeCompare(first.fecha))
       .slice(0, 8);
-  }, [state.bitacoras, state.fichas, state.prestamos]);
+  }, [estadoEquipoNombre, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

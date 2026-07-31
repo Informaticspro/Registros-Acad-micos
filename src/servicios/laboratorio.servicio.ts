@@ -37,7 +37,7 @@ export type LaboratorioSaveContext = {
 
 export type FichaTecnicaLaboratorioInput = Omit<FichaTecnicaLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
 
-export type EquipoLaboratorioInput = Omit<EquipoLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
+export type EquipoLaboratorioInput = Omit<EquipoLaboratorio, 'id' | 'registradoPor' | 'createdAt' | 'updatedAt'>;
 
 export type SeccionLaboratorioInput = Omit<SeccionLaboratorio, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -302,6 +302,7 @@ function mapEquipo(row: {
   location: string;
   status: string;
   notes: string;
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
 }): EquipoLaboratorio {
@@ -315,6 +316,7 @@ function mapEquipo(row: {
     ubicacion: row.location,
     estado: row.status as EstadoEquipoLaboratorio,
     observaciones: row.notes,
+    registradoPor: row.created_by ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -558,7 +560,7 @@ export async function createEquipoLaboratorio(
   if (useLocalStorageFallback()) {
     const state = readState();
     const now = new Date().toISOString();
-    const equipo: EquipoLaboratorio = { ...input, id: createId('equipo'), createdAt: now, updatedAt: now };
+    const equipo: EquipoLaboratorio = { ...input, id: createId('equipo'), registradoPor: context.userId, createdAt: now, updatedAt: now };
     writeState({ ...state, equipos: [equipo, ...state.equipos] });
     return equipo;
   }
@@ -590,7 +592,7 @@ export async function updateEquipoLaboratorio(id: string, input: EquipoLaborator
     const state = readState();
     const current = state.equipos.find((equipo) => equipo.id === id);
     if (!current) throw new Error('No se encontro el equipo.');
-    const updated: EquipoLaboratorio = { ...current, ...input, updatedAt: new Date().toISOString() };
+    const updated: EquipoLaboratorio = { ...current, ...input, registradoPor: current.registradoPor ?? '', updatedAt: new Date().toISOString() };
     writeState({ ...state, equipos: state.equipos.map((equipo) => (equipo.id === id ? updated : equipo)) });
     return updated;
   }
@@ -900,7 +902,7 @@ export async function importEquiposLaboratorio(
         return;
       }
 
-      const created: EquipoLaboratorio = { ...input, id: createId('equipo'), createdAt: now, updatedAt: now };
+      const created: EquipoLaboratorio = { ...input, id: createId('equipo'), registradoPor: context.userId, createdAt: now, updatedAt: now };
       nextEquipos.unshift(created);
       existingByCode.set(key, created);
       result.created += 1;
