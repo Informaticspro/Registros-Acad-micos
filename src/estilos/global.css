@@ -3184,6 +3184,13 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     padding-bottom: 0;
   }
@@ -3208,7 +3215,10 @@ textarea {
   }
 
   .content-shell {
+    width: 100%;
+    max-width: 100vw;
     padding: 18px 14px 28px;
+    overflow-x: hidden;
   }
 
   .legal-footer {
@@ -3488,12 +3498,41 @@ textarea {
   .lab-inventory-hero {
     grid-template-columns: 1fr;
     align-items: stretch;
-    padding: 14px;
+    padding: 12px;
+    overflow: hidden;
   }
 
   .lab-inventory-hero-actions {
     grid-template-columns: 1fr auto;
     min-width: 0;
+  }
+
+  .lab-inventory-hero h2 {
+    max-width: 100%;
+    font-size: clamp(1.45rem, 8vw, 1.9rem);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .lab-inventory-hero p {
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .lab-inventory-hero-actions strong {
+    font-size: 1.8rem;
+  }
+
+  .lab-inventory-hero-actions > span {
+    align-self: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .lab-inventory-hero-actions .primary-button,
@@ -3503,6 +3542,17 @@ textarea {
 
   .lab-inventory-workspace {
     padding: 12px;
+    overflow: hidden;
+  }
+
+  .lab-inventory-sheet-title {
+    padding: 10px 8px;
+  }
+
+  .lab-inventory-sheet-title h2 {
+    font-size: 0.95rem;
+    line-height: 1.12;
+    overflow-wrap: anywhere;
   }
 
   .lab-inventory-filter {
@@ -3828,14 +3878,18 @@ textarea {
   }
 
   .lab-workspace {
-    padding: 14px;
-    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+    gap: 12px;
+    overflow-x: hidden;
   }
 
   .lab-workspace-header {
     grid-template-columns: 1fr;
     align-items: stretch;
-    padding: 16px;
+    padding: 14px;
+    overflow: hidden;
   }
 
   .lab-workspace-header .secondary-button {
@@ -3847,24 +3901,49 @@ textarea {
   }
 
   .lab-header-side {
-    justify-items: stretch;
+    display: none;
   }
 
   .lab-quick-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: none;
   }
 
   .lab-workspace-title h1 {
-    font-size: 2rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(1.75rem, 10vw, 2.25rem);
+    line-height: 1.02;
+  }
+
+  .lab-workspace-title p {
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .lab-shell {
+    padding: 12px;
+    overflow: hidden;
   }
 
   .lab-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    gap: 8px;
+    margin: -2px -2px 12px;
+    padding: 2px 2px 8px;
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
 
   .lab-tabs button {
-    width: 100%;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 112px;
+    min-height: 42px;
+    padding: 0 14px;
   }
 
   .lab-list {
