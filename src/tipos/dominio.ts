@@ -64,6 +64,8 @@ export type PrioridadLaboratorio = 'baja' | 'media' | 'alta' | 'critica';
 
 export type EstadoTrabajoLaboratorio = 'pendiente' | 'en_proceso' | 'resuelto' | 'cerrado';
 
+export type ClaseRegistroLaboratorio = 'mantenimiento' | 'incidencia';
+
 export type EquipoLaboratorio = {
   id: string;
   codigo: string;
@@ -145,6 +147,8 @@ export type BitacoraLaboratorio = {
   responsable: string;
   prioridad: PrioridadLaboratorio;
   estado: EstadoTrabajoLaboratorio;
+  clase: ClaseRegistroLaboratorio;
+  equipoId: string;
   equipoOrigen: string;
   equipoDestino: string;
   ubicacion: string;

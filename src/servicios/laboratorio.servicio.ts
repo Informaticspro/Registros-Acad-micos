@@ -4,6 +4,7 @@ import { utils, writeFile } from 'xlsx-js-style';
 import {
   AplicacionFichaLaboratorio,
   BitacoraLaboratorio,
+  ClaseRegistroLaboratorio,
   CatalogoLaboratorio,
   CaracteristicaFichaLaboratorio,
   EquipoLaboratorio,
@@ -343,6 +344,8 @@ function mapBitacora(row: {
   responsible: string;
   priority: string;
   status: string;
+  entry_type?: string;
+  equipment_id?: string | null;
   source_equipment: string;
   target_equipment: string;
   location: string;
@@ -359,6 +362,8 @@ function mapBitacora(row: {
     responsable: row.responsible,
     prioridad: row.priority as PrioridadLaboratorio,
     estado: row.status as EstadoTrabajoLaboratorio,
+    clase: (row.entry_type ?? 'mantenimiento') as ClaseRegistroLaboratorio,
+    equipoId: row.equipment_id ?? '',
     equipoOrigen: row.source_equipment,
     equipoDestino: row.target_equipment,
     ubicacion: row.location,
@@ -948,6 +953,8 @@ export async function createBitacoraLaboratorio(
       responsible: input.responsable,
       priority: input.prioridad,
       status: input.estado,
+      entry_type: input.clase,
+      equipment_id: input.equipoId || null,
       source_equipment: input.equipoOrigen,
       target_equipment: input.equipoDestino,
       location: input.ubicacion,
@@ -982,6 +989,8 @@ export async function updateBitacoraLaboratorio(id: string, input: BitacoraLabor
       responsible: input.responsable,
       priority: input.prioridad,
       status: input.estado,
+      entry_type: input.clase,
+      equipment_id: input.equipoId || null,
       source_equipment: input.equipoOrigen,
       target_equipment: input.equipoDestino,
       location: input.ubicacion,
@@ -1417,6 +1426,53 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
   writeFile(workbook, `informe-mantenimiento-${slugifyFileName(selectedMonth)}.xlsx`);
 }
 
+/** Informe bajo demanda: no presupone una periodicidad fija. */
+export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState, desde: string, hasta: string) {
+  const start = desde ? new Date(`${desde}T00:00:00`).getTime() : Number.NEGATIVE_INFINITY;
+  const end = hasta ? new Date(`${hasta}T23:59:59.999`).getTime() : Number.POSITIVE_INFINITY;
+  const inRange = (fecha: string) => {
+    const time = new Date(fecha).getTime();
+    return time >= start && time <= end;
+  };
+  const registros = state.bitacoras.filter((item) => inRange(item.fecha));
+  const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
+  const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
+  const atendidos = new Set(mantenimientos.map((item) => item.equipoDestino || item.equipoOrigen).filter(Boolean));
+  const abiertos = state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia' && item.estado !== 'resuelto' && item.estado !== 'cerrado');
+  const rango = `${desde || 'Inicio'} a ${hasta || 'Hoy'}`;
+  const workbook = utils.book_new();
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet('INFORME DE MANTENIMIENTO POR RANGO', ['Indicador', 'Total'], [
+      ['Período seleccionado', rango],
+      ['Mantenimientos efectuados', mantenimientos.length],
+      ['Equipos atendidos', atendidos.size],
+      ['Daños o incidencias encontrados', incidencias.length],
+      ['Reparaciones pendientes o en proceso', abiertos.length],
+    ], [40, 32]),
+    'Resumen',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet('MANTENIMIENTOS E INCIDENCIAS', ['Fecha', 'Clase', 'Equipo', 'Título', 'Estado', 'Responsable', 'Detalle'],
+      registros.map((item) => [formatExcelDate(item.fecha), item.tipoTrabajo === 'Incidencia' ? 'Incidencia' : 'Mantenimiento', item.equipoDestino || item.equipoOrigen, item.titulo, estadoTrabajoLabels[item.estado], item.responsable, item.descripcion]),
+      [20, 18, 25, 30, 16, 22, 48]),
+    'Detalle',
+  );
+  writeFile(workbook, `informe-mantenimiento-${slugifyFileName(desde || 'inicio')}-a-${slugifyFileName(hasta || 'hoy')}.xlsx`);
+}
+
+export function buildInformeMantenimientoPorRango(state: LaboratorioState, desde: string, hasta: string) {
+  const start = desde ? new Date(`${desde}T00:00:00`).getTime() : Number.NEGATIVE_INFINITY;
+  const end = hasta ? new Date(`${hasta}T23:59:59.999`).getTime() : Number.POSITIVE_INFINITY;
+  const registros = state.bitacoras.filter((item) => { const time = new Date(item.fecha).getTime(); return time >= start && time <= end; });
+  const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
+  const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
+  const equipos = new Set(mantenimientos.map((item) => item.equipoDestino || item.equipoOrigen).filter(Boolean));
+  const abiertos = state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia' && !['resuelto', 'cerrado'].includes(item.estado));
+  return [`INFORME DE MANTENIMIENTO`, `Período: ${desde || 'Inicio'} a ${hasta || 'Hoy'}`, '', `Mantenimientos efectuados: ${mantenimientos.length}`, `Equipos atendidos: ${equipos.size}`, `Daños/incidencias encontrados: ${incidencias.length}`, `Reparaciones pendientes o en proceso: ${abiertos.length}`, '', ...registros.map((item) => `- ${item.fecha.slice(0, 10)} | ${item.tipoTrabajo === 'Incidencia' ? 'INCIDENCIA' : 'MANTENIMIENTO'} | ${item.equipoDestino || item.equipoOrigen || 'Equipo no indicado'} | ${item.titulo} | ${estadoTrabajoLabels[item.estado]}`)].join('\n');
+}
+
 export function exportInformeUbicacionLaboratorioExcel(state: LaboratorioState, ubicacion: string) {
   const selectedLocation = ubicacion || 'Todas';
   const equipos = state.equipos
@@ -1684,3 +1740,4 @@ export function buildLaboratorioReport(state: LaboratorioState) {
     ),
   ].join('\n');
 }
+

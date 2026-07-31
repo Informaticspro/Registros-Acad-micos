@@ -187,6 +187,8 @@ export type BaseDatos = {
           responsible: string;
           priority: string;
           status: string;
+          entry_type: string;
+          equipment_id: string | null;
           source_equipment: string;
           target_equipment: string;
           location: string;

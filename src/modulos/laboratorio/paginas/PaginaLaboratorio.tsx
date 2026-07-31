@@ -24,6 +24,7 @@ import {
   LaboratorioState,
   PrestamoLaboratorioInput,
   buildLaboratorioReport,
+  buildInformeMantenimientoPorRango,
   createBitacoraLaboratorio,
   createCatalogoLaboratorio,
   createEquipoLaboratorio,
@@ -38,6 +39,7 @@ import {
   deleteSeccionLaboratorio,
   exportHistorialEquipoLaboratorioExcel,
   exportInformeMensualMantenimientoExcel,
+  exportInformeMantenimientoPorRangoExcel,
   exportInformePendientesLaboratorioExcel,
   exportInformeUbicacionLaboratorioExcel,
   exportInventarioLaboratorioExcel,
@@ -57,6 +59,7 @@ import {
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
   EstadoTrabajoLaboratorio,
+  ClaseRegistroLaboratorio,
   FichaTecnicaLaboratorio,
   PrestamoLaboratorio,
   PrioridadLaboratorio,
@@ -81,7 +84,7 @@ const emptyState: LaboratorioState = {
 const tabLabels: Record<LabTab, string> = {
   inicio: 'Inicio',
   fichas: 'Ficha tecnica',
-  bitacoras: 'Bitacoras',
+  bitacoras: 'Mantenimientos e incidencias',
   inventario: 'Inventario',
   prestamos: 'Prestamos',
   informes: 'Informes',
@@ -290,6 +293,8 @@ function buildBitacoraInput(form: HTMLFormElement): BitacoraLaboratorioInput {
     responsable: readString(data, 'responsable'),
     prioridad: readString(data, 'prioridad') as PrioridadLaboratorio,
     estado: readString(data, 'estado') as EstadoTrabajoLaboratorio,
+    clase: readString(data, 'clase') as ClaseRegistroLaboratorio,
+    equipoId: readString(data, 'equipoId'),
     equipoOrigen: readString(data, 'equipoOrigen'),
     equipoDestino: readString(data, 'equipoDestino'),
     ubicacion: readString(data, 'ubicacion'),
@@ -391,6 +396,8 @@ export function PaginaLaboratorio() {
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedReportLocation, setSelectedReportLocation] = useState('Todas');
   const [selectedReportEquipoId, setSelectedReportEquipoId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -629,7 +636,24 @@ export function PaginaLaboratorio() {
 
   async function handleQuickEstadoEquipo(item: EquipoLaboratorio, estado: EstadoEquipoLaboratorio) {
     if (item.estado === estado) return;
+    const previousEstadoLabel = estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado);
+    const nextEstadoLabel = estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado);
+    const closingDetail =
+      estado === 'operativo' && item.estado !== 'operativo'
+        ? window.prompt('Detalle del trabajo realizado antes de dejar el equipo operativo:')
+        : null;
+
+    if (estado === 'operativo' && item.estado !== 'operativo' && !closingDetail?.trim()) {
+      setError('Debe escribir un detalle antes de devolver el equipo a operativo.');
+      return;
+    }
+
     const nextUbicacion = estado === 'baja' ? 'Deposito' : item.ubicacion;
+    const equipoLabel = `${item.codigo} - ${item.nombre}`;
+    const automaticDescription =
+      estado === 'operativo'
+        ? `Equipo devuelto a operativo. Estado anterior: ${previousEstadoLabel}. Detalle: ${closingDetail?.trim()}`
+        : `Cambio de estado tecnico: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
 
     setIsSaving(true);
     setError(null);
@@ -645,6 +669,25 @@ export function PaginaLaboratorio() {
         estado,
         observaciones: item.observaciones,
       });
+      await createBitacoraLaboratorio(
+        {
+          fecha: new Date().toISOString(),
+          tipoTrabajo: estado === 'operativo' ? 'Cierre de mantenimiento' : 'Cambio de estado',
+          titulo: estado === 'operativo' ? `Equipo operativo: ${equipoLabel}` : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
+          descripcion: automaticDescription,
+          responsable: profile?.fullName || profile?.email || 'Soporte tecnico',
+          prioridad: estado === 'baja' ? 'alta' : 'media',
+          estado: estado === 'operativo' || estado === 'baja' ? 'cerrado' : 'en_proceso',
+          clase: estado === 'operativo' ? 'mantenimiento' : 'incidencia',
+          equipoId: item.id,
+          equipoOrigen: item.estado,
+          equipoDestino: equipoLabel,
+          ubicacion: nextUbicacion,
+          evidenciaTitulo: '',
+          evidenciaUrl: '',
+        },
+        saveContext,
+      );
       setMessage(
         estado === 'baja'
           ? 'Equipo marcado como baja y movido a Deposito.'
@@ -851,6 +894,24 @@ export function PaginaLaboratorio() {
   function exportMonthlyReport() {
     exportInformeMensualMantenimientoExcel(state, selectedReportMonth);
     setMessage('Informe mensual de mantenimiento descargado correctamente.');
+  }
+
+  function exportDateRangeReport() {
+    if (!reportStartDate || !reportEndDate || reportStartDate > reportEndDate) {
+      setError('Seleccione un rango de fechas valido. La fecha inicial no puede ser posterior a la final.');
+      return;
+    }
+    exportInformeMantenimientoPorRangoExcel(state, reportStartDate, reportEndDate);
+    setMessage('Informe de mantenimiento por rango descargado correctamente.');
+  }
+
+  function exportRangeMaintenanceReport() {
+    if (reportStartDate && reportEndDate && reportStartDate > reportEndDate) {
+      setError('La fecha inicial no puede ser posterior a la fecha final.');
+      return;
+    }
+    exportInformeMantenimientoPorRangoExcel(state, reportStartDate, reportEndDate);
+    setMessage('Informe por rango descargado correctamente.');
   }
 
   function exportLocationReport() {
@@ -1358,7 +1419,8 @@ export function PaginaLaboratorio() {
         {activeTab === 'bitacoras' ? (
           <div className="lab-grid">
             <form className="stack-form lab-form" onSubmit={handleBitacoraSubmit}>
-              <h2>{editingBitacora ? 'Editar bitacora' : 'Nueva bitacora tecnica'}</h2>
+              <h2>{editingBitacora ? 'Editar registro' : 'Registrar mantenimiento o incidencia'}</h2>
+              <p className="form-hint">Los mantenimientos y las incidencias se registran por separado mediante su tipo y quedan asociados al equipo seleccionado.</p>
               <label>
                 Fecha y hora
                 <input
@@ -1373,8 +1435,10 @@ export function PaginaLaboratorio() {
                 <label>
                   Tipo de trabajo
                   <select name="tipoTrabajo" defaultValue={editingBitacora?.tipoTrabajo ?? 'Reparacion'} required>
+                    <option value="Mantenimiento preventivo">Mantenimiento preventivo</option>
+                    <option value="Mantenimiento correctivo">Mantenimiento correctivo</option>
+                    <option value="Incidencia">Daño o incidencia</option>
                     <option>Reparacion</option>
-                    <option>Mantenimiento preventivo</option>
                     <option>Cambio de pieza</option>
                     <option>Diagnostico</option>
                     <option>Instalacion</option>
@@ -1418,8 +1482,15 @@ export function PaginaLaboratorio() {
                   <input name="equipoOrigen" defaultValue={editingBitacora?.equipoOrigen} />
                 </label>
                 <label>
-                  Equipo destino
-                  <input name="equipoDestino" defaultValue={editingBitacora?.equipoDestino} />
+                  Equipo atendido
+                  <select name="equipoDestino" defaultValue={editingBitacora?.equipoDestino ?? ''} required>
+                    <option value="">Seleccione un equipo</option>
+                    {state.equipos.map((equipo) => (
+                      <option value={`${equipo.codigo} - ${equipo.nombre}`} key={equipo.id}>
+                        {equipo.codigo} - {equipo.nombre} ({equipo.ubicacion})
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
               <div className="form-grid compact-form-grid">
@@ -1465,9 +1536,9 @@ export function PaginaLaboratorio() {
             </form>
 
             <div className="lab-list">
-              <h2>Historial tecnico</h2>
-              {state.bitacoras.length === 0 ? <p className="form-hint">Todavia no hay bitacoras registradas.</p> : null}
-              {state.bitacoras.map((item) => (
+              <h2>Mantenimientos registrados</h2>
+              {state.bitacoras.filter((item) => item.tipoTrabajo !== 'Incidencia').length === 0 ? <p className="form-hint">Todavía no hay mantenimientos registrados.</p> : null}
+              {state.bitacoras.filter((item) => item.tipoTrabajo !== 'Incidencia').map((item) => (
                 <article className="lab-record" key={item.id}>
                   <div className="lab-record-header">
                     <div>
@@ -1498,6 +1569,14 @@ export function PaginaLaboratorio() {
                     <div><dt>Ubicacion</dt><dd>{item.ubicacion || 'No indicada'}</dd></div>
                     <div><dt>Evidencia</dt><dd>{item.evidenciaTitulo || item.evidenciaUrl || 'Sin evidencia'}</dd></div>
                   </dl>
+                </article>
+              ))}
+              <h2>Daños e incidencias por equipo</h2>
+              {state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia').length === 0 ? <p className="form-hint">No hay incidencias registradas.</p> : null}
+              {state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia').map((item) => (
+                <article className="lab-record" key={item.id}>
+                  <div className="lab-record-header"><div><span className={`status-pill priority-${item.prioridad}`}>{estadoTrabajoLabels[item.estado]}</span><h3>{item.titulo}</h3><small>{formatDateTime(item.fecha)} | {item.equipoDestino || 'Equipo no indicado'}</small></div><div className="row-actions"><button className="icon-button" type="button" title="Editar" onClick={() => setEditingBitacora(item)}><Pencil size={16} /></button><button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => void handleDeleteBitacora(item)}><Trash2 size={16} /></button></div></div>
+                  <p>{item.descripcion}</p><small>Responsable: {item.responsable} · Estado: {estadoTrabajoLabels[item.estado]}</small>
                 </article>
               ))}
             </div>
@@ -1907,6 +1986,14 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'informes' ? (
           <div className="lab-report-grid">
+            <article className="lab-report-card full">
+              <Wrench size={26} />
+              <h2>Informe de mantenimiento bajo demanda</h2>
+              <p>Elija cualquier rango de fechas. Consolida mantenimientos efectuados, equipos atendidos, incidencias encontradas y reparaciones pendientes o en proceso.</p>
+              <div className="form-grid compact-form-grid"><label>Desde<input type="date" value={reportStartDate} onChange={(event) => setReportStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={reportEndDate} onChange={(event) => setReportEndDate(event.target.value)} /></label></div>
+              <button className="primary-button" type="button" onClick={exportRangeMaintenanceReport}><Download size={18} />Descargar Excel por rango</button>
+              <pre>{buildInformeMantenimientoPorRango(state, reportStartDate, reportEndDate)}</pre>
+            </article>
             <article className="lab-report-card">
               <History size={26} />
               <h2>Informe mensual</h2>
