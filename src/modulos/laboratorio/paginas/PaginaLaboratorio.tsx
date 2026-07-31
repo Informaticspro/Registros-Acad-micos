@@ -488,11 +488,12 @@ export function PaginaLaboratorio() {
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
+    const equiposMantenimiento = state.equipos.filter((item) => item.estado === 'mantenimiento').length;
     const equiposPendientes = state.equipos.filter((item) => item.estado !== 'operativo').length;
     const prestamosActivos = state.prestamos.filter((item) => item.estado === 'activo').length;
     const evidencias = state.bitacoras.filter((item) => item.evidenciaUrl || item.evidenciaTitulo).length;
 
-    return { trabajosAbiertos, equiposPendientes, prestamosActivos, evidencias };
+    return { trabajosAbiertos, equiposMantenimiento, equiposPendientes, prestamosActivos, evidencias };
   }, [state]);
 
   const actividadReciente = useMemo(() => {
@@ -954,6 +955,11 @@ export function PaginaLaboratorio() {
             </section>
 
             <section className="lab-home-metrics">
+              <button className={indicadores.equiposMantenimiento > 0 ? 'attention' : ''} type="button" onClick={() => setActiveTab('inventario')}>
+                <span>En mantenimiento</span>
+                <strong>{indicadores.equiposMantenimiento}</strong>
+                <small>Equipos con atencion tecnica activa</small>
+              </button>
               <button type="button" onClick={() => setActiveTab('bitacoras')}>
                 <span>Trabajos abiertos</span>
                 <strong>{indicadores.trabajosAbiertos}</strong>

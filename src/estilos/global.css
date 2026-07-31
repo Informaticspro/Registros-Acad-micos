@@ -1552,6 +1552,13 @@ textarea {
   background: var(--surface-soft);
 }
 
+.lab-home-metrics button.attention {
+  border-color: rgba(43, 103, 199, 0.46);
+  background:
+    linear-gradient(135deg, rgba(43, 103, 199, 0.13), transparent 62%),
+    var(--surface-deep);
+}
+
 .lab-home-metrics span,
 .lab-activity-list span {
   color: var(--muted);
