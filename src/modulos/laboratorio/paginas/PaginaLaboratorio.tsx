@@ -36,6 +36,11 @@ import {
   deleteFichaTecnicaLaboratorio,
   deletePrestamoLaboratorio,
   deleteSeccionLaboratorio,
+  exportHistorialEquipoLaboratorioExcel,
+  exportInformeMensualMantenimientoExcel,
+  exportInformePendientesLaboratorioExcel,
+  exportInformeUbicacionLaboratorioExcel,
+  exportInventarioLaboratorioExcel,
   exportLaboratorioCsv,
   importEquiposLaboratorio,
   listLaboratorioData,
@@ -210,6 +215,10 @@ function shouldImportEquipoRow(input: EquipoLaboratorioInput) {
   const normalizedText = normalizeExcelKey(
     [input.codigo, input.nombre, input.marcaModelo, input.observaciones].join(' '),
   );
+  const isNoteRow =
+    normalizedName.startsWith('nota') ||
+    normalizedText.includes('debidalaincorporaciondenuevosequipos') ||
+    normalizedText.includes('manteneruncontroladecuado');
   const hasLongNoteAsModel = input.marcaModelo.length > 70;
   const looksLikeNote =
     normalizedText.includes('nota') &&
@@ -218,7 +227,7 @@ function shouldImportEquipoRow(input: EquipoLaboratorioInput) {
       normalizedText.includes('numeracionsecuencial'));
   const isGenericEquipmentName = normalizedName === 'computadora' || normalizedName.startsWith('equipo');
 
-  return Boolean(input.codigo && input.nombre) && !looksLikeNote && !(isGenericEquipmentName && hasLongNoteAsModel);
+  return Boolean(input.codigo && input.nombre) && !isNoteRow && !looksLikeNote && !(isGenericEquipmentName && hasLongNoteAsModel);
 }
 
 function downloadTextFile(content: string, fileName: string, type = 'text/plain;charset=utf-8') {
@@ -339,6 +348,9 @@ export function PaginaLaboratorio() {
   const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
+  const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [selectedReportLocation, setSelectedReportLocation] = useState('Todas');
+  const [selectedReportEquipoId, setSelectedReportEquipoId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -745,6 +757,39 @@ export function PaginaLaboratorio() {
 
   function exportReport() {
     downloadTextFile(buildLaboratorioReport(state), 'informe-laboratorio.txt');
+  }
+
+  function exportInventoryExcel() {
+    if (state.equipos.length === 0) {
+      setError('No hay equipos registrados para generar el informe de inventario.');
+      return;
+    }
+    exportInventarioLaboratorioExcel(state);
+    setMessage('Informe de inventario descargado correctamente.');
+  }
+
+  function exportMonthlyReport() {
+    exportInformeMensualMantenimientoExcel(state, selectedReportMonth);
+    setMessage('Informe mensual de mantenimiento descargado correctamente.');
+  }
+
+  function exportLocationReport() {
+    exportInformeUbicacionLaboratorioExcel(state, selectedReportLocation);
+    setMessage('Informe por ubicacion descargado correctamente.');
+  }
+
+  function exportPendingReport() {
+    exportInformePendientesLaboratorioExcel(state);
+    setMessage('Informe de pendientes descargado correctamente.');
+  }
+
+  function exportEquipmentHistoryReport() {
+    if (!selectedReportEquipoId) {
+      setError('Seleccione un equipo para generar su historial tecnico.');
+      return;
+    }
+    exportHistorialEquipoLaboratorioExcel(state, selectedReportEquipoId);
+    setMessage('Historial tecnico del equipo descargado correctamente.');
   }
 
   function closeCatalogManager() {
@@ -1742,20 +1787,97 @@ export function PaginaLaboratorio() {
           <div className="lab-report-grid">
             <article className="lab-report-card">
               <History size={26} />
-              <h2>Informe general</h2>
-              <p>Resumen ejecutivo del laboratorio con trabajos abiertos, equipos pendientes y ultimas bitacoras.</p>
-              <button className="primary-button" type="button" onClick={exportReport}>
+              <h2>Informe mensual</h2>
+              <p>Resumen ejecutivo del mes con bitacoras, fichas tecnicas, prestamos y pendientes del laboratorio.</p>
+              <label>
+                Mes del informe
+                <input
+                  type="month"
+                  value={selectedReportMonth}
+                  onChange={(event) => setSelectedReportMonth(event.target.value)}
+                />
+              </label>
+              <button className="primary-button" type="button" onClick={exportMonthlyReport}>
                 <Download size={18} />
-                Descargar TXT
+                Descargar Excel
+              </button>
+            </article>
+            <article className="lab-report-card">
+              <HardDrive size={26} />
+              <h2>Informe por ubicacion</h2>
+              <p>Equipos y bitacoras organizadas por area: laboratorio, biblioteca, decanato, ORD u otra seccion.</p>
+              <label>
+                Ubicacion
+                <select value={selectedReportLocation} onChange={(event) => setSelectedReportLocation(event.target.value)}>
+                  {ubicacionesInventario.map((ubicacion) => (
+                    <option value={ubicacion} key={ubicacion}>
+                      {ubicacion}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="primary-button" type="button" onClick={exportLocationReport}>
+                <Download size={18} />
+                Descargar Excel
+              </button>
+            </article>
+            <article className="lab-report-card">
+              <Wrench size={26} />
+              <h2>Pendientes tecnicos</h2>
+              <p>Equipos no operativos, trabajos abiertos y prestamos activos o vencidos para seguimiento inmediato.</p>
+              <button className="primary-button" type="button" onClick={exportPendingReport}>
+                <Download size={18} />
+                Descargar Excel
               </button>
             </article>
             <article className="lab-report-card">
               <ClipboardList size={26} />
-              <h2>Base exportable</h2>
-              <p>Archivo CSV para abrir en Excel con bitacoras, inventario y prestamos registrados.</p>
+              <h2>Historial por equipo</h2>
+              <p>Ficha de seguimiento con datos del equipo, fichas tecnicas y bitacoras relacionadas.</p>
+              <label>
+                Equipo
+                <select
+                  value={selectedReportEquipoId}
+                  onChange={(event) => setSelectedReportEquipoId(event.target.value)}
+                >
+                  <option value="">Seleccione un equipo</option>
+                  {state.equipos.map((equipo) => (
+                    <option value={equipo.id} key={equipo.id}>
+                      {equipo.codigo} - {equipo.nombre} - {equipo.ubicacion}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="secondary-button" type="button" onClick={exportEquipmentHistoryReport}>
+                <Download size={18} />
+                Descargar historial
+              </button>
+            </article>
+            <article className="lab-report-card">
+              <HardDrive size={26} />
+              <h2>Informe de inventario</h2>
+              <p>Excel formal con inventario ordenado por ubicacion, categoria y equipo, mas resumen por areas.</p>
+              <button className="primary-button" type="button" onClick={exportInventoryExcel}>
+                <Download size={18} />
+                Descargar Excel
+              </button>
+            </article>
+            <article className="lab-report-card">
+              <ClipboardList size={26} />
+              <h2>Base completa</h2>
+              <p>Archivo CSV general para abrir en Excel con bitacoras, inventario, fichas y prestamos registrados.</p>
               <button className="secondary-button" type="button" onClick={exportCsv}>
                 <Download size={18} />
                 Descargar CSV
+              </button>
+            </article>
+            <article className="lab-report-card">
+              <History size={26} />
+              <h2>Resumen TXT</h2>
+              <p>Resumen rapido en texto plano para compartir o pegar en una nota administrativa.</p>
+              <button className="secondary-button" type="button" onClick={exportReport}>
+                <Download size={18} />
+                Descargar TXT
               </button>
             </article>
             <article className="lab-report-card full">

@@ -1,5 +1,6 @@
 import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
+import { utils, writeFile } from 'xlsx-js-style';
 import {
   AplicacionFichaLaboratorio,
   BitacoraLaboratorio,
@@ -72,6 +73,51 @@ const prioridadLabels: Record<PrioridadLaboratorio, string> = {
   media: 'Media',
   alta: 'Alta',
   critica: 'Critica',
+};
+
+const excelBorderStyle = {
+  top: { style: 'thin', color: { rgb: 'D9E2EC' } },
+  right: { style: 'thin', color: { rgb: 'D9E2EC' } },
+  bottom: { style: 'thin', color: { rgb: 'D9E2EC' } },
+  left: { style: 'thin', color: { rgb: 'D9E2EC' } },
+};
+
+const excelTitleStyle = {
+  font: { bold: true, sz: 15, color: { rgb: '102A43' } },
+  alignment: { horizontal: 'center', vertical: 'center' },
+};
+
+const excelSubtitleStyle = {
+  font: { bold: true, sz: 12, color: { rgb: '334E68' } },
+  alignment: { horizontal: 'center', vertical: 'center' },
+};
+
+const excelSectionStyle = {
+  font: { bold: true, sz: 13, color: { rgb: 'FFFFFF' } },
+  alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  fill: { fgColor: { rgb: '0F5132' } },
+};
+
+const excelGeneratedStyle = {
+  font: { italic: true, sz: 10, color: { rgb: '486581' } },
+  alignment: { horizontal: 'center', vertical: 'center' },
+};
+
+const excelHeaderStyle = {
+  font: { bold: true, color: { rgb: 'FFFFFF' } },
+  alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  fill: { fgColor: { rgb: '1F2937' } },
+  border: excelBorderStyle,
+};
+
+const excelCellStyle = {
+  alignment: { vertical: 'center', wrapText: true },
+  border: excelBorderStyle,
+};
+
+const excelAlternateCellStyle = {
+  ...excelCellStyle,
+  fill: { fgColor: { rgb: 'F8FAFC' } },
 };
 
 const seccionesBaseLaboratorio = [
@@ -1038,6 +1084,523 @@ export async function deletePrestamoLaboratorio(id: string) {
 function csvEscape(value: string | number | null | undefined) {
   const normalized = String(value ?? '');
   return `"${normalized.replace(/"/g, '""')}"`;
+}
+
+function slugifyFileName(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function formatExcelDate(value: string | null | undefined) {
+  if (!value) return '';
+  return new Date(value).toLocaleString('es-PA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function applyInventoryWorksheetStyles(
+  worksheet: ReturnType<typeof utils.aoa_to_sheet>,
+  dataRowCount: number,
+  columnCount: number,
+) {
+  const headerRowIndex = 6;
+  const lastColumn = columnCount - 1;
+
+  worksheet['A1'].s = excelTitleStyle;
+  worksheet['A2'].s = excelSubtitleStyle;
+  worksheet['A4'].s = excelSectionStyle;
+  worksheet['A5'].s = excelGeneratedStyle;
+
+  for (let column = 0; column <= lastColumn; column += 1) {
+    const headerCell = utils.encode_cell({ r: headerRowIndex, c: column });
+    if (worksheet[headerCell]) worksheet[headerCell].s = excelHeaderStyle;
+  }
+
+  for (let row = headerRowIndex + 1; row < headerRowIndex + 1 + dataRowCount; row += 1) {
+    const rowStyle = (row - headerRowIndex) % 2 === 0 ? excelAlternateCellStyle : excelCellStyle;
+    for (let column = 0; column <= lastColumn; column += 1) {
+      const cell = utils.encode_cell({ r: row, c: column });
+      if (worksheet[cell]) worksheet[cell].s = rowStyle;
+    }
+  }
+}
+
+function applySummaryWorksheetStyles(
+  worksheet: ReturnType<typeof utils.aoa_to_sheet>,
+  dataRowCount: number,
+  columnCount: number,
+) {
+  const headerRowIndex = 5;
+  const lastColumn = columnCount - 1;
+
+  worksheet['A1'].s = excelTitleStyle;
+  worksheet['A2'].s = excelSubtitleStyle;
+  worksheet['A4'].s = excelSectionStyle;
+
+  for (let column = 0; column <= lastColumn; column += 1) {
+    const headerCell = utils.encode_cell({ r: headerRowIndex, c: column });
+    if (worksheet[headerCell]) worksheet[headerCell].s = excelHeaderStyle;
+  }
+
+  for (let row = headerRowIndex + 1; row < headerRowIndex + 1 + dataRowCount; row += 1) {
+    const rowStyle = (row - headerRowIndex) % 2 === 0 ? excelAlternateCellStyle : excelCellStyle;
+    for (let column = 0; column <= lastColumn; column += 1) {
+      const cell = utils.encode_cell({ r: row, c: column });
+      if (worksheet[cell]) worksheet[cell].s = rowStyle;
+    }
+  }
+}
+
+function createFormalWorksheet(
+  title: string,
+  headers: string[],
+  rows: Array<Array<string | number>>,
+  widths: number[],
+) {
+  const generatedAt = new Date().toLocaleString('es-PA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  const sheetRows = [
+    ['UNIVERSIDAD AUTONOMA DE CHIRIQUI'],
+    ['FACULTAD DE ECONOMIA'],
+    [],
+    [title],
+    [`Generado: ${generatedAt}`],
+    [],
+    headers,
+    ...rows,
+  ];
+  const worksheet = utils.aoa_to_sheet(sheetRows);
+  worksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: headers.length - 1 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: headers.length - 1 } },
+  ];
+  worksheet['!cols'] = widths.map((wch) => ({ wch }));
+  worksheet['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 18 }, { hpt: 8 }];
+  worksheet['!autofilter'] = { ref: `A7:${utils.encode_col(headers.length - 1)}${Math.max(7, rows.length + 7)}` };
+  applyInventoryWorksheetStyles(worksheet, rows.length, headers.length);
+  return worksheet;
+}
+
+function countBy<T extends string>(items: EquipoLaboratorio[], getKey: (item: EquipoLaboratorio) => T) {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    const key = getKey(item) || 'Sin clasificar';
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+}
+
+function isInventoryNoteRow(item: EquipoLaboratorio) {
+  const normalized = [item.codigo, item.nombre, item.marcaModelo, item.observaciones]
+    .join(' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  return (
+    item.nombre.trim().toLowerCase().startsWith('nota') ||
+    normalized.includes('debidalaincorporaciondenuevosequipos') ||
+    normalized.includes('ajustesrealizadosenellaboratorio') ||
+    normalized.includes('numeracionsecuencial') ||
+    normalized.includes('manteneruncontroladecuado')
+  );
+}
+
+export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
+  const sortedEquipos = state.equipos.filter((item) => !isInventoryNoteRow(item)).sort((first, second) => {
+    const byLocation = first.ubicacion.localeCompare(second.ubicacion, 'es');
+    if (byLocation !== 0) return byLocation;
+    const byCategory = first.categoria.localeCompare(second.categoria, 'es');
+    if (byCategory !== 0) return byCategory;
+    return first.nombre.localeCompare(second.nombre, 'es');
+  });
+
+  const headers = [
+    'Fila',
+    'Codigo interno',
+    'Equipo',
+    'Categoria',
+    'Marca / modelo',
+    'Serie',
+    'Ubicacion',
+    'Estado',
+    'Observaciones',
+    'Actualizado',
+  ];
+
+  const rows = sortedEquipos.map((item, index) => [
+    index + 1,
+    item.codigo,
+    item.nombre,
+    item.categoria,
+    item.marcaModelo,
+    item.serie,
+    item.ubicacion,
+    estadoEquipoLabels[item.estado] ?? item.estado,
+    item.observaciones,
+    formatExcelDate(item.updatedAt),
+  ]);
+
+  const generatedAt = new Date().toLocaleString('es-PA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  const inventorySheetRows = [
+    ['UNIVERSIDAD AUTONOMA DE CHIRIQUI'],
+    ['FACULTAD DE ECONOMIA'],
+    [],
+    ['INVENTARIO DE LA FACULTAD'],
+    [`Generado: ${generatedAt}`],
+    [],
+    headers,
+    ...rows,
+  ];
+
+  const workbook = utils.book_new();
+  const inventoryWorksheet = utils.aoa_to_sheet(inventorySheetRows);
+  inventoryWorksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: headers.length - 1 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: headers.length - 1 } },
+  ];
+  inventoryWorksheet['!cols'] = [
+    { wch: 8 },
+    { wch: 18 },
+    { wch: 24 },
+    { wch: 18 },
+    { wch: 28 },
+    { wch: 24 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 36 },
+    { wch: 20 },
+  ];
+  inventoryWorksheet['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 18 }, { hpt: 8 }];
+  inventoryWorksheet['!autofilter'] = { ref: `A7:J${Math.max(7, rows.length + 7)}` };
+  applyInventoryWorksheetStyles(inventoryWorksheet, rows.length, headers.length);
+  utils.book_append_sheet(workbook, inventoryWorksheet, 'Inventario');
+
+  const byLocation = countBy(sortedEquipos, (item) => item.ubicacion || 'Sin ubicacion');
+  const byStatus = countBy(sortedEquipos, (item) => estadoEquipoLabels[item.estado] ?? item.estado);
+  const summaryRows = [
+    ['UNIVERSIDAD AUTONOMA DE CHIRIQUI'],
+    ['FACULTAD DE ECONOMIA'],
+    [],
+    ['RESUMEN DEL INVENTARIO'],
+    [],
+    ['Grupo', 'Detalle', 'Total'],
+    ['General', 'Equipos registrados', sortedEquipos.length],
+    ...Object.entries(byLocation)
+      .sort(([first], [second]) => first.localeCompare(second, 'es'))
+      .map(([label, count]) => ['Ubicacion', label, count]),
+    ...Object.entries(byStatus)
+      .sort(([first], [second]) => first.localeCompare(second, 'es'))
+      .map(([label, count]) => ['Estado', label, count]),
+  ];
+  const summaryWorksheet = utils.aoa_to_sheet(summaryRows);
+  summaryWorksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 2 } },
+  ];
+  summaryWorksheet['!cols'] = [{ wch: 18 }, { wch: 34 }, { wch: 12 }];
+  applySummaryWorksheetStyles(summaryWorksheet, summaryRows.length - 6, 3);
+  utils.book_append_sheet(workbook, summaryWorksheet, 'Resumen');
+
+  writeFile(workbook, `inventario-facultad-${slugifyFileName(new Date().toISOString().slice(0, 10))}.xlsx`);
+}
+
+export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, month: string) {
+  const selectedMonth = month || new Date().toISOString().slice(0, 7);
+  const workbook = utils.book_new();
+  const bitacoras = state.bitacoras
+    .filter((item) => item.fecha.startsWith(selectedMonth))
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const fichas = state.fichas
+    .filter((item) => item.fecha.startsWith(selectedMonth))
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const prestamos = state.prestamos
+    .filter((item) => item.fechaPrestamo.startsWith(selectedMonth))
+    .sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo));
+
+  const resumenRows = [
+    ['Bitacoras registradas', bitacoras.length],
+    ['Fichas tecnicas registradas', fichas.length],
+    ['Prestamos registrados', prestamos.length],
+    ['Trabajos abiertos al generar', state.bitacoras.filter((item) => item.estado !== 'cerrado').length],
+    ['Equipos no operativos', state.equipos.filter((item) => item.estado !== 'operativo').length],
+  ];
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet('INFORME MENSUAL DE MANTENIMIENTO', ['Indicador', 'Total'], resumenRows, [34, 14]),
+    'Resumen',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'BITACORAS DEL MES',
+      ['Fecha', 'Titulo', 'Tipo', 'Prioridad', 'Estado', 'Responsable', 'Ubicacion', 'Descripcion'],
+      bitacoras.map((item) => [
+        formatExcelDate(item.fecha),
+        item.titulo,
+        item.tipoTrabajo,
+        prioridadLabels[item.prioridad],
+        estadoTrabajoLabels[item.estado],
+        item.responsable,
+        item.ubicacion,
+        item.descripcion,
+      ]),
+      [20, 28, 18, 14, 16, 22, 22, 44],
+    ),
+    'Bitacoras',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'FICHAS TECNICAS DEL MES',
+      ['Fecha', 'Equipo', 'Ubicacion', 'Responsable', 'Usuario asignado', 'Observacion'],
+      fichas.map((item) => [
+        formatExcelDate(item.fecha),
+        item.pc,
+        item.ubicacion,
+        item.responsable,
+        item.usuarioAsignado,
+        item.observacionGeneral,
+      ]),
+      [20, 24, 22, 22, 22, 46],
+    ),
+    'Fichas tecnicas',
+  );
+  writeFile(workbook, `informe-mantenimiento-${slugifyFileName(selectedMonth)}.xlsx`);
+}
+
+export function exportInformeUbicacionLaboratorioExcel(state: LaboratorioState, ubicacion: string) {
+  const selectedLocation = ubicacion || 'Todas';
+  const equipos = state.equipos
+    .filter((item) => !isInventoryNoteRow(item))
+    .filter((item) => selectedLocation === 'Todas' || item.ubicacion === selectedLocation)
+    .sort((first, second) => {
+      const byStatus = (estadoEquipoLabels[first.estado] ?? first.estado).localeCompare(
+        estadoEquipoLabels[second.estado] ?? second.estado,
+        'es',
+      );
+      if (byStatus !== 0) return byStatus;
+      return first.nombre.localeCompare(second.nombre, 'es');
+    });
+  const bitacoras = state.bitacoras
+    .filter((item) => selectedLocation === 'Todas' || item.ubicacion === selectedLocation)
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const workbook = utils.book_new();
+
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      `INFORME POR UBICACION: ${selectedLocation.toUpperCase()}`,
+      ['Fila', 'Equipo', 'Categoria', 'Marca / modelo', 'Serie', 'Estado', 'Observaciones'],
+      equipos.map((item, index) => [
+        index + 1,
+        item.nombre,
+        item.categoria,
+        item.marcaModelo,
+        item.serie,
+        estadoEquipoLabels[item.estado] ?? item.estado,
+        item.observaciones,
+      ]),
+      [8, 24, 18, 30, 24, 18, 44],
+    ),
+    'Equipos',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'BITACORAS RELACIONADAS',
+      ['Fecha', 'Titulo', 'Prioridad', 'Estado', 'Responsable', 'Descripcion'],
+      bitacoras.map((item) => [
+        formatExcelDate(item.fecha),
+        item.titulo,
+        prioridadLabels[item.prioridad],
+        estadoTrabajoLabels[item.estado],
+        item.responsable,
+        item.descripcion,
+      ]),
+      [20, 28, 14, 16, 22, 46],
+    ),
+    'Bitacoras',
+  );
+
+  writeFile(workbook, `informe-ubicacion-${slugifyFileName(selectedLocation)}.xlsx`);
+}
+
+export function exportInformePendientesLaboratorioExcel(state: LaboratorioState) {
+  const workbook = utils.book_new();
+  const equiposPendientes = state.equipos
+    .filter((item) => !isInventoryNoteRow(item) && item.estado !== 'operativo')
+    .sort((first, second) => first.ubicacion.localeCompare(second.ubicacion, 'es'));
+  const trabajosAbiertos = state.bitacoras
+    .filter((item) => item.estado !== 'cerrado')
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const prestamosActivos = state.prestamos
+    .filter((item) => item.estado !== 'devuelto')
+    .sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo));
+
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'EQUIPOS PENDIENTES O NO OPERATIVOS',
+      ['Equipo', 'Categoria', 'Ubicacion', 'Estado', 'Serie', 'Observaciones', 'Actualizado'],
+      equiposPendientes.map((item) => [
+        item.nombre,
+        item.categoria,
+        item.ubicacion,
+        estadoEquipoLabels[item.estado] ?? item.estado,
+        item.serie,
+        item.observaciones,
+        formatExcelDate(item.updatedAt),
+      ]),
+      [24, 18, 22, 18, 22, 44, 20],
+    ),
+    'Equipos pendientes',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'TRABAJOS ABIERTOS',
+      ['Fecha', 'Titulo', 'Prioridad', 'Estado', 'Responsable', 'Ubicacion', 'Descripcion'],
+      trabajosAbiertos.map((item) => [
+        formatExcelDate(item.fecha),
+        item.titulo,
+        prioridadLabels[item.prioridad],
+        estadoTrabajoLabels[item.estado],
+        item.responsable,
+        item.ubicacion,
+        item.descripcion,
+      ]),
+      [20, 28, 14, 16, 22, 22, 46],
+    ),
+    'Trabajos abiertos',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'PRESTAMOS ACTIVOS O VENCIDOS',
+      ['Fecha prestamo', 'Equipo', 'Entregado a', 'Documento', 'Responsable', 'Estado', 'Devolucion', 'Observaciones'],
+      prestamosActivos.map((item) => [
+        formatExcelDate(item.fechaPrestamo),
+        item.equipo,
+        item.entregadoA,
+        item.documento,
+        item.responsableEntrega,
+        item.estado,
+        item.fechaDevolucion ? formatExcelDate(item.fechaDevolucion) : 'Pendiente',
+        item.observaciones,
+      ]),
+      [20, 24, 24, 18, 22, 14, 20, 44],
+    ),
+    'Prestamos',
+  );
+  writeFile(workbook, `informe-pendientes-laboratorio-${slugifyFileName(new Date().toISOString().slice(0, 10))}.xlsx`);
+}
+
+export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, equipoId: string) {
+  const equipo = state.equipos.find((item) => item.id === equipoId);
+  if (!equipo) return;
+
+  const normalizedKeys = [equipo.codigo, equipo.nombre, equipo.serie, equipo.marcaModelo]
+    .filter(Boolean)
+    .map((value) =>
+      value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase(),
+    );
+  const matchesEquipo = (value: string) => {
+    const normalizedValue = value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    return normalizedKeys.some((key) => key && normalizedValue.includes(key));
+  };
+  const fichas = state.fichas
+    .filter((item) => matchesEquipo(`${item.pc} ${item.inventario.map((field) => field.numero).join(' ')}`))
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const bitacoras = state.bitacoras
+    .filter((item) => matchesEquipo(`${item.equipoOrigen} ${item.equipoDestino} ${item.titulo} ${item.descripcion}`))
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
+
+  const workbook = utils.book_new();
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      `HISTORIAL TECNICO: ${equipo.nombre.toUpperCase()}`,
+      ['Campo', 'Valor'],
+      [
+        ['Codigo interno', equipo.codigo],
+        ['Equipo', equipo.nombre],
+        ['Categoria', equipo.categoria],
+        ['Marca / modelo', equipo.marcaModelo],
+        ['Serie', equipo.serie],
+        ['Ubicacion', equipo.ubicacion],
+        ['Estado', estadoEquipoLabels[equipo.estado] ?? equipo.estado],
+        ['Observaciones', equipo.observaciones],
+      ],
+      [24, 60],
+    ),
+    'Equipo',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'FICHAS TECNICAS RELACIONADAS',
+      ['Fecha', 'Equipo', 'Responsable', 'Usuario asignado', 'Observacion'],
+      fichas.map((item) => [
+        formatExcelDate(item.fecha),
+        item.pc,
+        item.responsable,
+        item.usuarioAsignado,
+        item.observacionGeneral,
+      ]),
+      [20, 24, 22, 22, 48],
+    ),
+    'Fichas',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'BITACORAS RELACIONADAS',
+      ['Fecha', 'Titulo', 'Prioridad', 'Estado', 'Responsable', 'Descripcion'],
+      bitacoras.map((item) => [
+        formatExcelDate(item.fecha),
+        item.titulo,
+        prioridadLabels[item.prioridad],
+        estadoTrabajoLabels[item.estado],
+        item.responsable,
+        item.descripcion,
+      ]),
+      [20, 28, 14, 16, 22, 48],
+    ),
+    'Bitacoras',
+  );
+  writeFile(workbook, `historial-${slugifyFileName(equipo.nombre || equipo.codigo)}.xlsx`);
 }
 
 export function exportLaboratorioCsv(state: LaboratorioState) {
