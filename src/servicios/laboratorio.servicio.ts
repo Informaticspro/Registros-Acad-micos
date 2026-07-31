@@ -54,6 +54,25 @@ export type ImportEquiposLaboratorioResult = {
   ignored: number;
 };
 
+function shouldRetryLegacyLaboratoryLog(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  const details = [
+    'message' in error ? String(error.message) : '',
+    'details' in error ? String(error.details) : '',
+    'hint' in error ? String(error.hint) : '',
+    'code' in error ? String(error.code) : '',
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    details.includes('entry_type') ||
+    details.includes('equipment_id') ||
+    details.includes('schema cache') ||
+    details.includes('pgrst204')
+  );
+}
+
 const estadoEquipoLabels: Record<string, string> = {
   operativo: 'Operativo',
   mantenimiento: 'Mantenimiento',
@@ -942,31 +961,35 @@ export async function createBitacoraLaboratorio(
   }
 
   requireContext(context);
-  const { data, error } = await requireSupabase()
-    .from('laboratory_logs')
-    .insert({
-      organization_id: context.organizationId,
-      work_date: input.fecha,
-      work_type: input.tipoTrabajo,
-      title: input.titulo,
-      description: input.descripcion,
-      responsible: input.responsable,
-      priority: input.prioridad,
-      status: input.estado,
-      entry_type: input.clase,
-      equipment_id: input.equipoId || null,
-      source_equipment: input.equipoOrigen,
-      target_equipment: input.equipoDestino,
-      location: input.ubicacion,
-      evidence_title: input.evidenciaTitulo,
-      evidence_url: input.evidenciaUrl,
-      created_by: context.userId,
-    })
-    .select('*')
-    .single();
+  const basePayload = {
+    organization_id: context.organizationId,
+    work_date: input.fecha,
+    work_type: input.tipoTrabajo,
+    title: input.titulo,
+    description: input.descripcion,
+    responsible: input.responsable,
+    priority: input.prioridad,
+    status: input.estado,
+    source_equipment: input.equipoOrigen,
+    target_equipment: input.equipoDestino,
+    location: input.ubicacion,
+    evidence_title: input.evidenciaTitulo,
+    evidence_url: input.evidenciaUrl,
+    created_by: context.userId,
+  };
+  const payload = {
+    ...basePayload,
+    entry_type: input.clase,
+    equipment_id: input.equipoId || null,
+  };
+  let response = await requireSupabase().from('laboratory_logs').insert(payload).select('*').single();
 
-  if (error) throw error;
-  return mapBitacora(data);
+  if (response.error && shouldRetryLegacyLaboratoryLog(response.error)) {
+    response = await requireSupabase().from('laboratory_logs').insert(basePayload).select('*').single();
+  }
+
+  if (response.error) throw response.error;
+  return mapBitacora(response.data);
 }
 
 export async function updateBitacoraLaboratorio(id: string, input: BitacoraLaboratorioInput): Promise<BitacoraLaboratorio> {
@@ -979,30 +1002,43 @@ export async function updateBitacoraLaboratorio(id: string, input: BitacoraLabor
     return updated;
   }
 
-  const { data, error } = await requireSupabase()
+  const basePayload = {
+    work_date: input.fecha,
+    work_type: input.tipoTrabajo,
+    title: input.titulo,
+    description: input.descripcion,
+    responsible: input.responsable,
+    priority: input.prioridad,
+    status: input.estado,
+    source_equipment: input.equipoOrigen,
+    target_equipment: input.equipoDestino,
+    location: input.ubicacion,
+    evidence_title: input.evidenciaTitulo,
+    evidence_url: input.evidenciaUrl,
+  };
+  const payload = {
+    ...basePayload,
+    entry_type: input.clase,
+    equipment_id: input.equipoId || null,
+  };
+  let response = await requireSupabase()
     .from('laboratory_logs')
-    .update({
-      work_date: input.fecha,
-      work_type: input.tipoTrabajo,
-      title: input.titulo,
-      description: input.descripcion,
-      responsible: input.responsable,
-      priority: input.prioridad,
-      status: input.estado,
-      entry_type: input.clase,
-      equipment_id: input.equipoId || null,
-      source_equipment: input.equipoOrigen,
-      target_equipment: input.equipoDestino,
-      location: input.ubicacion,
-      evidence_title: input.evidenciaTitulo,
-      evidence_url: input.evidenciaUrl,
-    })
+    .update(payload)
     .eq('id', id)
     .select('*')
     .single();
 
-  if (error) throw error;
-  return mapBitacora(data);
+  if (response.error && shouldRetryLegacyLaboratoryLog(response.error)) {
+    response = await requireSupabase()
+      .from('laboratory_logs')
+      .update(basePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+  }
+
+  if (response.error) throw response.error;
+  return mapBitacora(response.data);
 }
 
 export async function deleteBitacoraLaboratorio(id: string) {
