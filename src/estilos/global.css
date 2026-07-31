@@ -3491,8 +3491,24 @@ textarea {
     flex-direction: column;
   }
 
+  .lab-home-hero {
+    padding: 12px;
+  }
+
+  .lab-home-hero h2 {
+    font-size: 1.55rem;
+    line-height: 1.08;
+  }
+
+  .lab-home-hero p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
   .lab-home-actions {
-    justify-content: stretch;
+    display: none;
   }
 
   .lab-inventory-hero {
@@ -3500,34 +3516,30 @@ textarea {
     align-items: stretch;
     width: 100%;
     min-width: 0;
-    padding: 12px;
+    padding: 10px;
     overflow: hidden;
   }
 
   .lab-inventory-hero-actions {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr);
     width: 100%;
     min-width: 0;
+    gap: 6px;
   }
 
   .lab-inventory-hero h2 {
     max-width: 100%;
-    font-size: clamp(1.45rem, 8vw, 1.9rem);
+    font-size: clamp(1.35rem, 7vw, 1.75rem);
     line-height: 1.05;
     overflow-wrap: anywhere;
   }
 
   .lab-inventory-hero p {
-    display: -webkit-box;
-    max-width: 100%;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow-wrap: anywhere;
+    display: none;
   }
 
   .lab-inventory-hero-actions strong {
-    font-size: 1.8rem;
+    font-size: 1.55rem;
   }
 
   .lab-inventory-hero-actions > span {
@@ -3540,7 +3552,10 @@ textarea {
 
   .lab-inventory-hero-actions .primary-button,
   .lab-inventory-hero-actions .secondary-button {
-    grid-column: 1 / -1;
+    grid-column: span 1;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 0.9rem;
   }
 
   .lab-inventory-workspace {
@@ -3891,8 +3906,8 @@ textarea {
   .lab-workspace {
     width: 100vw;
     max-width: 100vw;
-    padding: 10px;
-    gap: 12px;
+    padding: 8px;
+    gap: 8px;
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -3906,12 +3921,14 @@ textarea {
   .lab-workspace-header {
     grid-template-columns: 1fr;
     align-items: stretch;
-    padding: 14px;
+    gap: 8px;
+    padding: 10px 12px;
     overflow: visible;
   }
 
   .lab-workspace-header .secondary-button {
     width: 100%;
+    min-height: 38px;
   }
 
   .lab-workspace-badge {
@@ -3929,21 +3946,16 @@ textarea {
   .lab-workspace-title h1 {
     max-width: 100%;
     overflow-wrap: anywhere;
-    font-size: clamp(1.75rem, 10vw, 2.25rem);
+    font-size: clamp(1.5rem, 8vw, 1.85rem);
     line-height: 1.02;
   }
 
   .lab-workspace-title p {
-    display: -webkit-box;
-    max-width: 100%;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-    overflow-wrap: anywhere;
+    display: none;
   }
 
   .lab-shell {
-    padding: 10px;
+    padding: 8px;
     width: 100%;
     min-width: 0;
     overflow-x: hidden;
@@ -3953,8 +3965,8 @@ textarea {
   .lab-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin: 0 0 12px;
+    gap: 5px;
+    margin: 0 0 8px;
     padding: 0;
     max-width: 100%;
     overflow: visible;
@@ -3963,10 +3975,10 @@ textarea {
   .lab-tabs button {
     width: 100%;
     min-width: 0;
-    min-height: 36px;
-    padding: 0 7px;
-    border-radius: 12px;
-    font-size: 0.8rem;
+    min-height: 31px;
+    padding: 0 5px;
+    border-radius: 10px;
+    font-size: 0.72rem;
     line-height: 1.05;
     white-space: nowrap;
   }
