@@ -725,25 +725,30 @@ export function PaginaLaboratorio() {
         estado,
         observaciones: item.observaciones,
       });
-      await createBitacoraLaboratorio(
-        {
-          fecha: new Date().toISOString(),
-          tipoTrabajo: estado === 'operativo' ? 'Cierre de mantenimiento' : 'Cambio de estado',
-          titulo: estado === 'operativo' ? `Equipo operativo: ${equipoLabel}` : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
-          descripcion: automaticDescription,
-          responsable: profile?.fullName || profile?.email || 'Soporte tecnico',
-          prioridad: estado === 'baja' ? 'alta' : 'media',
-          estado: estado === 'operativo' || estado === 'baja' ? 'cerrado' : 'en_proceso',
-          clase: estado === 'operativo' ? 'mantenimiento' : 'incidencia',
-          equipoId: item.id,
-          equipoOrigen: item.estado,
-          equipoDestino: equipoLabel,
-          ubicacion: nextUbicacion,
-          evidenciaTitulo: '',
-          evidenciaUrl: '',
-        },
-        saveContext,
-      );
+      try {
+        await createBitacoraLaboratorio(
+          {
+            fecha: new Date().toISOString(),
+            tipoTrabajo: estado === 'operativo' ? 'Cierre de mantenimiento' : 'Cambio de estado',
+            titulo: estado === 'operativo' ? `Equipo operativo: ${equipoLabel}` : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
+            descripcion: automaticDescription,
+            responsable: profile?.fullName || profile?.email || 'Soporte tecnico',
+            prioridad: estado === 'baja' ? 'alta' : 'media',
+            estado: estado === 'operativo' || estado === 'baja' ? 'cerrado' : 'en_proceso',
+            clase: estado === 'operativo' ? 'mantenimiento' : 'incidencia',
+            equipoId: item.id,
+            equipoOrigen: item.estado,
+            equipoDestino: equipoLabel,
+            ubicacion: nextUbicacion,
+            evidenciaTitulo: '',
+            evidenciaUrl: '',
+          },
+          saveContext,
+        );
+      } catch (historyError) {
+        const detail = historyError instanceof Error ? historyError.message : 'Error desconocido';
+        setError(`Estado actualizado, pero no se pudo guardar el historial automatico: ${detail}`);
+      }
       setMessage(
         estado === 'baja'
           ? 'Equipo marcado como baja y movido a Deposito.'
