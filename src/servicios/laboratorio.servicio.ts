@@ -1,4 +1,4 @@
-import { isDemoMode } from '@/infraestructura/entorno';
+﻿import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
 import { utils, writeFile } from 'xlsx-js-style';
 import {
@@ -1266,6 +1266,28 @@ function countBy<T extends string>(items: EquipoLaboratorio[], getKey: (item: Eq
   }, {});
 }
 
+function getEstadoEquipoDisplay(value: string) {
+  return estadoEquipoLabels[value] ?? value;
+}
+
+function getMovimientoEstadoLaboratorio(item: BitacoraLaboratorio) {
+  const auditMatch = item.descripcion.match(/Auditoria de inventario:\s*([^-\n]+?)\s*->\s*([^\.\n]+)/i);
+  const automaticMatch = item.descripcion.match(/Cambio de estado tecnico:\s*([^-\n]+?)\s*->\s*([^\.\n]+)/i);
+  const isAutomaticStateChange = item.tipoTrabajo === 'Cambio de estado' || item.tipoTrabajo === 'Cierre de mantenimiento';
+  const match = auditMatch ?? automaticMatch;
+
+  if (!match && !isAutomaticStateChange) return null;
+
+  return {
+    fecha: item.fecha,
+    equipo: item.equipoDestino || item.equipoOrigen || 'Equipo no indicado',
+    estadoAnterior: match?.[1]?.trim() || getEstadoEquipoDisplay(item.equipoOrigen),
+    estadoNuevo: match?.[2]?.trim() || (item.tipoTrabajo === 'Cierre de mantenimiento' ? 'Operativo' : 'No indicado'),
+    responsable: item.responsable || 'No indicado',
+    detalle: item.descripcion,
+  };
+}
+
 function isInventoryNoteRow(item: EquipoLaboratorio) {
   const normalized = [item.codigo, item.nombre, item.marcaModelo, item.observaciones]
     .join(' ')
@@ -1404,6 +1426,7 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
   const bitacoras = state.bitacoras
     .filter((item) => item.fecha.startsWith(selectedMonth))
     .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const movimientosEstado = bitacoras.map(getMovimientoEstadoLaboratorio).filter((item): item is NonNullable<typeof item> => Boolean(item));
   const fichas = state.fichas
     .filter((item) => item.fecha.startsWith(selectedMonth))
     .sort((first, second) => second.fecha.localeCompare(first.fecha));
@@ -1413,6 +1436,7 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
 
   const resumenRows = [
     ['Bitacoras registradas', bitacoras.length],
+    ['Cambios de estado auditados', movimientosEstado.length],
     ['Fichas tecnicas registradas', fichas.length],
     ['Prestamos registrados', prestamos.length],
     ['Trabajos abiertos al generar', state.bitacoras.filter((item) => item.estado !== 'cerrado').length],
@@ -1445,6 +1469,23 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
   utils.book_append_sheet(
     workbook,
     createFormalWorksheet(
+      'AUDITORIA DE CAMBIOS DE ESTADO',
+      ['Fecha', 'Equipo', 'Estado anterior', 'Estado nuevo', 'Responsable', 'Detalle'],
+      movimientosEstado.map((item) => [
+        formatExcelDate(item.fecha),
+        item.equipo,
+        item.estadoAnterior,
+        item.estadoNuevo,
+        item.responsable,
+        item.detalle,
+      ]),
+      [20, 30, 22, 22, 24, 56],
+    ),
+    'Auditoria',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
       'FICHAS TECNICAS DEL MES',
       ['Fecha', 'Equipo', 'Ubicacion', 'Responsable', 'Usuario asignado', 'Observacion'],
       fichas.map((item) => [
@@ -1473,6 +1514,7 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
   const registros = state.bitacoras.filter((item) => inRange(item.fecha)).sort((first, second) => second.fecha.localeCompare(first.fecha));
   const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
   const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
+  const movimientosEstado = registros.map(getMovimientoEstadoLaboratorio).filter((item): item is NonNullable<typeof item> => Boolean(item));
   const atendidos = new Set(registros.map((item) => item.equipoId || item.equipoDestino || item.equipoOrigen).filter(Boolean));
   const abiertos = state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia' && item.estado !== 'resuelto' && item.estado !== 'cerrado');
   const equiposValidos = state.equipos.filter((item) => !isInventoryNoteRow(item));
@@ -1492,6 +1534,7 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
       ['Periodo seleccionado', rango],
       ['Movimientos tecnicos registrados', registros.length],
       ['Mantenimientos efectuados', mantenimientos.length],
+      ['Cambios de estado auditados', movimientosEstado.length],
       ['Equipos atendidos', atendidos.size],
       ['Daños o incidencias encontrados', incidencias.length],
       ['Reparaciones pendientes o en proceso', abiertos.length],
@@ -1515,6 +1558,23 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
       ]),
       [20, 18, 22, 28, 22, 30, 16, 22, 52]),
     'Detalle',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'AUDITORIA DE CAMBIOS DE ESTADO',
+      ['Fecha', 'Equipo', 'Estado anterior', 'Estado nuevo', 'Responsable', 'Detalle'],
+      movimientosEstado.map((item) => [
+        formatExcelDate(item.fecha),
+        item.equipo,
+        item.estadoAnterior,
+        item.estadoNuevo,
+        item.responsable,
+        item.detalle,
+      ]),
+      [20, 30, 22, 22, 24, 56],
+    ),
+    'Auditoria',
   );
   utils.book_append_sheet(
     workbook,
@@ -1852,5 +1912,7 @@ export function buildLaboratorioReport(state: LaboratorioState) {
     ),
   ].join('\n');
 }
+
+
 
 

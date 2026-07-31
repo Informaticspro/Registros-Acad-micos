@@ -627,6 +627,13 @@ export function PaginaLaboratorio() {
       shouldSyncEquipoEstado = false;
     }
 
+    if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
+      const previousEstadoLabel = estadoEquipoNombre[equipoAtendido.estado] ?? getEstadoEquipoLabel(equipoAtendido.estado);
+      const nextEstadoLabel = estadoEquipoNombre[nextEquipoEstado] ?? getEstadoEquipoLabel(nextEquipoEstado);
+      input.descripcion = `${input.descripcion.trim()}\n\nAuditoria de inventario: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
+      input.equipoOrigen = input.equipoOrigen || equipoAtendido.estado;
+    }
+
     setIsSaving(true);
     setError(null);
     setMessage(null);
