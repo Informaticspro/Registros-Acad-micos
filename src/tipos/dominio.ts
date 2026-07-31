@@ -18,6 +18,7 @@ export type EventoAcademico = {
   id: string;
   title: string;
   eventType: 'seminario' | 'congreso' | 'taller' | 'capacitacion' | 'universitario';
+  registrationFormType?: 'educacion_continua' | 'seminario_general' | null;
   description: string;
   location: string;
   startsAt: string | null;

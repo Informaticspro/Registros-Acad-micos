@@ -9,6 +9,8 @@ import {
   SEMINARIO_DATE_OPTIONS,
   SEMINARIO_DISABILITY_OPTIONS,
   SEMINARIO_FACULTY_OPTIONS,
+  SEMINARIO_GENERAL_PARTICIPANT_TYPE_OPTIONS,
+  SEMINARIO_GENERAL_REGIONAL_CENTER_OPTIONS,
   SEMINARIO_PARTICIPANT_TYPE_OPTIONS,
   SEMINARIO_PURPOSE_OPTIONS,
   SEMINARIO_REGIONAL_CENTER_OPTIONS,
@@ -55,15 +57,47 @@ export function CamposFormularioRegistro({ formKind }: Props) {
         <input name="documentId" required placeholder="Ej. 8-888-111" autoComplete="off" />
       </label>
       <label>
-        {formKind === 'seminario' ? 'Correo institucional' : 'Correo institucional'}
+        Correo institucional
         <input
           name="email"
           required
           type="email"
-          placeholder={formKind === 'seminario' ? 'correo@unachi.ac.pa' : 'correo@institucion.edu'}
+          placeholder={formKind === 'seminario' || formKind === 'seminario_general' ? 'correo@unachi.ac.pa' : 'correo@institucion.edu'}
           autoComplete="email"
         />
       </label>
+      {formKind === 'seminario_general' ? (
+        <>
+          <label>
+            Correo personal
+            <input name="personalEmail" required type="email" placeholder="correo.personal@gmail.com" />
+          </label>
+          <RadioGroup legend="Sexo" name="sex" options={SEMINARIO_SEX_OPTIONS} />
+          <label>
+            Celular con WhatsApp
+            <input name="phone" required placeholder="Ej. 6123-4567" inputMode="tel" />
+          </label>
+          <fieldset className="choice-group full-field">
+            <legend>Facultad donde esta realizando su especializacion</legend>
+            {SEMINARIO_FACULTY_OPTIONS.map((option) => (
+              <label className="choice-option" key={option}>
+                <input name="faculty" type="radio" value={option} required />
+                <span>{option}</span>
+              </label>
+            ))}
+          </fieldset>
+          <RadioGroup
+            legend="Centro universitario al que pertenece"
+            name="regionalCenter"
+            options={SEMINARIO_GENERAL_REGIONAL_CENTER_OPTIONS}
+          />
+          <label className="full-field">
+            Si pertenece a otra universidad, indique el nombre
+            <input name="otherUniversity" placeholder="Ej. Universidad, institucion o centro externo" />
+          </label>
+          <RadioGroup legend="Es usted" name="participantType" options={SEMINARIO_GENERAL_PARTICIPANT_TYPE_OPTIONS} />
+        </>
+      ) : null}
       {formKind === 'seminario' ? (
         <>
           <label>

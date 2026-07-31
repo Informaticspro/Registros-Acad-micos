@@ -1,15 +1,21 @@
 ﻿import { EventoAcademico } from '@/tipos/dominio';
 
-export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario';
+export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario' | 'seminario_general';
+
+export type TipoFormularioSeminario = NonNullable<EventoAcademico['registrationFormType']>;
 
 export const SEMINARIO_INFORMATICA_INTERMEDIA_TITULO =
   'Seminario de Informatica Intermedia como requisito de Posgrado y Maestria';
 
 export function getInscripcionFormKind(
-  eventType: EventoAcademico['eventType'] | undefined,
+  eventOrType: EventoAcademico | EventoAcademico['eventType'] | undefined,
 ): InscripcionFormKind {
+  const eventType = typeof eventOrType === 'string' ? eventOrType : eventOrType?.eventType;
   if (eventType === 'congreso') return 'congreso';
-  if (eventType === 'seminario') return 'seminario';
+  if (eventType === 'seminario') {
+    const registrationFormType = typeof eventOrType === 'string' ? null : eventOrType?.registrationFormType;
+    return registrationFormType === 'seminario_general' ? 'seminario_general' : 'seminario';
+  }
   return 'simple';
 }
 
@@ -18,7 +24,10 @@ export function getInscripcionFormHint(kind: InscripcionFormKind): string {
     return 'Formulario de congreso: datos extendidos para certificado y reportes.';
   }
   if (kind === 'seminario') {
-    return 'Formulario de seminario: datos academicos, contacto, fecha disponible y motivo de participacion.';
+    return 'Formulario de seminario de educacion continua: datos academicos, contacto, fecha disponible y motivo de participacion.';
+  }
+  if (kind === 'seminario_general') {
+    return 'Formulario de seminario general: datos de contacto, facultad, centro universitario y tipo de participante.';
   }
   return 'Formulario simple: nombre, apellido, cedula y correo institucional.';
 }
@@ -122,6 +131,18 @@ export const SEMINARIO_REGIONAL_CENTER_OPTIONS = [
 ] as const;
 
 export const SEMINARIO_PARTICIPANT_TYPE_OPTIONS = ['Docente', 'Estudiante'] as const;
+
+export const SEMINARIO_GENERAL_REGIONAL_CENTER_OPTIONS = [
+  ...SEMINARIO_REGIONAL_CENTER_OPTIONS,
+  'Otra universidad / fuera de la UNACHI',
+] as const;
+
+export const SEMINARIO_GENERAL_PARTICIPANT_TYPE_OPTIONS = [
+  'Docente',
+  'Estudiante',
+  'Administrativo',
+  'Otros',
+] as const;
 
 export const SEMINARIO_DATE_OPTIONS = [
   'Del 10 al 14 de Agosto',

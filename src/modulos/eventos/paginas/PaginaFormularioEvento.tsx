@@ -25,6 +25,7 @@ export function PaginaFormularioEvento() {
   const { eventId } = useParams();
   const { profile } = useAutenticacion();
   const [eventToEdit, setEventToEdit] = useState<EventoAcademico | null>(null);
+  const [selectedEventType, setSelectedEventType] = useState<EventoAcademico['eventType']>('congreso');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = Boolean(eventId);
@@ -33,6 +34,7 @@ export function PaginaFormularioEvento() {
     () => ({
       title: eventToEdit?.title ?? '',
       eventType: eventToEdit?.eventType ?? 'congreso',
+      registrationFormType: eventToEdit?.registrationFormType ?? 'educacion_continua',
       location: eventToEdit?.location ?? '',
       capacity: eventToEdit?.capacity ?? '',
       startsAt: toDateTimeLocal(eventToEdit?.startsAt ?? null),
@@ -56,6 +58,10 @@ export function PaginaFormularioEvento() {
       })
       .catch((err) => setError(getErrorMessage(err, 'No se pudo cargar el evento')));
   }, [eventId]);
+
+  useEffect(() => {
+    setSelectedEventType(initialValues.eventType);
+  }, [initialValues.eventType]);
 
   function getRequiredText(form: FormData, field: string, label: string) {
     const value = String(form.get(field) ?? '').trim();
@@ -88,9 +94,14 @@ export function PaginaFormularioEvento() {
       const capacity = Number(form.get('capacity') ?? 0);
       if (!Number.isFinite(capacity) || capacity <= 0) throw new Error('La capacidad debe ser mayor que cero');
 
+      const eventType = String(form.get('eventType') ?? 'seminario') as EventoAcademico['eventType'];
       const payload = {
         title: getRequiredText(form, 'title', 'El nombre del evento'),
-        eventType: String(form.get('eventType') ?? 'seminario') as EventoAcademico['eventType'],
+        eventType,
+        registrationFormType:
+          eventType === 'seminario'
+            ? (String(form.get('registrationFormType') ?? 'educacion_continua') as EventoAcademico['registrationFormType'])
+            : null,
         description: String(form.get('description') ?? '').trim(),
         location: getRequiredText(form, 'location', 'El lugar'),
         startsAt: getOptionalDateTime(form, 'startsAt'),
@@ -129,7 +140,12 @@ export function PaginaFormularioEvento() {
         </label>
         <label>
           Tipo
-          <select name="eventType" defaultValue={initialValues.eventType} required key={`type-${initialValues.eventType}`}>
+          <select
+            name="eventType"
+            value={selectedEventType}
+            required
+            onChange={(event) => setSelectedEventType(event.currentTarget.value as EventoAcademico['eventType'])}
+          >
             <option value="seminario">Seminario</option>
             <option value="congreso">Congreso</option>
             <option value="taller">Taller</option>
@@ -137,6 +153,22 @@ export function PaginaFormularioEvento() {
             <option value="universitario">Evento universitario</option>
           </select>
         </label>
+        {selectedEventType === 'seminario' ? (
+          <label>
+            Formulario del seminario
+            <select
+              name="registrationFormType"
+              defaultValue={initialValues.registrationFormType ?? 'educacion_continua'}
+              key={`seminar-form-${initialValues.registrationFormType ?? 'educacion_continua'}`}
+            >
+              <option value="educacion_continua">Educacion continua / Informatica intermedia</option>
+              <option value="seminario_general">Seminario general UNACHI</option>
+            </select>
+            <span className="field-hint">
+              Educacion continua usa fechas, aula virtual y motivo. General UNACHI usa un formulario mas corto.
+            </span>
+          </label>
+        ) : null}
         <label>
           Lugar
           <input name="location" required placeholder="Auditorio, salon o campus" defaultValue={initialValues.location} />

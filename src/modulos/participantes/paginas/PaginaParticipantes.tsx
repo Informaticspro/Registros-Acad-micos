@@ -89,6 +89,7 @@ const seminarMetadataFields = [
   { key: 'virtualClassEmail', label: 'Correo aula virtual' },
   { key: 'faculty', label: 'Facultad' },
   { key: 'regionalCenter', label: 'Centro universitario' },
+  { key: 'otherUniversity', label: 'Otra universidad' },
   { key: 'participantType', label: 'Tipo participante' },
   { key: 'seminarDate', label: 'Fecha seminario' },
   { key: 'seminarPurpose', label: 'Motivo seminario' },

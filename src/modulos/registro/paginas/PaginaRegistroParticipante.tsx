@@ -19,8 +19,8 @@ function getValue(form: FormData, field: string) {
   return String(form.get(field) ?? '').trim();
 }
 
-function collectMetadata(form: FormData, eventType: EventoAcademico['eventType'] | undefined): Record<string, string> {
-  const formKind = getInscripcionFormKind(eventType);
+function collectMetadata(form: FormData, event: EventoAcademico | null): Record<string, string> {
+  const formKind = getInscripcionFormKind(event ?? undefined);
 
   if (formKind === 'congreso') {
     return {
@@ -48,6 +48,19 @@ function collectMetadata(form: FormData, eventType: EventoAcademico['eventType']
       participantType: getValue(form, 'participantType'),
       seminarDate: getValue(form, 'seminarDate'),
       seminarPurpose: getValue(form, 'seminarPurpose'),
+    };
+  }
+
+  if (formKind === 'seminario_general') {
+    return {
+      institutionalEmail: getValue(form, 'email'),
+      personalEmail: getValue(form, 'personalEmail'),
+      sex: getValue(form, 'sex'),
+      phone: getValue(form, 'phone'),
+      faculty: getValue(form, 'faculty'),
+      regionalCenter: getValue(form, 'regionalCenter'),
+      otherUniversity: getValue(form, 'otherUniversity'),
+      participantType: getValue(form, 'participantType'),
     };
   }
 
@@ -112,7 +125,7 @@ export function PaginaRegistroParticipante() {
     return () => window.clearTimeout(timeout);
   }, [fromAdmin, navigate, result]);
 
-  const formKind = getInscripcionFormKind(event?.eventType);
+  const formKind = getInscripcionFormKind(event ?? undefined);
   const registrationOpen = event ? isPublicRegistrationOpen(event) : false;
   const showDraftWarning = event && !registrationOpen;
 
@@ -144,7 +157,7 @@ export function PaginaRegistroParticipante() {
         documentId: getValue(form, 'documentId'),
         email: getValue(form, 'email'),
         eventType: event.eventType,
-        metadata: collectMetadata(form, event.eventType),
+        metadata: collectMetadata(form, event),
       });
       setResult(response);
       formElement.reset();

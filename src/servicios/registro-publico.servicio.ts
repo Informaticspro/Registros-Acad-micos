@@ -31,6 +31,28 @@ const seminarioMetadataSchema = z.object({
   seminarPurpose: z.string().min(1, 'Motivo del seminario requerido'),
 });
 
+const seminarioGeneralMetadataSchema = z.object({
+  institutionalEmail: z.string().email('Correo institucional invalido'),
+  personalEmail: z.string().email('Correo personal invalido'),
+  sex: z.string().min(1, 'Sexo requerido'),
+  phone: z.string().min(6, 'Celular con WhatsApp requerido'),
+  faculty: z.string().min(1, 'Facultad requerida'),
+  regionalCenter: z.string().min(1, 'Centro universitario requerido'),
+  otherUniversity: z.string().optional(),
+  participantType: z.string().min(1, 'Tipo de participante requerido'),
+});
+
+function validateMetadataWithSchema(
+  schema: typeof congresoMetadataSchema | typeof seminarioMetadataSchema | typeof seminarioGeneralMetadataSchema,
+  metadata: Record<string, string> | undefined,
+) {
+  const parsed = schema.safeParse(metadata ?? {});
+  if (parsed.success) return;
+
+  const firstIssue = parsed.error.issues[0];
+  throw new Error(firstIssue?.message ?? 'Complete los campos requeridos del formulario');
+}
+
 export const publicCheckInSchema = z
   .object({
     eventId: z.string().min(1, 'Evento requerido'),
@@ -43,12 +65,9 @@ export const publicCheckInSchema = z
   })
   .superRefine((data, ctx) => {
     const kind = getInscripcionFormKind(data.eventType);
-    if (kind !== 'congreso' && kind !== 'seminario') return;
+    if (kind !== 'congreso') return;
 
-    const parsed =
-      kind === 'congreso'
-        ? congresoMetadataSchema.safeParse(data.metadata ?? {})
-        : seminarioMetadataSchema.safeParse(data.metadata ?? {});
+    const parsed = congresoMetadataSchema.safeParse(data.metadata ?? {});
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         ctx.addIssue({
@@ -82,9 +101,15 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     throw new Error('Este evento no esta disponible para registro en este momento.');
   }
 
-  const formKind = getInscripcionFormKind(parsed.eventType as EventoAcademico['eventType'] | undefined);
+  const formKind = getInscripcionFormKind(event);
+  if (formKind === 'seminario') {
+    validateMetadataWithSchema(seminarioMetadataSchema, parsed.metadata);
+  }
+  if (formKind === 'seminario_general') {
+    validateMetadataWithSchema(seminarioGeneralMetadataSchema, parsed.metadata);
+  }
   const metadata =
-    formKind === 'congreso' || formKind === 'seminario'
+    formKind === 'congreso' || formKind === 'seminario' || formKind === 'seminario_general'
       ? Object.fromEntries(
           Object.entries(parsed.metadata ?? {}).filter(([, value]) => value.trim().length > 0),
         )
