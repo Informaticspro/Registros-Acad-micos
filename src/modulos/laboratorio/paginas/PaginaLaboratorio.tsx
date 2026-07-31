@@ -66,6 +66,7 @@ import {
   SeccionLaboratorio,
 } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
+import { supabase } from '@/infraestructura/supabase';
 import { formatDateTime } from '@/utilidades/formato';
 
 type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
@@ -432,6 +433,7 @@ export function PaginaLaboratorio() {
   const [selectedReportEquipoId, setSelectedReportEquipoId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [profileNamesById, setProfileNamesById] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -513,6 +515,27 @@ export function PaginaLaboratorio() {
   }, []);
 
   useEffect(() => {
+    const registeredIds = Array.from(new Set(state.equipos.map((item) => item.registradoPor).filter((value) => value && isUuid(value))));
+    const missingIds = registeredIds.filter((id) => !profileNamesById[id]);
+    if (profile?.id && profile.fullName) {
+      setProfileNamesById((current) => (current[profile.id] ? current : { ...current, [profile.id]: profile.fullName }));
+    }
+    if (!supabase || missingIds.length === 0) return;
+
+    supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', missingIds)
+      .then(({ data }) => {
+        if (!data?.length) return;
+        setProfileNamesById((current) => ({
+          ...current,
+          ...Object.fromEntries(data.map((row) => [row.id, row.full_name])),
+        }));
+      });
+  }, [profile?.fullName, profile?.id, profileNamesById, state.equipos]);
+
+  useEffect(() => {
     if (!message && !error) return undefined;
 
     const timeout = window.setTimeout(() => {
@@ -578,6 +601,8 @@ export function PaginaLaboratorio() {
       const responsable =
         item.registradoPor && item.registradoPor === profile?.id
           ? profile.fullName
+          : item.registradoPor && profileNamesById[item.registradoPor]
+            ? profileNamesById[item.registradoPor]
           : item.registradoPor && !isUuid(item.registradoPor)
             ? item.registradoPor
             : 'Usuario del sistema';
@@ -594,7 +619,7 @@ export function PaginaLaboratorio() {
     return [...bitacoras, ...fichas, ...prestamos, ...equipos]
       .sort((first, second) => second.fecha.localeCompare(first.fecha))
       .slice(0, 8);
-  }, [estadoEquipoNombre, profile?.fullName, profile?.id, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
+  }, [estadoEquipoNombre, profile?.fullName, profile?.id, profileNamesById, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
