@@ -1584,7 +1584,7 @@ export function PaginaLaboratorio() {
                   <form className="stack-form lab-form lab-modal-form" onSubmit={handleEquipoSubmit}>
                     <div className="form-grid compact-form-grid">
                       <label>
-                        Codigo interno
+                        Numero de inventario
                         <input name="codigo" required defaultValue={editingEquipo?.codigo} />
                       </label>
                       <label>

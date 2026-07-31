@@ -3542,7 +3542,7 @@ textarea {
 
   .lab-inventory-workspace {
     padding: 12px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .lab-inventory-sheet-title {
@@ -3566,7 +3566,8 @@ textarea {
   }
 
   .lab-inventory-table-wrap {
-    max-height: 68vh;
+    max-height: none;
+    overflow: visible;
     border-radius: var(--radius);
   }
 
@@ -3882,14 +3883,14 @@ textarea {
     max-width: 100%;
     padding: 10px;
     gap: 12px;
-    overflow-x: hidden;
+    overflow: visible;
   }
 
   .lab-workspace-header {
     grid-template-columns: 1fr;
     align-items: stretch;
     padding: 14px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .lab-workspace-header .secondary-button {
@@ -3926,7 +3927,7 @@ textarea {
 
   .lab-shell {
     padding: 12px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .lab-tabs {
