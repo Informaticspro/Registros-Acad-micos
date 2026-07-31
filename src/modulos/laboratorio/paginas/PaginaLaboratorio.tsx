@@ -151,6 +151,10 @@ function getEstadoEquipoLabel(value: string) {
   return estadoEquipoLabels[value] ?? value;
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
 function getEstadoEquipoClass(value: string) {
   const normalized = value
     .normalize('NFD')
@@ -571,12 +575,18 @@ export function PaginaLaboratorio() {
     }));
     const equipos = state.equipos.map((item) => {
       const isCreation = Math.abs(new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime()) < 2000;
+      const responsable =
+        item.registradoPor && item.registradoPor === profile?.id
+          ? profile.fullName
+          : item.registradoPor && !isUuid(item.registradoPor)
+            ? item.registradoPor
+            : 'Usuario del sistema';
       return {
         id: `equipo-${item.id}`,
         fecha: item.updatedAt || item.createdAt,
         tipo: isCreation ? 'Equipo registrado' : 'Equipo actualizado',
         titulo: item.nombre,
-        detalle: `${item.registradoPor || 'Inventario'} | ${item.ubicacion || 'Sin ubicacion'} | ${estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}`,
+        detalle: `${responsable} | ${item.ubicacion || 'Sin ubicacion'} | ${estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}`,
         tab: 'inventario' as LabTab,
       };
     });
@@ -584,7 +594,7 @@ export function PaginaLaboratorio() {
     return [...bitacoras, ...fichas, ...prestamos, ...equipos]
       .sort((first, second) => second.fecha.localeCompare(first.fecha))
       .slice(0, 8);
-  }, [estadoEquipoNombre, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
+  }, [estadoEquipoNombre, profile?.fullName, profile?.id, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
