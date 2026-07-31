@@ -188,6 +188,30 @@ function splitMarcaModelo(value: string) {
   return { marca: parts[0], modelo: parts.slice(1).join(' ') };
 }
 
+function getNaturalInventorySortKey(item: EquipoLaboratorio) {
+  const source = [item.nombre, item.codigo, item.serie].filter(Boolean).join(' ');
+  const normalized = source
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const numberMatch = normalized.match(/\b(?:pc|est|estacion|equipo|lab)\s*[-#:]?\s*(\d+)\b/) ?? normalized.match(/\b(\d+)\b/);
+  const number = numberMatch ? Number(numberMatch[1]) : Number.MAX_SAFE_INTEGER;
+  const prefix = normalized.match(/[a-z]+/)?.[0] ?? 'zz';
+
+  return { prefix, number, label: normalized };
+}
+
+function sortEquiposInventario(items: EquipoLaboratorio[]) {
+  return [...items].sort((first, second) => {
+    const firstKey = getNaturalInventorySortKey(first);
+    const secondKey = getNaturalInventorySortKey(second);
+    const byPrefix = firstKey.prefix.localeCompare(secondKey.prefix, 'es', { numeric: true });
+    if (byPrefix !== 0) return byPrefix;
+    if (firstKey.number !== secondKey.number) return firstKey.number - secondKey.number;
+    return firstKey.label.localeCompare(secondKey.label, 'es', { numeric: true });
+  });
+}
+
 function parseEquipoExcelRow(row: Record<string, unknown>, index: number): EquipoLaboratorioInput {
   const codigo =
     readExcelCell(row, ['codigo', 'codigo interno', 'inventario', 'n inventario', 'numero inventario', 'placa', 'asset', 'id']) ||
@@ -382,8 +406,11 @@ export function PaginaLaboratorio() {
   }, [state.equipos, state.secciones]);
 
   const equiposInventarioFiltrados = useMemo(() => {
-    if (selectedInventoryLocation === 'Todas') return state.equipos;
-    return state.equipos.filter((item) => item.ubicacion === selectedInventoryLocation);
+    const filtered =
+      selectedInventoryLocation === 'Todas'
+        ? state.equipos
+        : state.equipos.filter((item) => item.ubicacion === selectedInventoryLocation);
+    return sortEquiposInventario(filtered);
   }, [selectedInventoryLocation, state.equipos]);
 
   const categoriasEquipo = useMemo(() => {
@@ -577,6 +604,32 @@ export function PaginaLaboratorio() {
       await refresh();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el equipo.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleQuickEstadoEquipo(item: EquipoLaboratorio, estado: EstadoEquipoLaboratorio) {
+    if (item.estado === estado) return;
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await updateEquipoLaboratorio(item.id, {
+        codigo: item.codigo,
+        nombre: item.nombre,
+        categoria: item.categoria,
+        marcaModelo: item.marcaModelo,
+        serie: item.serie,
+        ubicacion: item.ubicacion,
+        estado,
+        observaciones: item.observaciones,
+      });
+      setMessage(`Estado actualizado a ${estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}.`);
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo actualizar el estado del equipo.');
     } finally {
       setIsSaving(false);
     }
@@ -1509,16 +1562,26 @@ export function PaginaLaboratorio() {
                       return (
                         <div className="lab-inventory-row" key={item.id}>
                           <span>{index + 1}</span>
-                          <strong>{item.categoria || item.nombre}</strong>
+                          <strong>{item.nombre || item.categoria}</strong>
                           <span>{marca}</span>
                           <span>{modelo}</span>
                           <span>{item.codigo || 'S/N'}</span>
                           <span>{item.serie || 'S/N'}</span>
                           <span>{item.ubicacion || 'Sin ubicacion'}</span>
                           <span>
-                            <em className={`inventory-status equipment-${getEstadoEquipoClass(item.estado)}`}>
-                              {estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}
-                            </em>
+                            <select
+                              className={`inventory-status inventory-status-select equipment-${getEstadoEquipoClass(item.estado)}`}
+                              value={item.estado}
+                              disabled={isSaving}
+                              title="Cambiar estado"
+                              onChange={(event) => void handleQuickEstadoEquipo(item, event.target.value)}
+                            >
+                              {estadosEquipo.map((estado) => (
+                                <option value={estado} key={estado}>
+                                  {estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
+                                </option>
+                              ))}
+                            </select>
                           </span>
                           <span className="row-actions inventory-actions">
                             <button

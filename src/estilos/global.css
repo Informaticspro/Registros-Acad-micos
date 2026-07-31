@@ -2077,6 +2077,20 @@ textarea {
   text-transform: uppercase;
 }
 
+.inventory-status-select {
+  width: auto;
+  max-width: 150px;
+  min-height: 30px;
+  padding: 3px 24px 3px 10px;
+  cursor: pointer;
+  outline: 0;
+  text-align: center;
+}
+
+.inventory-status-select:focus {
+  box-shadow: 0 0 0 3px rgba(243, 189, 34, 0.18);
+}
+
 .inventory-actions {
   justify-content: center;
 }
