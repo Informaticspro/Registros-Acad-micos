@@ -1470,30 +1470,106 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
     const time = new Date(fecha).getTime();
     return time >= start && time <= end;
   };
-  const registros = state.bitacoras.filter((item) => inRange(item.fecha));
+  const registros = state.bitacoras.filter((item) => inRange(item.fecha)).sort((first, second) => second.fecha.localeCompare(first.fecha));
   const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
   const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
-  const atendidos = new Set(mantenimientos.map((item) => item.equipoDestino || item.equipoOrigen).filter(Boolean));
+  const atendidos = new Set(registros.map((item) => item.equipoId || item.equipoDestino || item.equipoOrigen).filter(Boolean));
   const abiertos = state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia' && item.estado !== 'resuelto' && item.estado !== 'cerrado');
+  const equiposValidos = state.equipos.filter((item) => !isInventoryNoteRow(item));
+  const equiposNoOperativos = equiposValidos.filter((item) => item.estado !== 'operativo');
+  const registrosPorUbicacion = registros.reduce<Record<string, number>>((acc, item) => {
+    const ubicacion = item.ubicacion || 'Sin ubicacion';
+    acc[ubicacion] = (acc[ubicacion] ?? 0) + 1;
+    return acc;
+  }, {});
+  const equiposPorEstado = countBy(equiposValidos, (item) => estadoEquipoLabels[item.estado] ?? item.estado);
   const rango = `${desde || 'Inicio'} a ${hasta || 'Hoy'}`;
   const workbook = utils.book_new();
+
   utils.book_append_sheet(
     workbook,
     createFormalWorksheet('INFORME DE MANTENIMIENTO POR RANGO', ['Indicador', 'Total'], [
-      ['Período seleccionado', rango],
+      ['Periodo seleccionado', rango],
+      ['Movimientos tecnicos registrados', registros.length],
       ['Mantenimientos efectuados', mantenimientos.length],
       ['Equipos atendidos', atendidos.size],
       ['Daños o incidencias encontrados', incidencias.length],
       ['Reparaciones pendientes o en proceso', abiertos.length],
-    ], [40, 32]),
+      ['Equipos no operativos al generar', equiposNoOperativos.length],
+    ], [42, 32]),
     'Resumen',
   );
   utils.book_append_sheet(
     workbook,
-    createFormalWorksheet('MANTENIMIENTOS E INCIDENCIAS', ['Fecha', 'Clase', 'Equipo', 'Título', 'Estado', 'Responsable', 'Detalle'],
-      registros.map((item) => [formatExcelDate(item.fecha), item.tipoTrabajo === 'Incidencia' ? 'Incidencia' : 'Mantenimiento', item.equipoDestino || item.equipoOrigen, item.titulo, estadoTrabajoLabels[item.estado], item.responsable, item.descripcion]),
-      [20, 18, 25, 30, 16, 22, 48]),
+    createFormalWorksheet('MANTENIMIENTOS E INCIDENCIAS', ['Fecha', 'Clase', 'Tipo', 'Equipo', 'Ubicacion', 'Titulo', 'Estado', 'Responsable', 'Detalle'],
+      registros.map((item) => [
+        formatExcelDate(item.fecha),
+        item.tipoTrabajo === 'Incidencia' ? 'Incidencia' : 'Mantenimiento',
+        item.tipoTrabajo,
+        item.equipoDestino || item.equipoOrigen || 'Equipo no indicado',
+        item.ubicacion || 'No indicada',
+        item.titulo,
+        estadoTrabajoLabels[item.estado],
+        item.responsable,
+        item.descripcion,
+      ]),
+      [20, 18, 22, 28, 22, 30, 16, 22, 52]),
     'Detalle',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'RESUMEN POR UBICACION',
+      ['Ubicacion', 'Registros del periodo'],
+      Object.entries(registrosPorUbicacion)
+        .sort(([first], [second]) => first.localeCompare(second, 'es'))
+        .map(([ubicacion, total]) => [ubicacion, total]),
+      [34, 20],
+    ),
+    'Por ubicacion',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'ESTADO ACTUAL DEL INVENTARIO',
+      ['Estado', 'Total de equipos'],
+      Object.entries(equiposPorEstado)
+        .sort(([first], [second]) => first.localeCompare(second, 'es'))
+        .map(([estado, total]) => [estado, total]),
+      [30, 18],
+    ),
+    'Estados actuales',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'PENDIENTES ACTUALES',
+      ['Equipo', 'Ubicacion', 'Estado', 'Serie', 'Observaciones'],
+      equiposNoOperativos.map((item) => [
+        item.nombre,
+        item.ubicacion,
+        estadoEquipoLabels[item.estado] ?? item.estado,
+        item.serie,
+        item.observaciones,
+      ]),
+      [28, 24, 18, 24, 52],
+    ),
+    'Pendientes actuales',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'CONCLUSIONES DEL PERIODO',
+      ['Conclusion'],
+      [
+        [`Durante el periodo seleccionado se registraron ${registros.length} movimientos tecnicos.`],
+        [`Se atendieron ${atendidos.size} equipos entre mantenimientos, incidencias, cierres o cambios de estado.`],
+        [`Al generar este informe quedan ${equiposNoOperativos.length} equipos no operativos o pendientes de seguimiento.`],
+        [`Las reparaciones o incidencias abiertas suman ${abiertos.length} registros.`],
+      ],
+      [92],
+    ),
+    'Conclusiones',
   );
   writeFile(workbook, `informe-mantenimiento-${slugifyFileName(desde || 'inicio')}-a-${slugifyFileName(hasta || 'hoy')}.xlsx`);
 }
@@ -1504,9 +1580,9 @@ export function buildInformeMantenimientoPorRango(state: LaboratorioState, desde
   const registros = state.bitacoras.filter((item) => { const time = new Date(item.fecha).getTime(); return time >= start && time <= end; });
   const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
   const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
-  const equipos = new Set(mantenimientos.map((item) => item.equipoDestino || item.equipoOrigen).filter(Boolean));
+  const equipos = new Set(registros.map((item) => item.equipoId || item.equipoDestino || item.equipoOrigen).filter(Boolean));
   const abiertos = state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia' && !['resuelto', 'cerrado'].includes(item.estado));
-  return [`INFORME DE MANTENIMIENTO`, `Período: ${desde || 'Inicio'} a ${hasta || 'Hoy'}`, '', `Mantenimientos efectuados: ${mantenimientos.length}`, `Equipos atendidos: ${equipos.size}`, `Daños/incidencias encontrados: ${incidencias.length}`, `Reparaciones pendientes o en proceso: ${abiertos.length}`, '', ...registros.map((item) => `- ${item.fecha.slice(0, 10)} | ${item.tipoTrabajo === 'Incidencia' ? 'INCIDENCIA' : 'MANTENIMIENTO'} | ${item.equipoDestino || item.equipoOrigen || 'Equipo no indicado'} | ${item.titulo} | ${estadoTrabajoLabels[item.estado]}`)].join('\n');
+  return [`INFORME DE MANTENIMIENTO`, `Periodo: ${desde || 'Inicio'} a ${hasta || 'Hoy'}`, '', `Movimientos tecnicos registrados: ${registros.length}`, `Mantenimientos efectuados: ${mantenimientos.length}`, `Equipos atendidos: ${equipos.size}`, `Daños/incidencias encontrados: ${incidencias.length}`, `Reparaciones pendientes o en proceso: ${abiertos.length}`, '', ...registros.map((item) => `- ${item.fecha.slice(0, 10)} | ${item.tipoTrabajo === 'Incidencia' ? 'INCIDENCIA' : 'MANTENIMIENTO'} | ${item.equipoDestino || item.equipoOrigen || 'Equipo no indicado'} | ${item.titulo} | ${estadoTrabajoLabels[item.estado]}`)].join('\n');
 }
 
 export function exportInformeUbicacionLaboratorioExcel(state: LaboratorioState, ubicacion: string) {
@@ -1663,7 +1739,7 @@ export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, e
     .filter((item) => matchesEquipo(`${item.pc} ${item.inventario.map((field) => field.numero).join(' ')}`))
     .sort((first, second) => second.fecha.localeCompare(first.fecha));
   const bitacoras = state.bitacoras
-    .filter((item) => matchesEquipo(`${item.equipoOrigen} ${item.equipoDestino} ${item.titulo} ${item.descripcion}`))
+    .filter((item) => item.equipoId === equipo.id || matchesEquipo(`${item.equipoOrigen} ${item.equipoDestino} ${item.titulo} ${item.descripcion}`))
     .sort((first, second) => second.fecha.localeCompare(first.fecha));
 
   const workbook = utils.book_new();
@@ -1776,4 +1852,5 @@ export function buildLaboratorioReport(state: LaboratorioState) {
     ),
   ].join('\n');
 }
+
 
