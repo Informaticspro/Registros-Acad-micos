@@ -202,8 +202,23 @@ function getNaturalInventorySortKey(item: EquipoLaboratorio) {
   return { prefix, number, label: normalized };
 }
 
-function sortEquiposInventario(items: EquipoLaboratorio[]) {
+function getInventoryStatusPriority(item: EquipoLaboratorio) {
+  const priority: Record<string, number> = {
+    mantenimiento: 0,
+    operativo: 1,
+    baja: 2,
+  };
+
+  return priority[item.estado] ?? 3;
+}
+
+function sortEquiposInventario(items: EquipoLaboratorio[], prioritizeStatus = false) {
   return [...items].sort((first, second) => {
+    if (prioritizeStatus) {
+      const byStatus = getInventoryStatusPriority(first) - getInventoryStatusPriority(second);
+      if (byStatus !== 0) return byStatus;
+    }
+
     const firstKey = getNaturalInventorySortKey(first);
     const secondKey = getNaturalInventorySortKey(second);
     const byPrefix = firstKey.prefix.localeCompare(secondKey.prefix, 'es', { numeric: true });
@@ -411,7 +426,7 @@ export function PaginaLaboratorio() {
       selectedInventoryLocation === 'Todas'
         ? state.equipos
         : state.equipos.filter((item) => item.ubicacion === selectedInventoryLocation);
-    return sortEquiposInventario(filtered);
+    return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
   }, [selectedInventoryLocation, state.equipos]);
 
   const categoriasEquipo = useMemo(() => {
