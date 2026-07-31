@@ -215,6 +215,28 @@ function getInventoryStatusPriority(item: EquipoLaboratorio) {
   return priority[item.estado] ?? 3;
 }
 
+function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
+  const tipo = input.tipoTrabajo
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (input.estado === 'resuelto' || input.estado === 'cerrado') return 'operativo';
+  if (tipo.includes('preventivo')) return 'mantenimiento';
+  if (
+    tipo.includes('incidencia') ||
+    tipo.includes('reparacion') ||
+    tipo.includes('correctivo') ||
+    tipo.includes('cambio de pieza') ||
+    tipo.includes('diagnostico')
+  ) {
+    return 'en_reparacion';
+  }
+  if (tipo.includes('instalacion') || tipo.includes('soporte')) return 'mantenimiento';
+
+  return null;
+}
+
 function sortEquiposInventario(items: EquipoLaboratorio[], prioritizeStatus = false) {
   return [...items].sort((first, second) => {
     if (prioritizeStatus) {
@@ -285,18 +307,22 @@ function downloadTextFile(content: string, fileName: string, type = 'text/plain;
 
 function buildBitacoraInput(form: HTMLFormElement): BitacoraLaboratorioInput {
   const data = new FormData(form);
+  const equipoId = readString(data, 'equipoId');
+  const equipoLabel = readString(data, 'equipoLabel');
+  const tipoTrabajo = readString(data, 'tipoTrabajo');
+  const clase = tipoTrabajo === 'Incidencia' ? 'incidencia' : 'mantenimiento';
   return {
     fecha: new Date(readString(data, 'fecha')).toISOString(),
-    tipoTrabajo: readString(data, 'tipoTrabajo'),
+    tipoTrabajo,
     titulo: readString(data, 'titulo'),
     descripcion: readString(data, 'descripcion'),
     responsable: readString(data, 'responsable'),
     prioridad: readString(data, 'prioridad') as PrioridadLaboratorio,
     estado: readString(data, 'estado') as EstadoTrabajoLaboratorio,
-    clase: readString(data, 'clase') as ClaseRegistroLaboratorio,
-    equipoId: readString(data, 'equipoId'),
+    clase,
+    equipoId,
     equipoOrigen: readString(data, 'equipoOrigen'),
-    equipoDestino: readString(data, 'equipoDestino'),
+    equipoDestino: equipoLabel || readString(data, 'equipoDestino'),
     ubicacion: readString(data, 'ubicacion'),
     evidenciaTitulo: readString(data, 'evidenciaTitulo'),
     evidenciaUrl: readString(data, 'evidenciaUrl'),
@@ -583,6 +609,23 @@ export function PaginaLaboratorio() {
     event.preventDefault();
     const form = event.currentTarget;
     const input = buildBitacoraInput(form);
+    const equipoAtendido = state.equipos.find((item) => item.id === input.equipoId);
+    const nextEquipoEstado = equipoAtendido ? resolveInventoryStatusFromBitacora(input) : null;
+    let shouldSyncEquipoEstado = Boolean(equipoAtendido && nextEquipoEstado);
+
+    if (equipoAtendido) {
+      input.equipoDestino = `${equipoAtendido.codigo} - ${equipoAtendido.nombre}`;
+      input.ubicacion = input.ubicacion || equipoAtendido.ubicacion;
+    }
+
+    if (
+      equipoAtendido &&
+      nextEquipoEstado === 'operativo' &&
+      equipoAtendido.estado !== 'operativo' &&
+      !window.confirm('Este registro esta resuelto o cerrado. Desea devolver el equipo a operativo en el inventario?')
+    ) {
+      shouldSyncEquipoEstado = false;
+    }
 
     setIsSaving(true);
     setError(null);
@@ -596,6 +639,19 @@ export function PaginaLaboratorio() {
         await createBitacoraLaboratorio(input, saveContext);
         setMessage('Bitacora registrada correctamente.');
         form.reset();
+      }
+
+      if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
+        await updateEquipoLaboratorio(equipoAtendido.id, {
+          codigo: equipoAtendido.codigo,
+          nombre: equipoAtendido.nombre,
+          categoria: equipoAtendido.categoria,
+          marcaModelo: equipoAtendido.marcaModelo,
+          serie: equipoAtendido.serie,
+          ubicacion: equipoAtendido.ubicacion,
+          estado: nextEquipoEstado,
+          observaciones: equipoAtendido.observaciones,
+        });
       }
 
       await refresh();
@@ -1483,10 +1539,10 @@ export function PaginaLaboratorio() {
                 </label>
                 <label>
                   Equipo atendido
-                  <select name="equipoDestino" defaultValue={editingBitacora?.equipoDestino ?? ''} required>
+                  <select name="equipoId" defaultValue={editingBitacora?.equipoId ?? ''} required>
                     <option value="">Seleccione un equipo</option>
                     {state.equipos.map((equipo) => (
-                      <option value={`${equipo.codigo} - ${equipo.nombre}`} key={equipo.id}>
+                      <option value={equipo.id} key={equipo.id}>
                         {equipo.codigo} - {equipo.nombre} ({equipo.ubicacion})
                       </option>
                     ))}
