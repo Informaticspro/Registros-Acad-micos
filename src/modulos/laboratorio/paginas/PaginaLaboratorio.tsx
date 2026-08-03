@@ -161,6 +161,34 @@ function normalizeExcelKey(value: string) {
     .replace(/[^a-z0-9]/g, '');
 }
 
+function normalizeLooseText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function containsExactLooseText(source: string, term: string) {
+  const normalizedSource = normalizeLooseText(source);
+  const normalizedTerm = normalizeLooseText(term);
+  if (!normalizedSource || !normalizedTerm) return false;
+  if (normalizedSource === normalizedTerm) return true;
+  return new RegExp(`(^|\\s)${escapeRegExp(normalizedTerm)}(\\s|$)`).test(normalizedSource);
+}
+
+function getTechnicalIdentifiers(value: string) {
+  return Array.from(value.toLowerCase().matchAll(/[a-z0-9]+/g), (match) => match[0]).filter(
+    (item) => item.length >= 3 && !['sin', 'sna', 'nan'].includes(item),
+  );
+}
+
 function getEstadoEquipoLabel(value: string) {
   return estadoEquipoLabels[value] ?? value;
 }
@@ -1195,25 +1223,24 @@ export function PaginaLaboratorio() {
     setMessage('Historial tecnico del equipo descargado correctamente.');
   }
 
-  function matchesEquipoDetalle(equipo: EquipoLaboratorio, value: string) {
-    const normalizedValue = value
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase();
-    const keys = [equipo.codigo, equipo.nombre, equipo.serie, equipo.marcaModelo]
-      .filter(Boolean)
-      .map((item) =>
-        item
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase(),
-      );
-    return keys.some((key) => key && normalizedValue.includes(key));
+  function matchesEquipoPorIdentificador(equipo: EquipoLaboratorio, value: string) {
+    const equipoIdentifiers = getTechnicalIdentifiers(`${equipo.codigo} ${equipo.serie}`);
+    if (equipoIdentifiers.length === 0) return false;
+    const valueIdentifiers = new Set(getTechnicalIdentifiers(value));
+    return equipoIdentifiers.some((identifier) => valueIdentifiers.has(identifier));
+  }
+
+  function matchesEquipoPorNombre(equipo: EquipoLaboratorio, value: string) {
+    return containsExactLooseText(value, equipo.nombre);
   }
 
   function getFichasEquipo(equipo: EquipoLaboratorio) {
     return state.fichas
-      .filter((item) => matchesEquipoDetalle(equipo, `${item.pc} ${item.inventario.map((field) => field.numero).join(' ')}`))
+      .filter(
+        (item) =>
+          normalizeLooseText(item.pc) === normalizeLooseText(equipo.nombre) ||
+          matchesEquipoPorIdentificador(equipo, item.inventario.map((field) => field.numero).join(' ')),
+      )
       .sort((first, second) => second.fecha.localeCompare(first.fecha));
   }
 
@@ -1222,9 +1249,20 @@ export function PaginaLaboratorio() {
       .filter(
         (item) =>
           item.equipoId === equipo.id ||
-          matchesEquipoDetalle(equipo, `${item.equipoOrigen} ${item.equipoDestino} ${item.titulo} ${item.descripcion}`),
+          matchesEquipoPorIdentificador(equipo, `${item.equipoOrigen} ${item.equipoDestino} ${item.titulo}`) ||
+          matchesEquipoPorNombre(equipo, `${item.equipoDestino} ${item.titulo}`),
       )
       .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  }
+
+  function getUltimoMantenimientoEquipo(fichas: FichaTecnicaLaboratorio[], bitacoras: BitacoraLaboratorio[]) {
+    const fechas = [
+      ...fichas.map((item) => item.fecha),
+      ...bitacoras
+        .filter((item) => item.clase === 'mantenimiento' || item.tipoTrabajo.toLowerCase().includes('mantenimiento'))
+        .map((item) => item.fecha),
+    ].filter(Boolean);
+    return fechas.sort((first, second) => second.localeCompare(first))[0] ?? null;
   }
 
   function openFichaForEquipo(equipo: EquipoLaboratorio) {
@@ -2068,6 +2106,7 @@ export function PaginaLaboratorio() {
                     const { marca, modelo } = splitMarcaModelo(selectedEquipoDetalle.marcaModelo);
                     const fichasEquipo = getFichasEquipo(selectedEquipoDetalle);
                     const bitacorasEquipo = getBitacorasEquipo(selectedEquipoDetalle);
+                    const ultimoMantenimiento = getUltimoMantenimientoEquipo(fichasEquipo, bitacorasEquipo);
                     return (
                       <>
                         <div className="modal-header lab-equipment-detail-header">
@@ -2110,6 +2149,10 @@ export function PaginaLaboratorio() {
                           <div><dt>Serie</dt><dd>{selectedEquipoDetalle.serie || 'S/N'}</dd></div>
                           <div><dt>Ubicacion</dt><dd>{selectedEquipoDetalle.ubicacion || 'No indicada'}</dd></div>
                           <div><dt>Estado</dt><dd>{estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado)}</dd></div>
+                          <div>
+                            <dt>Ultimo mantenimiento</dt>
+                            <dd>{ultimoMantenimiento ? formatDateTime(ultimoMantenimiento) : 'Sin mantenimiento registrado'}</dd>
+                          </div>
                           <div><dt>Actualizado</dt><dd>{formatDateTime(selectedEquipoDetalle.updatedAt)}</dd></div>
                         </dl>
 
