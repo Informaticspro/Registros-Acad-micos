@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Copy, ExternalLink, Files, Plus } from 'lucide-react';
+import { Copy, ExternalLink, Files, Plus, Users, XCircle } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { env } from '@/infraestructura/entorno';
 import { listEvents } from '@/servicios/eventos.servicio';
-import { EventoAcademico } from '@/tipos/dominio';
+import { listInscripcions, listParticipantes } from '@/servicios/participantes.servicio';
+import { EventoAcademico, Inscripcion, Participante } from '@/tipos/dominio';
 import {
   getEstadoEventoVisualClassName,
   getEstadoEventoVisualLabel,
@@ -25,12 +26,44 @@ function getRegistrationUrl(eventId: string) {
   return `${origin}/eventos/${eventId}/registro`;
 }
 
+const participantMetadataLabels: Record<string, string> = {
+  sex: 'Sexo',
+  category: 'Categoria',
+  personalEmail: 'Correo personal',
+  nationality: 'Nacionalidad',
+  otherNationality: 'Otra nacionalidad',
+  modality: 'Modalidad',
+  participationType: 'Tipo participacion',
+  entity: 'Entidad',
+  hasDisability: 'Discapacidad',
+  disabilityDetail: 'Detalle discapacidad',
+  phone: 'Celular',
+  virtualClassEmail: 'Correo aula virtual',
+  faculty: 'Facultad',
+  regionalCenter: 'Centro universitario',
+  otherUniversity: 'Otra universidad',
+  participantType: 'Tipo participante',
+  seminarDate: 'Fecha seminario',
+  seminarPurpose: 'Motivo seminario',
+};
+
+function getParticipantDisplayName(participant: Participante) {
+  return [participant.firstName, participant.lastName].filter(Boolean).join(' ') || 'Participante sin nombre';
+}
+
 export function PaginaEventos() {
   const [events, setEvents] = useState<EventoAcademico[]>([]);
+  const [participants, setParticipants] = useState<Participante[]>([]);
+  const [registrations, setRegistrations] = useState<Inscripcion[]>([]);
+  const [selectedParticipantsEvent, setSelectedParticipantsEvent] = useState<EventoAcademico | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    void listEvents().then(setEvents);
+    void Promise.all([listEvents(), listParticipantes(), listInscripcions()]).then(([eventRows, participantRows, registrationRows]) => {
+      setEvents(eventRows);
+      setParticipants(participantRows);
+      setRegistrations(registrationRows);
+    });
   }, []);
 
   async function handleCopyRegistrationUrl(event: EventoAcademico) {
@@ -41,6 +74,20 @@ export function PaginaEventos() {
       setMessage('No se pudo copiar automaticamente. Abra el detalle y copie el enlace manualmente.');
     }
   }
+
+  const participantsById = new Map(participants.map((participant) => [participant.id, participant]));
+
+  function getEventParticipants(eventId: string) {
+    return registrations
+      .filter((registration) => registration.eventId === eventId)
+      .map((registration) => ({
+        registration,
+        participant: participantsById.get(registration.participantId),
+      }))
+      .filter((row): row is { registration: Inscripcion; participant: Participante } => Boolean(row.participant));
+  }
+
+  const selectedParticipants = selectedParticipantsEvent ? getEventParticipants(selectedParticipantsEvent.id) : [];
 
   return (
     <div className="page-stack">
@@ -72,6 +119,11 @@ export function PaginaEventos() {
               <span>{getEventDateLabel(event)}</span>
               <span>{getCapacityLabel(event)}</span>
             </div>
+            <button className="event-participants-button" type="button" onClick={() => setSelectedParticipantsEvent(event)}>
+              <Users size={16} />
+              <strong>{getEventParticipants(event.id).length}</strong>
+              <span>participantes</span>
+            </button>
             <div className="event-card-actions">
               <Link className="secondary-button" to={`/eventos/${event.id}`}>
                 <ExternalLink size={16} />
@@ -89,6 +141,58 @@ export function PaginaEventos() {
           </article>
         ))}
       </section>
+      {selectedParticipantsEvent ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setSelectedParticipantsEvent(null)}>
+          <article
+            className="modal-panel event-participants-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="event-participants-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <span className="eyebrow">Participantes inscritos</span>
+                <h2 id="event-participants-title">{selectedParticipantsEvent.title}</h2>
+                <p>{selectedParticipants.length} participantes registrados</p>
+              </div>
+              <button className="icon-button" type="button" aria-label="Cerrar" onClick={() => setSelectedParticipantsEvent(null)}>
+                <XCircle size={18} />
+              </button>
+            </div>
+            {selectedParticipants.length === 0 ? <p className="form-hint">Todavia no hay participantes registrados en este evento.</p> : null}
+            {selectedParticipants.length > 0 ? (
+              <div className="event-participants-modal-list">
+                <div className="event-participants-modal-head">
+                  <span>Participante</span>
+                  <span>Cedula</span>
+                  <span>Correo</span>
+                  <span>Datos del registro</span>
+                </div>
+                {selectedParticipants.map(({ participant, registration }) => {
+                  const metadata = participant.metadata ?? {};
+                  const metadataText = Object.entries(metadata)
+                    .filter(([, value]) => Boolean(value))
+                    .map(([key, value]) => `${participantMetadataLabels[key] ?? key}: ${value}`)
+                    .join(' | ');
+
+                  return (
+                    <div className="event-participants-modal-row" key={registration.id}>
+                      <strong>{getParticipantDisplayName(participant)}</strong>
+                      <span>{participant.documentId || 'No indicada'}</span>
+                      <span>{participant.email || 'No indicado'}</span>
+                      <small>
+                        {metadataText || participant.institution || 'Registro simple'} | Registrado:{' '}
+                        {formatDateTime(registration.createdAt)}
+                      </small>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </article>
+        </div>
+      ) : null}
     </div>
   );
 }

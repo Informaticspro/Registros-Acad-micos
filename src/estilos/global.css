@@ -717,6 +717,39 @@ p {
   font-size: 0.9rem;
 }
 
+.event-participants-button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid rgba(121, 183, 53, 0.34);
+  border-radius: var(--radius);
+  background: rgba(121, 183, 53, 0.1);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.event-participants-button svg {
+  color: var(--accent);
+}
+
+.event-participants-button strong {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.event-participants-button span {
+  color: var(--muted);
+}
+
+.event-participants-button:hover {
+  border-color: rgba(243, 189, 34, 0.48);
+  background: var(--surface-soft);
+}
+
 .event-card-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -729,6 +762,62 @@ p {
   min-height: 38px;
   padding-inline: 10px;
   font-size: 0.86rem;
+}
+
+.event-participants-modal {
+  width: min(1080px, calc(100vw - 32px));
+  display: grid;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+.event-participants-modal .modal-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.event-participants-modal > .form-hint {
+  margin: 0 18px 18px;
+}
+
+.event-participants-modal-list {
+  display: grid;
+  max-height: min(620px, 68vh);
+  margin: 0 18px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.event-participants-modal-head,
+.event-participants-modal-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) 130px minmax(190px, 1fr) minmax(260px, 1.7fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 860px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.event-participants-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-deep);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.event-participants-modal-row:last-child {
+  border-bottom: 0;
+}
+
+.event-participants-modal-row small,
+.event-participants-modal-row span {
+  color: var(--muted);
 }
 
 .custom-form-builder {
@@ -4099,6 +4188,32 @@ textarea {
 
   .event-meta {
     align-self: auto;
+  }
+
+  .event-participants-modal {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+  }
+
+  .event-participants-modal-list {
+    max-height: 66vh;
+    overflow-x: hidden;
+    gap: 10px;
+    padding: 10px;
+    border: 0;
+  }
+
+  .event-participants-modal-head {
+    display: none;
+  }
+
+  .event-participants-modal-row {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-deep);
   }
 
   .definition-list div {
