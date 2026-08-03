@@ -249,12 +249,15 @@ function getNaturalInventorySortKey(item: EquipoLaboratorio) {
 
 function getInventoryStatusPriority(item: EquipoLaboratorio) {
   const priority: Record<string, number> = {
-    mantenimiento: 0,
-    operativo: 1,
-    baja: 2,
+    en_reparacion: 0,
+    pendiente_revision: 1,
+    mantenimiento: 2,
+    prestado: 3,
+    operativo: 5,
+    baja: 6,
   };
 
-  return priority[item.estado] ?? 3;
+  return priority[item.estado] ?? 4;
 }
 
 function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
