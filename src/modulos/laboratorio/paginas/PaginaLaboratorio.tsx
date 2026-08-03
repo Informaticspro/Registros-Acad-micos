@@ -1252,22 +1252,22 @@ export function PaginaLaboratorio() {
           <div className="lab-quick-stats" aria-label="Resumen rapido de laboratorio">
             <div>
               <Wrench size={16} />
-              <span>Trabajos</span>
+              <span>Trabajos abiertos</span>
               <strong>{indicadores.trabajosAbiertos}</strong>
             </div>
             <div>
               <HardDrive size={16} />
-              <span>Equipos</span>
+              <span>Equipos no operativos</span>
               <strong>{indicadores.equiposPendientes}</strong>
             </div>
             <div>
               <PackageCheck size={16} />
-              <span>Prestamos</span>
+              <span>Prestamos activos</span>
               <strong>{indicadores.prestamosActivos}</strong>
             </div>
             <div>
               <ClipboardList size={16} />
-              <span>Evidencias</span>
+              <span>Evidencias registradas</span>
               <strong>{indicadores.evidencias}</strong>
             </div>
           </div>
