@@ -166,6 +166,30 @@ function getEstadoEquipoClass(value: string) {
   return normalized || 'personalizado';
 }
 
+function shouldRequestIssueDetailForEstado(estado: string) {
+  if (estado === 'operativo' || estado === 'baja' || estado === 'prestado') return false;
+  const normalized = normalizeExcelKey(estado);
+  return (
+    normalized.includes('pend') ||
+    normalized.includes('revision') ||
+    normalized.includes('repar') ||
+    normalized.includes('manten') ||
+    normalized.includes('incid')
+  );
+}
+
+function getEstadoChangeWorkType(estado: string) {
+  if (estado === 'operativo') return 'Cierre de mantenimiento';
+  if (shouldRequestIssueDetailForEstado(estado)) return 'Incidencia';
+  return 'Cambio de estado';
+}
+
+function getEstadoChangeWorkStatus(estado: string): EstadoTrabajoLaboratorio {
+  if (estado === 'operativo' || estado === 'baja') return 'cerrado';
+  if (estado === 'pendiente_revision') return 'pendiente';
+  return 'en_proceso';
+}
+
 function readExcelCell(row: Record<string, unknown>, aliases: string[]) {
   const normalizedAliases = aliases.map(normalizeExcelKey);
   const entry = Object.entries(row).find(([key]) => normalizedAliases.includes(normalizeExcelKey(key)));
@@ -727,9 +751,18 @@ export function PaginaLaboratorio() {
       editingEquipo && hasEstadoChange && input.estado === 'operativo' && editingEquipo.estado !== 'operativo'
         ? window.prompt('Detalle del trabajo realizado antes de dejar el equipo operativo:')
         : null;
+    const issueDetail =
+      editingEquipo && hasEstadoChange && shouldRequestIssueDetailForEstado(input.estado)
+        ? window.prompt('Describa la incidencia, falla o motivo de revision del equipo:')
+        : null;
 
     if (editingEquipo && hasEstadoChange && input.estado === 'operativo' && !closingDetail?.trim()) {
       setError('Debe escribir un detalle antes de devolver el equipo a operativo.');
+      return;
+    }
+
+    if (editingEquipo && hasEstadoChange && shouldRequestIssueDetailForEstado(input.estado) && !issueDetail?.trim()) {
+      setError('Debe escribir la incidencia o motivo antes de cambiar el estado del equipo.');
       return;
     }
 
@@ -745,19 +778,27 @@ export function PaginaLaboratorio() {
         await updateEquipoLaboratorio(editingEquipo.id, input);
         if (hasEstadoChange) {
           const equipoLabel = `${input.codigo || editingEquipo.codigo} - ${input.nombre || editingEquipo.nombre}`;
+          const workType = getEstadoChangeWorkType(input.estado);
           const automaticDescription =
             input.estado === 'operativo'
               ? `Equipo devuelto a operativo. Estado anterior: ${previousEstadoLabel}. Detalle: ${closingDetail?.trim()}`
-              : `Cambio de estado tecnico desde edicion de inventario: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
+              : shouldRequestIssueDetailForEstado(input.estado)
+                ? `Incidencia registrada desde inventario. Estado anterior: ${previousEstadoLabel}. Estado actual: ${nextEstadoLabel}. Detalle: ${issueDetail?.trim()}`
+                : `Cambio de estado tecnico desde edicion de inventario: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
           await createBitacoraLaboratorio(
             {
               fecha: new Date().toISOString(),
-              tipoTrabajo: input.estado === 'operativo' ? 'Cierre de mantenimiento' : 'Cambio de estado',
-              titulo: input.estado === 'operativo' ? `Equipo operativo: ${equipoLabel}` : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
+              tipoTrabajo: workType,
+              titulo:
+                input.estado === 'operativo'
+                  ? `Equipo operativo: ${equipoLabel}`
+                  : shouldRequestIssueDetailForEstado(input.estado)
+                    ? `Incidencia en ${equipoLabel}`
+                    : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
               descripcion: automaticDescription,
               responsable: profile?.fullName || profile?.email || 'Soporte tecnico',
               prioridad: input.estado === 'baja' ? 'alta' : 'media',
-              estado: input.estado === 'operativo' || input.estado === 'baja' ? 'cerrado' : 'en_proceso',
+              estado: getEstadoChangeWorkStatus(input.estado),
               clase: input.estado === 'operativo' ? 'mantenimiento' : 'incidencia',
               equipoId: editingEquipo.id,
               equipoOrigen: editingEquipo.estado,
@@ -794,18 +835,30 @@ export function PaginaLaboratorio() {
       estado === 'operativo' && item.estado !== 'operativo'
         ? window.prompt('Detalle del trabajo realizado antes de dejar el equipo operativo:')
         : null;
+    const issueDetail =
+      shouldRequestIssueDetailForEstado(estado)
+        ? window.prompt('Describa la incidencia, falla o motivo de revision del equipo:')
+        : null;
 
     if (estado === 'operativo' && item.estado !== 'operativo' && !closingDetail?.trim()) {
       setError('Debe escribir un detalle antes de devolver el equipo a operativo.');
       return;
     }
 
+    if (shouldRequestIssueDetailForEstado(estado) && !issueDetail?.trim()) {
+      setError('Debe escribir la incidencia o motivo antes de cambiar el estado del equipo.');
+      return;
+    }
+
     const nextUbicacion = estado === 'baja' ? 'Deposito' : item.ubicacion;
     const equipoLabel = `${item.codigo} - ${item.nombre}`;
+    const workType = getEstadoChangeWorkType(estado);
     const automaticDescription =
       estado === 'operativo'
         ? `Equipo devuelto a operativo. Estado anterior: ${previousEstadoLabel}. Detalle: ${closingDetail?.trim()}`
-        : `Cambio de estado tecnico: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
+        : shouldRequestIssueDetailForEstado(estado)
+          ? `Incidencia registrada desde inventario. Estado anterior: ${previousEstadoLabel}. Estado actual: ${nextEstadoLabel}. Detalle: ${issueDetail?.trim()}`
+          : `Cambio de estado tecnico: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
 
     setIsSaving(true);
     setError(null);
@@ -825,12 +878,17 @@ export function PaginaLaboratorio() {
         await createBitacoraLaboratorio(
           {
             fecha: new Date().toISOString(),
-            tipoTrabajo: estado === 'operativo' ? 'Cierre de mantenimiento' : 'Cambio de estado',
-            titulo: estado === 'operativo' ? `Equipo operativo: ${equipoLabel}` : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
+            tipoTrabajo: workType,
+            titulo:
+              estado === 'operativo'
+                ? `Equipo operativo: ${equipoLabel}`
+                : shouldRequestIssueDetailForEstado(estado)
+                  ? `Incidencia en ${equipoLabel}`
+                  : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
             descripcion: automaticDescription,
             responsable: profile?.fullName || profile?.email || 'Soporte tecnico',
             prioridad: estado === 'baja' ? 'alta' : 'media',
-            estado: estado === 'operativo' || estado === 'baja' ? 'cerrado' : 'en_proceso',
+            estado: getEstadoChangeWorkStatus(estado),
             clase: estado === 'operativo' ? 'mantenimiento' : 'incidencia',
             equipoId: item.id,
             equipoOrigen: item.estado,
@@ -1628,20 +1686,20 @@ export function PaginaLaboratorio() {
                 />
               </label>
               <label>
-                Descripcion del trabajo
+                Descripcion del trabajo o incidencia
                 <textarea
                   name="descripcion"
                   required
                   rows={5}
-                  placeholder="Detalle que ocurrio, que equipo se reviso, que pieza se reemplazo y resultado final."
+                  placeholder="Detalle que ocurrio, que equipo se reviso, sintomas detectados, acciones tomadas o pendiente por revisar."
                   defaultValue={editingBitacora?.descripcion}
                   key={`descripcion-${editingBitacora?.id ?? 'new'}`}
                 />
               </label>
               <div className="form-grid compact-form-grid">
                 <label>
-                  Equipo origen
-                  <input name="equipoOrigen" defaultValue={editingBitacora?.equipoOrigen} />
+                  Equipo origen / pieza usada opcional
+                  <input name="equipoOrigen" placeholder="Solo si se uso otro equipo o pieza como referencia" defaultValue={editingBitacora?.equipoOrigen} />
                 </label>
                 <label>
                   Equipo atendido
@@ -1726,7 +1784,7 @@ export function PaginaLaboratorio() {
                   <dl className="lab-definition-grid">
                     <div><dt>Estado</dt><dd>{estadoTrabajoLabels[item.estado]}</dd></div>
                     <div><dt>Tipo</dt><dd>{item.tipoTrabajo}</dd></div>
-                    <div><dt>Origen</dt><dd>{item.equipoOrigen || 'No indicado'}</dd></div>
+                    <div><dt>Origen / pieza usada</dt><dd>{item.equipoOrigen || 'No aplica'}</dd></div>
                     <div><dt>Destino</dt><dd>{item.equipoDestino || 'No indicado'}</dd></div>
                     <div><dt>Ubicacion</dt><dd>{item.ubicacion || 'No indicada'}</dd></div>
                     <div><dt>Evidencia</dt><dd>{item.evidenciaTitulo || item.evidenciaUrl || 'Sin evidencia'}</dd></div>
