@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Copy, Download, Edit, ExternalLink, RefreshCw, Trash2, UserPlus } from 'lucide-react';
+import { Copy, Download, Edit, ExternalLink, Files, RefreshCw, Trash2, UserPlus } from 'lucide-react';
 import QRCode from 'qrcode';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { env } from '@/infraestructura/entorno';
@@ -238,6 +238,10 @@ export function PaginaDetalleEvento() {
             <Link className="primary-button" to={`/eventos/${event.id}/editar`}>
               <Edit size={18} />
               Editar
+            </Link>
+            <Link className="secondary-button" to="/eventos/nuevo" state={{ duplicateFrom: event }}>
+              <Files size={18} />
+              Duplicar
             </Link>
             <button className="secondary-button" type="button" onClick={() => void handleDelete()}>
               <Trash2 size={18} />

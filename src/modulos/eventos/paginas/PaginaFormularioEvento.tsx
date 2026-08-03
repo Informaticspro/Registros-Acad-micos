@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { createEvent, getEvent, updateEvent } from '@/servicios/eventos.servicio';
@@ -20,10 +20,21 @@ function toDateTimeLocal(value: string | null) {
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
+type DuplicateEventState = {
+  duplicateFrom?: EventoAcademico;
+};
+
+function getDuplicateEventTitle(event?: EventoAcademico | null) {
+  if (!event) return '';
+  return `Copia de ${event.title}`;
+}
+
 export function PaginaFormularioEvento() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { eventId } = useParams();
   const { profile } = useAutenticacion();
+  const duplicateFrom = !eventId ? ((location.state as DuplicateEventState | null)?.duplicateFrom ?? null) : null;
   const [eventToEdit, setEventToEdit] = useState<EventoAcademico | null>(null);
   const [selectedEventType, setSelectedEventType] = useState<EventoAcademico['eventType']>('congreso');
   const [selectedRegistrationFormType, setSelectedRegistrationFormType] =
@@ -35,18 +46,18 @@ export function PaginaFormularioEvento() {
 
   const initialValues = useMemo(
     () => ({
-      title: eventToEdit?.title ?? '',
-      eventType: eventToEdit?.eventType ?? 'congreso',
-      registrationFormType: eventToEdit?.registrationFormType ?? 'seminario_general',
-      isPermanent: eventToEdit?.isPermanent ?? false,
-      location: eventToEdit?.location ?? '',
-      capacity: eventToEdit?.capacity ?? '',
-      startsAt: toDateTimeLocal(eventToEdit?.startsAt ?? null),
-      endsAt: toDateTimeLocal(eventToEdit?.endsAt ?? null),
-      status: getEditableStatus(eventToEdit?.status ?? 'published'),
-      description: eventToEdit?.description ?? '',
+      title: eventToEdit?.title ?? getDuplicateEventTitle(duplicateFrom),
+      eventType: eventToEdit?.eventType ?? duplicateFrom?.eventType ?? 'congreso',
+      registrationFormType: eventToEdit?.registrationFormType ?? duplicateFrom?.registrationFormType ?? 'seminario_general',
+      isPermanent: eventToEdit?.isPermanent ?? duplicateFrom?.isPermanent ?? false,
+      location: eventToEdit?.location ?? duplicateFrom?.location ?? '',
+      capacity: eventToEdit?.capacity ?? duplicateFrom?.capacity ?? '',
+      startsAt: toDateTimeLocal(eventToEdit?.startsAt ?? duplicateFrom?.startsAt ?? null),
+      endsAt: toDateTimeLocal(eventToEdit?.endsAt ?? duplicateFrom?.endsAt ?? null),
+      status: getEditableStatus(eventToEdit?.status ?? duplicateFrom?.status ?? 'published'),
+      description: eventToEdit?.description ?? duplicateFrom?.description ?? '',
     }),
-    [eventToEdit],
+    [duplicateFrom, eventToEdit],
   );
 
   useEffect(() => {
@@ -155,8 +166,14 @@ export function PaginaFormularioEvento() {
     <div className="page-stack">
       <PageEncabezado
         eyebrow="Gestion de eventos"
-        title={isEditing ? 'Editar evento' : 'Nuevo evento'}
-        description={isEditing ? 'Modifique los datos del evento seleccionado.' : 'Cree un evento academico para registro y control de asistencia.'}
+        title={isEditing ? 'Editar evento' : duplicateFrom ? 'Duplicar evento' : 'Nuevo evento'}
+        description={
+          isEditing
+            ? 'Modifique los datos del evento seleccionado.'
+            : duplicateFrom
+              ? 'Revise la copia, ajuste lo necesario y guarde para generar un nuevo enlace publico independiente.'
+              : 'Cree un evento academico para registro y control de asistencia.'
+        }
       />
       <form className="panel form-grid" onSubmit={handleSubmit} noValidate>
         <label>
