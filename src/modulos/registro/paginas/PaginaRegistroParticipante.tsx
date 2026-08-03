@@ -50,6 +50,24 @@ function getPublicRegisterCopy(event: EventoAcademico | null) {
   };
 }
 
+function EncabezadoInstitucionalPublico() {
+  return (
+    <header className="public-institution-header" aria-label="Facultad de Economia">
+      <div className="public-institution-logo">
+        <img src="/logo-unachi.png" alt="Logo de la Universidad Autonoma de Chiriqui" />
+      </div>
+      <div className="public-institution-title">
+        <span>Universidad Autonoma de Chiriqui</span>
+        <strong>Facultad de Economia</strong>
+        <small>Registro academico institucional</small>
+      </div>
+      <div className="public-institution-logo">
+        <img src="/logo-registros-academicos.png" alt="Logo de la Facultad de Economia" />
+      </div>
+    </header>
+  );
+}
+
 function collectMetadata(form: FormData, event: EventoAcademico | null): Record<string, string> {
   const formKind = getInscripcionFormKind(event ?? undefined);
 
@@ -207,6 +225,7 @@ export function PaginaRegistroParticipante() {
     const shouldGenerateParticipantQr = event.eventType === 'congreso';
     return (
       <section className={shellClass}>
+        {!fromAdmin ? <EncabezadoInstitucionalPublico /> : null}
         {showSuccessNotice ? (
           <div className="success-popover" role="status" aria-live="polite">
             <div className="success-popover-icon">
@@ -322,6 +341,7 @@ export function PaginaRegistroParticipante() {
 
   return (
     <section className={shellClass}>
+      {!fromAdmin ? <EncabezadoInstitucionalPublico /> : null}
       {fromAdmin && eventId ? (
         <Link className="secondary-button register-back-link" to={`/eventos/${eventId}`}>
           <ArrowLeft size={18} />
