@@ -7,6 +7,7 @@ import { SEMINARIO_DATE_OPTIONS, SEMINARIO_PURPOSE_OPTIONS } from '@/modulos/reg
 import { createEvent, getEvent, updateEvent } from '@/servicios/eventos.servicio';
 import { CampoFormularioPersonalizado, EventoAcademico, TipoCampoFormularioPersonalizado } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
+import { isRegistroPermanenteEvento } from '@/utilidades/estado-evento';
 
 function getEditableStatus(status: EventoAcademico['status']) {
   if (status === 'draft' || status === 'archived') return status;
@@ -92,6 +93,13 @@ function buildEducationContinuaSchema(dateOptions: string[], purposeOptions: str
   };
 }
 
+function getSeminarRegistrationFormType(event?: EventoAcademico | null): EventoAcademico['registrationFormType'] {
+  if (!event || event.eventType !== 'seminario') return 'seminario_general';
+  if (event.registrationFormType === 'educacion_continua') return 'educacion_continua';
+  if (isRegistroPermanenteEvento(event)) return 'educacion_continua';
+  return 'seminario_general';
+}
+
 export function PaginaFormularioEvento() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,7 +122,7 @@ export function PaginaFormularioEvento() {
     () => ({
       title: eventToEdit?.title ?? getDuplicateEventTitle(duplicateFrom),
       eventType: eventToEdit?.eventType ?? duplicateFrom?.eventType ?? 'congreso',
-      registrationFormType: eventToEdit?.registrationFormType ?? duplicateFrom?.registrationFormType ?? 'seminario_general',
+      registrationFormType: getSeminarRegistrationFormType(eventToEdit ?? duplicateFrom),
       isPermanent: eventToEdit?.isPermanent ?? duplicateFrom?.isPermanent ?? false,
       location: eventToEdit?.location ?? duplicateFrom?.location ?? '',
       capacity: eventToEdit?.capacity ?? duplicateFrom?.capacity ?? '',
@@ -324,7 +332,6 @@ export function PaginaFormularioEvento() {
             >
               <option value="seminario_general">Seminario general UNACHI</option>
               <option value="educacion_continua">Educacion continua / Informatica intermedia</option>
-              <option value="personalizado">Formulario personalizado</option>
             </select>
             <span className="field-hint">
               Educacion continua usa fechas, aula virtual y motivo. General UNACHI usa un formulario mas corto.
@@ -508,7 +515,7 @@ export function PaginaFormularioEvento() {
             min="1"
             type="number"
             placeholder={allowsOptionalCapacity ? 'Sin limite' : '120'}
-            defaultValue={initialValues.capacity === 9999 ? '' : initialValues.capacity}
+            defaultValue={allowsOptionalCapacity || initialValues.capacity === 9999 ? '' : initialValues.capacity}
           />
           {allowsOptionalCapacity ? (
             <span className="field-hint">
