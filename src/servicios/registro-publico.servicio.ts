@@ -151,7 +151,15 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     p_metadata: metadata,
   });
 
-  if (error) throw error;
+  if (error) {
+    const errorText = `${error.message ?? ''} ${error.details ?? ''} ${error.code ?? ''}`.toLowerCase();
+    if (errorText.includes('23505') || errorText.includes('duplicate key')) {
+      throw new Error(
+        'Ya existe un participante con esa cedula o correo. Intente nuevamente verificando sus datos o contacte al administrador.',
+      );
+    }
+    throw error;
+  }
   const result = data?.[0];
 
   if (!result) {
