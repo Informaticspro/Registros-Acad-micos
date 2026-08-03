@@ -1129,33 +1129,45 @@ textarea {
 }
 
 .public-institution-header {
+  position: relative;
   grid-column: 1 / -1;
   width: min(1180px, 100%);
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) 92px;
+  grid-template-columns: 84px minmax(0, 1fr) 84px;
   align-items: center;
-  gap: 22px;
+  gap: 20px;
   margin: 0 auto 4px;
-  padding: 16px 22px;
-  border: 1px solid rgba(121, 183, 53, 0.28);
-  border-radius: 22px;
+  padding: 14px 22px 16px;
+  overflow: hidden;
+  border: 1px solid rgba(243, 189, 34, 0.34);
+  border-radius: 24px;
   background:
-    linear-gradient(135deg, rgba(14, 76, 45, 0.92), rgba(16, 42, 67, 0.92)),
+    radial-gradient(circle at 15% 0%, rgba(121, 183, 53, 0.28), transparent 32%),
+    linear-gradient(135deg, rgba(10, 70, 42, 0.96), rgba(13, 44, 63, 0.96)),
     var(--surface);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.24);
   color: #ffffff;
 }
 
+.public-institution-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, var(--gold), var(--accent), var(--gold));
+}
+
 .public-institution-logo {
-  width: 92px;
-  height: 92px;
+  width: 84px;
+  height: 84px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 2px solid rgba(243, 189, 34, 0.78);
-  border-radius: 20px;
+  border: 2px solid rgba(243, 189, 34, 0.9);
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.96);
-  padding: 6px;
+  padding: 7px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
 .public-institution-logo img {
@@ -1169,30 +1181,31 @@ textarea {
   min-width: 0;
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 5px;
   text-align: center;
 }
 
 .public-institution-title span {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .public-institution-title strong {
   color: #ffffff;
-  font-size: clamp(2rem, 4vw, 3.35rem);
-  line-height: 0.98;
-  text-transform: uppercase;
+  font-size: clamp(1.95rem, 3.35vw, 2.85rem);
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .public-institution-title small {
   color: var(--gold);
-  font-size: 0.92rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -4197,17 +4210,20 @@ textarea {
   }
 
   .public-institution-header {
-    grid-template-columns: 52px minmax(0, 1fr) 52px;
-    gap: 10px;
+    grid-template-columns: 46px minmax(0, 1fr) 46px;
+    gap: 9px;
     margin-bottom: 0;
-    padding: 10px;
-    border-radius: 16px;
+    padding: 12px 10px 10px;
+    border-radius: 18px;
+  }
+
+  .public-institution-header::before {
+    height: 4px;
   }
 
   .public-institution-logo {
-    width: 52px;
-    height: 52px;
-    border-radius: 13px;
+    width: 46px;
+    height: 46px;
     padding: 4px;
   }
 
@@ -4216,18 +4232,20 @@ textarea {
   }
 
   .public-institution-title span {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
     line-height: 1.15;
+    letter-spacing: 0.04em;
   }
 
   .public-institution-title strong {
-    font-size: clamp(1.15rem, 7vw, 1.7rem);
-    line-height: 1;
+    font-size: clamp(1.18rem, 6.2vw, 1.48rem);
+    line-height: 1.02;
   }
 
   .public-institution-title small {
-    font-size: 0.56rem;
+    font-size: 0.5rem;
     line-height: 1.15;
+    letter-spacing: 0.04em;
   }
 
   .public-register .public-copy {
