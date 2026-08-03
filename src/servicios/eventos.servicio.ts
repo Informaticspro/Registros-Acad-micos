@@ -8,6 +8,7 @@ export type SaveEventInput = {
   title: string;
   eventType: EventoAcademico['eventType'];
   registrationFormType?: EventoAcademico['registrationFormType'];
+  isPermanent?: boolean;
   description: string;
   location: string;
   startsAt: string | null;
@@ -34,6 +35,7 @@ type EventRow = {
   status: string;
   organizer_id: string;
   registration_form_type?: string | null;
+  is_permanent?: boolean | null;
 };
 
 const mapEvent = (row: EventRow): EventoAcademico => {
@@ -42,6 +44,7 @@ const mapEvent = (row: EventRow): EventoAcademico => {
     title: row.title,
     eventType: row.event_type as EventoAcademico['eventType'],
     registrationFormType: (row.registration_form_type ?? null) as EventoAcademico['registrationFormType'],
+    isPermanent: Boolean(row.is_permanent),
     description: row.description,
     location: row.location,
     startsAt: row.starts_at,
@@ -60,11 +63,16 @@ const mapEvent = (row: EventRow): EventoAcademico => {
 const eventColumnsBase =
   'id,title,event_type,description,location,starts_at,ends_at,capacity,status,organizer_id' as const;
 const eventColumns =
-  'id,title,event_type,registration_form_type,description,location,starts_at,ends_at,capacity,status,organizer_id' as const;
+  'id,title,event_type,registration_form_type,is_permanent,description,location,starts_at,ends_at,capacity,status,organizer_id' as const;
 
-function isMissingRegistrationFormTypeColumn(error: { message?: string; code?: string }) {
+function isMissingOptionalEventColumn(error: { message?: string; code?: string }) {
   const message = error.message?.toLowerCase() ?? '';
-  return error.code === '42703' || error.code === 'PGRST204' || message.includes('registration_form_type');
+  return (
+    error.code === '42703' ||
+    error.code === 'PGRST204' ||
+    message.includes('registration_form_type') ||
+    message.includes('is_permanent')
+  );
 }
 
 async function syncEventLifecycleStatuses() {
@@ -77,18 +85,26 @@ async function syncEventLifecycleStatuses() {
       .update({ status: 'closed', updated_at: now })
       .lt('ends_at', now)
       .not('ends_at', 'is', null)
+      .eq('is_permanent', false)
       .not('status', 'in', '(draft,archived,closed)'),
     supabase
       .from('events')
       .update({ status: 'active', updated_at: now })
       .lte('starts_at', now)
       .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .eq('is_permanent', false)
       .in('status', ['published']),
     supabase
       .from('events')
       .update({ status: 'published', updated_at: now })
       .gt('starts_at', now)
+      .eq('is_permanent', false)
       .eq('status', 'active'),
+    supabase
+      .from('events')
+      .update({ status: 'published', updated_at: now })
+      .eq('is_permanent', true)
+      .eq('status', 'closed'),
   ]);
 }
 
@@ -103,7 +119,7 @@ export async function listEvents(): Promise<EventoAcademico[]> {
     .select(eventColumns)
     .order('starts_at', { ascending: false });
 
-  if (error && isMissingRegistrationFormTypeColumn(error)) {
+  if (error && isMissingOptionalEventColumn(error)) {
     const fallback = await supabase.from('events').select(eventColumnsBase).order('starts_at', { ascending: false });
     data = fallback.data as typeof data;
     error = fallback.error;
@@ -128,7 +144,7 @@ export async function listPublicEvents(): Promise<EventoAcademico[]> {
     .in('status', ['published', 'active'])
     .order('starts_at', { ascending: false });
 
-  if (error && isMissingRegistrationFormTypeColumn(error)) {
+  if (error && isMissingOptionalEventColumn(error)) {
     const fallback = await supabase
       .from('events')
       .select(eventColumnsBase)
@@ -152,7 +168,7 @@ export async function getEvent(eventId: string): Promise<EventoAcademico | null>
     .eq('id', eventId)
     .maybeSingle();
 
-  if (error && isMissingRegistrationFormTypeColumn(error)) {
+  if (error && isMissingOptionalEventColumn(error)) {
     const fallback = await supabase.from('events').select(eventColumnsBase).eq('id', eventId).maybeSingle();
     data = fallback.data as typeof data;
     error = fallback.error;
@@ -171,6 +187,7 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
       title: input.title,
       eventType: input.eventType,
       registrationFormType: input.registrationFormType ?? null,
+      isPermanent: input.isPermanent ?? false,
       description: input.description,
       location: input.location,
       startsAt: input.startsAt,
@@ -191,6 +208,7 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
     title: input.title,
     event_type: input.eventType,
     registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'seminario_general' : null,
+    is_permanent: input.isPermanent ?? false,
     description: input.description,
     location: input.location,
     starts_at: input.startsAt,
@@ -205,9 +223,10 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
     .select(eventColumns)
     .single();
 
-  if (error && isMissingRegistrationFormTypeColumn(error)) {
+  if (error && isMissingOptionalEventColumn(error)) {
     const fallbackPayload: Record<string, unknown> = { ...insertPayload };
     delete fallbackPayload.registration_form_type;
+    delete fallbackPayload.is_permanent;
     const fallback = await supabase.from('events').insert(fallbackPayload).select(eventColumnsBase).single();
     data = fallback.data as typeof data;
     error = fallback.error;
@@ -226,6 +245,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
       title: input.title,
       eventType: input.eventType,
       registrationFormType: input.registrationFormType ?? null,
+      isPermanent: input.isPermanent ?? false,
       description: input.description,
       location: input.location,
       startsAt: input.startsAt,
@@ -240,6 +260,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
     title: input.title,
     event_type: input.eventType,
     registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'seminario_general' : null,
+    is_permanent: input.isPermanent ?? false,
     description: input.description,
     location: input.location,
     starts_at: input.startsAt,
@@ -256,9 +277,10 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
     .select(eventColumns)
     .single();
 
-  if (error && isMissingRegistrationFormTypeColumn(error)) {
+  if (error && isMissingOptionalEventColumn(error)) {
     const fallbackPayload: Record<string, unknown> = { ...updatePayload };
     delete fallbackPayload.registration_form_type;
+    delete fallbackPayload.is_permanent;
     const fallback = await supabase
       .from('events')
       .update(fallbackPayload)

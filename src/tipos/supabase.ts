@@ -33,6 +33,7 @@ export type BaseDatos = {
           title: string;
           event_type: string;
           registration_form_type: string | null;
+          is_permanent: boolean | null;
           description: string;
           location: string;
           starts_at: string | null;

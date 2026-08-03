@@ -35,6 +35,7 @@ export function PaginaFormularioEvento() {
       title: eventToEdit?.title ?? '',
       eventType: eventToEdit?.eventType ?? 'congreso',
       registrationFormType: eventToEdit?.registrationFormType ?? 'seminario_general',
+      isPermanent: eventToEdit?.isPermanent ?? false,
       location: eventToEdit?.location ?? '',
       capacity: eventToEdit?.capacity ?? '',
       startsAt: toDateTimeLocal(eventToEdit?.startsAt ?? null),
@@ -102,6 +103,7 @@ export function PaginaFormularioEvento() {
           eventType === 'seminario'
             ? (String(form.get('registrationFormType') ?? 'seminario_general') as EventoAcademico['registrationFormType'])
             : null,
+        isPermanent: form.get('isPermanent') === 'on',
         description: String(form.get('description') ?? '').trim(),
         location: getRequiredText(form, 'location', 'El lugar'),
         startsAt: getOptionalDateTime(form, 'startsAt'),
@@ -184,6 +186,15 @@ export function PaginaFormularioEvento() {
         <label>
           Fin opcional
           <input name="endsAt" type="datetime-local" step="60" defaultValue={initialValues.endsAt} />
+        </label>
+        <label className="checkbox-field">
+          <input name="isPermanent" type="checkbox" defaultChecked={initialValues.isPermanent} />
+          <span>
+            Registro permanente
+            <small>
+              Mantiene el enlace publico disponible todo el año y evita que el evento cierre automaticamente por fecha.
+            </small>
+          </span>
         </label>
         <label>
           Publicacion del evento

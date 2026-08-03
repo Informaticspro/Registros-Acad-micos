@@ -3,10 +3,11 @@ import { EstadoEvento, EventoAcademico } from '@/tipos/dominio';
 const manualStatuses = new Set<EstadoEvento>(['draft', 'archived']);
 
 export function getEstadoEventoPorFecha(
-  event: Pick<EventoAcademico, 'status' | 'startsAt' | 'endsAt'>,
+  event: Pick<EventoAcademico, 'status' | 'startsAt' | 'endsAt' | 'isPermanent'>,
   referenceDate = new Date(),
 ): EstadoEvento {
   if (manualStatuses.has(event.status)) return event.status;
+  if (event.isPermanent) return event.status === 'closed' ? 'published' : event.status;
 
   const startsAt = event.startsAt ? new Date(event.startsAt) : null;
   const endsAt = event.endsAt ? new Date(event.endsAt) : null;
@@ -23,6 +24,7 @@ export function normalizeEventStatusForSave(input: {
   status: EstadoEvento;
   startsAt: string | null;
   endsAt: string | null;
+  isPermanent?: boolean;
 }) {
   return getEstadoEventoPorFecha(input);
 }
