@@ -229,7 +229,7 @@ export function PaginaRegistroParticipante() {
     const shouldGenerateParticipantQr = event.eventType === 'congreso';
     return (
       <section className={shellClass}>
-        {!fromAdmin ? <EncabezadoInstitucionalPublico /> : null}
+        <EncabezadoInstitucionalPublico />
         {showSuccessNotice ? (
           <div className="success-popover" role="status" aria-live="polite">
             <div className="success-popover-icon">
@@ -345,7 +345,7 @@ export function PaginaRegistroParticipante() {
 
   return (
     <section className={shellClass}>
-      {!fromAdmin ? <EncabezadoInstitucionalPublico /> : null}
+      <EncabezadoInstitucionalPublico />
       {fromAdmin && eventId ? (
         <Link className="secondary-button register-back-link" to={`/eventos/${eventId}`}>
           <ArrowLeft size={18} />
