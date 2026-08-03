@@ -62,7 +62,7 @@ function EncabezadoInstitucionalPublico() {
         <small>Registro academico institucional</small>
       </div>
       <div className="public-institution-logo">
-        <img src="/logo-registros-academicos.png" alt="Logo de la Facultad de Economia" />
+        <img src="/logo-economia.png" alt="Logo de la Facultad de Economia" />
       </div>
     </header>
   );
