@@ -720,6 +720,22 @@ export function PaginaLaboratorio() {
     event.preventDefault();
     const form = event.currentTarget;
     const input = buildEquipoInput(form);
+    const hasEstadoChange = Boolean(editingEquipo && editingEquipo.estado !== input.estado);
+    const previousEstadoLabel = editingEquipo ? estadoEquipoNombre[editingEquipo.estado] ?? getEstadoEquipoLabel(editingEquipo.estado) : '';
+    const nextEstadoLabel = estadoEquipoNombre[input.estado] ?? getEstadoEquipoLabel(input.estado);
+    const closingDetail =
+      editingEquipo && hasEstadoChange && input.estado === 'operativo' && editingEquipo.estado !== 'operativo'
+        ? window.prompt('Detalle del trabajo realizado antes de dejar el equipo operativo:')
+        : null;
+
+    if (editingEquipo && hasEstadoChange && input.estado === 'operativo' && !closingDetail?.trim()) {
+      setError('Debe escribir un detalle antes de devolver el equipo a operativo.');
+      return;
+    }
+
+    if (hasEstadoChange && input.estado === 'baja') {
+      input.ubicacion = 'Deposito';
+    }
 
     setIsSaving(true);
     setError(null);
@@ -727,8 +743,34 @@ export function PaginaLaboratorio() {
     try {
       if (editingEquipo) {
         await updateEquipoLaboratorio(editingEquipo.id, input);
+        if (hasEstadoChange) {
+          const equipoLabel = `${input.codigo || editingEquipo.codigo} - ${input.nombre || editingEquipo.nombre}`;
+          const automaticDescription =
+            input.estado === 'operativo'
+              ? `Equipo devuelto a operativo. Estado anterior: ${previousEstadoLabel}. Detalle: ${closingDetail?.trim()}`
+              : `Cambio de estado tecnico desde edicion de inventario: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
+          await createBitacoraLaboratorio(
+            {
+              fecha: new Date().toISOString(),
+              tipoTrabajo: input.estado === 'operativo' ? 'Cierre de mantenimiento' : 'Cambio de estado',
+              titulo: input.estado === 'operativo' ? `Equipo operativo: ${equipoLabel}` : `Equipo en ${nextEstadoLabel}: ${equipoLabel}`,
+              descripcion: automaticDescription,
+              responsable: profile?.fullName || profile?.email || 'Soporte tecnico',
+              prioridad: input.estado === 'baja' ? 'alta' : 'media',
+              estado: input.estado === 'operativo' || input.estado === 'baja' ? 'cerrado' : 'en_proceso',
+              clase: input.estado === 'operativo' ? 'mantenimiento' : 'incidencia',
+              equipoId: editingEquipo.id,
+              equipoOrigen: editingEquipo.estado,
+              equipoDestino: equipoLabel,
+              ubicacion: input.ubicacion,
+              evidenciaTitulo: '',
+              evidenciaUrl: '',
+            },
+            saveContext,
+          );
+        }
         setEditingEquipo(null);
-        setMessage('Equipo actualizado correctamente.');
+        setMessage(hasEstadoChange ? 'Equipo actualizado y bitacora automatica registrada.' : 'Equipo actualizado correctamente.');
       } else {
         await createEquipoLaboratorio(input, saveContext);
         setMessage('Equipo agregado al inventario.');
