@@ -17,7 +17,7 @@ import {
   isPublicRegistrationOpen,
   isRegistroPermanenteEvento,
 } from '@/utilidades/estado-evento';
-import { formatDateTime } from '@/utilidades/formato';
+import { formatDateTime, toTitleCase } from '@/utilidades/formato';
 
 function getValue(form: FormData, field: string) {
   return String(form.get(field) ?? '').trim();
@@ -25,6 +25,29 @@ function getValue(form: FormData, field: string) {
 
 function getEventDateLabel(event: EventoAcademico) {
   return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
+}
+
+function getPublicRegisterCopy(event: EventoAcademico | null) {
+  if (event?.eventType === 'seminario') {
+    return {
+      eyebrow: 'Inscripcion de seminario',
+      description:
+        'Complete sus datos para quedar registrado en este seminario. La informacion sera validada por la Facultad de Economia.',
+    };
+  }
+
+  if (event?.eventType === 'congreso') {
+    return {
+      eyebrow: 'Inscripcion de congreso',
+      description: 'Complete sus datos para generar su registro y QR personal de participacion.',
+    };
+  }
+
+  return {
+    eyebrow: 'Registro de asistencia',
+    description:
+      'Complete sus datos al llegar al salon. Su asistencia quedara guardada para emision de certificado.',
+  };
 }
 
 function collectMetadata(form: FormData, event: EventoAcademico | null): Record<string, string> {
@@ -136,6 +159,7 @@ export function PaginaRegistroParticipante() {
   const formKind = getInscripcionFormKind(event ?? undefined);
   const registrationOpen = event ? isPublicRegistrationOpen(event) : false;
   const showDraftWarning = event && !registrationOpen;
+  const publicRegisterCopy = getPublicRegisterCopy(event);
 
   function resetForAnotherInscripcion() {
     setResult(null);
@@ -308,14 +332,12 @@ export function PaginaRegistroParticipante() {
         <div className="public-icon">
           <ClipboardCheck size={28} />
         </div>
-        <span className="eyebrow">Registro de asistencia</span>
+        <span className="eyebrow">{publicRegisterCopy.eyebrow}</span>
         <h1>{event?.title ?? 'Evento academico'}</h1>
-        <p>
-          Complete sus datos al llegar al salon. Su asistencia quedara guardada para emision de certificado.
-        </p>
+        <p>{publicRegisterCopy.description}</p>
         {event ? (
           <div className="public-event-meta">
-            <span>Tipo: {event.eventType}</span>
+            <span>Tipo: {toTitleCase(event.eventType)}</span>
             <span>{event.location}</span>
             <span>{getEventDateLabel(event)}</span>
           </div>
