@@ -7,10 +7,12 @@ import {
   Eye,
   HardDrive,
   History,
+  Moon,
   PackageCheck,
   Pencil,
   Save,
   Settings2,
+  Sun,
   Trash2,
   Upload,
   Wrench,
@@ -71,6 +73,7 @@ import { formatDateTime } from '@/utilidades/formato';
 
 type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
 type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
+type TemaVisual = 'dark' | 'light';
 
 const emptyState: LaboratorioState = {
   fichas: [],
@@ -136,6 +139,14 @@ const prioridadLabels: Record<PrioridadLaboratorio, string> = {
 function localDateTimeValue(value = new Date()) {
   const offset = value.getTimezoneOffset();
   return new Date(value.getTime() - offset * 60_000).toISOString().slice(0, 16);
+}
+
+function getInitialTheme(): TemaVisual {
+  try {
+    return localStorage.getItem('acad-theme') === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
 }
 
 function readString(data: FormData, key: string) {
@@ -461,6 +472,7 @@ export function PaginaLaboratorio() {
   const [error, setError] = useState<string | null>(null);
   const [profileNamesById, setProfileNamesById] = useState<Record<string, string>>({});
   const [showMoreActivity, setShowMoreActivity] = useState(false);
+  const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -472,6 +484,7 @@ export function PaginaLaboratorio() {
     [profile?.id, profile?.organizationId],
   );
   const responsableSesion = profile?.fullName || profile?.email || 'Soporte tecnico';
+  const isLightTheme = theme === 'light';
 
   const selectedEquipoFicha = useMemo(
     () => state.equipos.find((item) => item.id === selectedEquipoFichaId) ?? null,
@@ -537,6 +550,15 @@ export function PaginaLaboratorio() {
       setIsLoading(false);
     }
   }
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('acad-theme', theme);
+    } catch {
+      // No se guarda si el navegador bloquea almacenamiento local.
+    }
+  }, [theme]);
 
   useEffect(() => {
     void refresh();
@@ -1171,9 +1193,20 @@ export function PaginaLaboratorio() {
           <p>Bitacoras, inventario, evidencias, prestamos e informes del laboratorio de informatica.</p>
         </div>
         <div className="lab-header-side">
-          <div className="lab-workspace-badge">
-            <Wrench size={18} />
-            Modo tecnico
+          <div className="lab-header-actions">
+            <button
+              className="icon-button theme-toggle"
+              type="button"
+              aria-label={isLightTheme ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+              title={isLightTheme ? 'Tema oscuro' : 'Tema claro'}
+              onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+            >
+              {isLightTheme ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+            <div className="lab-workspace-badge">
+              <Wrench size={18} />
+              Modo tecnico
+            </div>
           </div>
           <div className="lab-quick-stats" aria-label="Resumen rapido de laboratorio">
             <div>

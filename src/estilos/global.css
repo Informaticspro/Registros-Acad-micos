@@ -1579,6 +1579,13 @@ textarea {
   justify-items: end;
 }
 
+.lab-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .lab-quick-stats {
   width: 100%;
   display: grid;
@@ -4226,7 +4233,20 @@ textarea {
   }
 
   .lab-header-side {
-    display: none;
+    display: grid;
+    justify-items: stretch;
+  }
+
+  .lab-header-actions {
+    justify-content: stretch;
+  }
+
+  .lab-header-actions .theme-toggle {
+    flex: 0 0 42px;
+  }
+
+  .lab-header-actions .lab-workspace-badge {
+    flex: 1;
   }
 
   .lab-quick-stats {
