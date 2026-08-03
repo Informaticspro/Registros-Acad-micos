@@ -1449,18 +1449,24 @@ textarea {
 .participant-type-section {
   display: grid;
   min-width: 0;
-  gap: 16px;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(121, 183, 53, 0.06), transparent 36%),
+    var(--surface-deep);
 }
 
 .participant-type-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   align-items: start;
-  gap: 24px 16px;
+  gap: 18px;
 }
 
 .participant-type-grid .event-participants-grid {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .section-heading {
@@ -1468,12 +1474,13 @@ textarea {
   align-items: end;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--line);
 }
 
 .section-heading h2 {
   margin-bottom: 0;
+  line-height: 1;
 }
 
 .event-participants-grid {
@@ -1485,12 +1492,16 @@ textarea {
 
 .event-participants-card {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   min-width: 0;
-  padding: 20px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+}
+
+.event-participants-card.is-empty {
+  align-content: start;
 }
 
 .event-participants-card .participants-mini-table {
@@ -1507,6 +1518,7 @@ textarea {
 
 .event-participants-header h3 {
   margin: 8px 0 0;
+  line-height: 1.22;
 }
 
 .event-participants-header > strong {
@@ -1517,6 +1529,24 @@ textarea {
   border: 1px solid rgba(121, 183, 53, 0.35);
   border-radius: var(--radius);
   color: var(--accent);
+}
+
+.participants-empty-state {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px dashed rgba(243, 189, 34, 0.42);
+  border-radius: var(--radius);
+  background: rgba(243, 189, 34, 0.08);
+  color: var(--gold);
+}
+
+.participants-empty-state p {
+  margin: 0;
+  color: inherit;
+  font-weight: 700;
 }
 
 .status-pill {
@@ -3605,13 +3635,16 @@ textarea {
   .split-grid,
   .detail-grid,
   .scanner-grid,
-  .participant-type-grid,
   .event-participants-grid,
   .lab-grid,
   .lab-grid-wide,
   .lab-sheet-sections,
   .public-register {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .participant-type-grid {
+    grid-template-columns: 1fr;
   }
 
   .lab-sheet-preview-grid {

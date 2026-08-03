@@ -330,7 +330,12 @@ export function PaginaParticipantes() {
 
               <div className="event-participants-grid">
                 {typeGroup.events.map((eventGroup) => (
-                  <article className="event-participants-card" key={eventGroup.event.id}>
+                  <article
+                    className={`event-participants-card ${
+                      eventGroup.participants.length === 0 ? 'is-empty' : ''
+                    }`}
+                    key={eventGroup.event.id}
+                  >
                     <div className="event-participants-header">
                       <div>
                         <span className={getEstadoEventoVisualClassName(eventGroup.event)}>
@@ -356,7 +361,10 @@ export function PaginaParticipantes() {
                     </div>
 
                     {eventGroup.participants.length === 0 ? (
-                      <p className="form-hint">Este evento aun no tiene participantes.</p>
+                      <div className="participants-empty-state">
+                        <Users size={18} />
+                        <p>Este evento aun no tiene participantes.</p>
+                      </div>
                     ) : (
                       <ParticipantsTable
                         canManage={isAdmin}
