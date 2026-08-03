@@ -469,6 +469,7 @@ export function PaginaLaboratorio() {
     }),
     [profile?.id, profile?.organizationId],
   );
+  const responsableSesion = profile?.fullName || profile?.email || 'Soporte tecnico';
 
   const selectedEquipoFicha = useMemo(
     () => state.equipos.find((item) => item.id === selectedEquipoFichaId) ?? null,
@@ -1716,7 +1717,7 @@ export function PaginaLaboratorio() {
               <div className="form-grid compact-form-grid">
                 <label>
                   Responsable
-                  <input name="responsable" required defaultValue={editingBitacora?.responsable} />
+                  <input name="responsable" required readOnly value={responsableSesion} />
                 </label>
                 <label>
                   Ubicacion
