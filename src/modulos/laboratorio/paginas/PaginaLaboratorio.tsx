@@ -91,6 +91,8 @@ const tabLabels: Record<LabTab, string> = {
   informes: 'Informes',
 };
 
+const labTabOrder: LabTab[] = ['inicio', 'inventario', 'fichas', 'bitacoras', 'prestamos', 'informes'];
+
 const aplicacionesBase = [
   'Windows',
   'Linux',
@@ -1200,10 +1202,10 @@ export function PaginaLaboratorio() {
 
       <section className="panel lab-shell">
         <div className="lab-tabs" role="tablist" aria-label="Secciones de laboratorio">
-          {(Object.keys(tabLabels) as LabTab[]).map((tab) => (
+          {labTabOrder.map((tab) => (
             <button
               type="button"
-              className={activeTab === tab ? 'active' : ''}
+              className={`lab-tab-${tab}${activeTab === tab ? ' active' : ''}`}
               key={tab}
               onClick={() => setActiveTab(tab)}
             >

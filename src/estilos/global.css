@@ -1646,6 +1646,36 @@ textarea {
   font-weight: 800;
 }
 
+.lab-tabs .lab-tab-inicio {
+  border-color: rgba(64, 125, 245, 0.28);
+  background: rgba(64, 125, 245, 0.08);
+}
+
+.lab-tabs .lab-tab-inventario {
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.lab-tabs .lab-tab-fichas {
+  border-color: rgba(14, 165, 233, 0.32);
+  background: rgba(14, 165, 233, 0.09);
+}
+
+.lab-tabs .lab-tab-bitacoras {
+  border-color: rgba(243, 189, 34, 0.4);
+  background: rgba(243, 189, 34, 0.11);
+}
+
+.lab-tabs .lab-tab-prestamos {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.08);
+}
+
+.lab-tabs .lab-tab-informes {
+  border-color: rgba(20, 184, 166, 0.3);
+  background: rgba(20, 184, 166, 0.08);
+}
+
 .lab-tabs button.active,
 .lab-tabs button:hover {
   border-color: rgba(243, 189, 34, 0.48);
