@@ -7,14 +7,35 @@ export type TipoFormularioSeminario = NonNullable<EventoAcademico['registrationF
 export const SEMINARIO_INFORMATICA_INTERMEDIA_TITULO =
   'Seminario de Informatica Intermedia como requisito de Posgrado y Maestria';
 
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function isEducacionContinuaSeminar(event: EventoAcademico | undefined) {
+  if (!event) return false;
+  if (event.registrationFormType === 'educacion_continua') return true;
+
+  const searchableText = normalizeText(`${event.title} ${event.description}`);
+  return (
+    searchableText.includes('educacion continua') ||
+    searchableText.includes('informatica intermedia') ||
+    searchableText.includes('posgrado') ||
+    searchableText.includes('maestria')
+  );
+}
+
 export function getInscripcionFormKind(
   eventOrType: EventoAcademico | EventoAcademico['eventType'] | undefined,
 ): InscripcionFormKind {
   const eventType = typeof eventOrType === 'string' ? eventOrType : eventOrType?.eventType;
   if (eventType === 'congreso') return 'congreso';
   if (eventType === 'seminario') {
-    const registrationFormType = typeof eventOrType === 'string' ? null : eventOrType?.registrationFormType;
-    return registrationFormType === 'educacion_continua' ? 'seminario' : 'seminario_general';
+    return typeof eventOrType !== 'string' && isEducacionContinuaSeminar(eventOrType)
+      ? 'seminario'
+      : 'seminario_general';
   }
   return 'simple';
 }
