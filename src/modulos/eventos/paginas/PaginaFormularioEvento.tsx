@@ -3,6 +3,7 @@ import { Plus, Save, Trash2 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
+import { SEMINARIO_DATE_OPTIONS, SEMINARIO_PURPOSE_OPTIONS } from '@/modulos/registro/configuracion-registro';
 import { createEvent, getEvent, updateEvent } from '@/servicios/eventos.servicio';
 import { CampoFormularioPersonalizado, EventoAcademico, TipoCampoFormularioPersonalizado } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
@@ -66,6 +67,31 @@ function parseOptions(value: string) {
     .filter(Boolean);
 }
 
+function getSchemaFieldOptions(event: EventoAcademico | null, fieldId: string, fallback: readonly string[]) {
+  return event?.customFormSchema?.fields.find((field) => field.id === fieldId)?.options ?? [...fallback];
+}
+
+function buildEducationContinuaSchema(dateOptions: string[], purposeOptions: string[]) {
+  return {
+    fields: [
+      {
+        id: 'seminarDate',
+        label: 'Fecha de seminario disponible',
+        type: 'radio' as const,
+        required: true,
+        options: dateOptions,
+      },
+      {
+        id: 'seminarPurpose',
+        label: 'Usted tomara el seminario para',
+        type: 'radio' as const,
+        required: true,
+        options: purposeOptions,
+      },
+    ],
+  };
+}
+
 export function PaginaFormularioEvento() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,6 +104,8 @@ export function PaginaFormularioEvento() {
     useState<EventoAcademico['registrationFormType']>('seminario_general');
   const [isPermanentSelected, setIsPermanentSelected] = useState(false);
   const [customFields, setCustomFields] = useState<CampoFormularioPersonalizado[]>([]);
+  const [seminarDateOptionsText, setSeminarDateOptionsText] = useState(SEMINARIO_DATE_OPTIONS.join('\n'));
+  const [seminarPurposeOptionsText, setSeminarPurposeOptionsText] = useState(SEMINARIO_PURPOSE_OPTIONS.join('\n'));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = Boolean(eventId);
@@ -121,6 +149,9 @@ export function PaginaFormularioEvento() {
     setSelectedRegistrationFormType(initialValues.registrationFormType);
     setIsPermanentSelected(initialValues.isPermanent);
     setCustomFields(initialValues.customFormSchema?.fields ?? []);
+    const sourceEvent = eventToEdit ?? duplicateFrom;
+    setSeminarDateOptionsText(getSchemaFieldOptions(sourceEvent, 'seminarDate', SEMINARIO_DATE_OPTIONS).join('\n'));
+    setSeminarPurposeOptionsText(getSchemaFieldOptions(sourceEvent, 'seminarPurpose', SEMINARIO_PURPOSE_OPTIONS).join('\n'));
   }, [initialValues.customFormSchema, initialValues.registrationFormType, initialValues.isPermanent]);
 
   const isEducacionContinuaSelected =
@@ -185,22 +216,33 @@ export function PaginaFormularioEvento() {
         capacity,
         status: String(form.get('status') ?? 'published') as EventoAcademico['status'],
         customFormSchema:
-          registrationFormType === 'personalizado'
-            ? {
-                fields: customFields
-                  .map((field) => ({
-                    ...field,
-                    label: field.label.trim(),
-                    helpText: field.helpText?.trim() ?? '',
-                    options: needsOptions(field.type) ? field.options?.map((option) => option.trim()).filter(Boolean) : [],
-                  }))
-                  .filter((field) => field.label.length > 0),
-              }
-            : null,
+          registrationFormType === 'educacion_continua'
+            ? buildEducationContinuaSchema(parseOptions(seminarDateOptionsText), parseOptions(seminarPurposeOptionsText))
+            : registrationFormType === 'personalizado'
+              ? {
+                  fields: customFields
+                    .map((field) => ({
+                      ...field,
+                      label: field.label.trim(),
+                      helpText: field.helpText?.trim() ?? '',
+                      options: needsOptions(field.type) ? field.options?.map((option) => option.trim()).filter(Boolean) : [],
+                    }))
+                    .filter((field) => field.label.length > 0),
+                }
+              : null,
       };
 
-      if (payload.customFormSchema && payload.customFormSchema.fields.length === 0) {
+      if (registrationFormType === 'personalizado' && payload.customFormSchema && payload.customFormSchema.fields.length === 0) {
         throw new Error('Agregue al menos un campo al formulario personalizado');
+      }
+
+      if (registrationFormType === 'educacion_continua') {
+        if (parseOptions(seminarDateOptionsText).length === 0) {
+          throw new Error('Agregue al menos una fecha disponible para Educacion Continua');
+        }
+        if (parseOptions(seminarPurposeOptionsText).length === 0) {
+          throw new Error('Agregue al menos un motivo para Educacion Continua');
+        }
       }
 
       const invalidOptionsField = payload.customFormSchema?.fields.find(
@@ -288,6 +330,38 @@ export function PaginaFormularioEvento() {
               Educacion continua usa fechas, aula virtual y motivo. General UNACHI usa un formulario mas corto.
             </span>
           </label>
+        ) : null}
+        {isEducacionContinuaSelected ? (
+          <section className="custom-form-builder full-field">
+            <div>
+              <span className="eyebrow">Educacion continua</span>
+              <h2>Opciones editables del formulario</h2>
+              <p className="form-hint">
+                Estas opciones se duplican junto con el evento. Deje una opcion por linea; si quiere una sola fecha,
+                borre las demas.
+              </p>
+            </div>
+            <div className="form-grid">
+              <label>
+                Fechas disponibles
+                <textarea
+                  rows={7}
+                  value={seminarDateOptionsText}
+                  onChange={(event) => setSeminarDateOptionsText(event.currentTarget.value)}
+                  placeholder="Del 10 al 14 de Agosto"
+                />
+              </label>
+              <label>
+                Motivos del seminario
+                <textarea
+                  rows={7}
+                  value={seminarPurposeOptionsText}
+                  onChange={(event) => setSeminarPurposeOptionsText(event.currentTarget.value)}
+                  placeholder="Requisito de ingreso a posgrado y maestria"
+                />
+              </label>
+            </div>
+          </section>
         ) : null}
         <label>
           {allowsOptionalCapacity ? 'Lugar opcional' : 'Lugar'}

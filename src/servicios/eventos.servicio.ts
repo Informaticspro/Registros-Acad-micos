@@ -227,7 +227,10 @@ export async function createEvent(input: SaveEventInput): Promise<EventoAcademic
     title: input.title,
     event_type: input.eventType,
     registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'seminario_general' : null,
-    custom_form_schema: input.registrationFormType === 'personalizado' ? input.customFormSchema ?? { fields: [] } : null,
+    custom_form_schema:
+      input.registrationFormType === 'personalizado' || input.registrationFormType === 'educacion_continua'
+        ? input.customFormSchema ?? { fields: [] }
+        : null,
     is_permanent: input.isPermanent ?? false,
     description: input.description,
     location: input.location,
@@ -288,7 +291,10 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventoAcadem
     title: input.title,
     event_type: input.eventType,
     registration_form_type: input.eventType === 'seminario' ? input.registrationFormType ?? 'seminario_general' : null,
-    custom_form_schema: input.registrationFormType === 'personalizado' ? input.customFormSchema ?? { fields: [] } : null,
+    custom_form_schema:
+      input.registrationFormType === 'personalizado' || input.registrationFormType === 'educacion_continua'
+        ? input.customFormSchema ?? { fields: [] }
+        : null,
     is_permanent: input.isPermanent ?? false,
     description: input.description,
     location: input.location,

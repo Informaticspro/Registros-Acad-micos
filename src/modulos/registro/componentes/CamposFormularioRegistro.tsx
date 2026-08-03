@@ -43,6 +43,15 @@ function RadioGroup({ legend, name, options }: RadioGroupProps) {
   );
 }
 
+function getConfiguredOptions(
+  customFormSchema: FormularioPersonalizado | null | undefined,
+  fieldId: string,
+  fallback: readonly string[],
+) {
+  const configuredOptions = customFormSchema?.fields.find((field) => field.id === fieldId)?.options ?? [];
+  return configuredOptions.length > 0 ? configuredOptions : fallback;
+}
+
 function CustomField({ field }: { field: FormularioPersonalizado['fields'][number] }) {
   const fieldName = `custom_${field.id}`;
   const help = field.helpText ? <span className="field-hint">{field.helpText}</span> : null;
@@ -106,6 +115,9 @@ function CustomField({ field }: { field: FormularioPersonalizado['fields'][numbe
 }
 
 export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) {
+  const seminarDateOptions = getConfiguredOptions(customFormSchema, 'seminarDate', SEMINARIO_DATE_OPTIONS);
+  const seminarPurposeOptions = getConfiguredOptions(customFormSchema, 'seminarPurpose', SEMINARIO_PURPOSE_OPTIONS);
+
   return (
     <>
       <label>
@@ -231,7 +243,7 @@ export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) 
                 </ul>
               </div>
             </aside>
-            {SEMINARIO_DATE_OPTIONS.map((option) => (
+            {seminarDateOptions.map((option) => (
               <label className="choice-option" key={option}>
                 <input name="seminarDate" type="radio" value={option} required />
                 <span>{option}</span>
@@ -240,7 +252,7 @@ export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) 
           </fieldset>
           <fieldset className="choice-group full-field">
             <legend>Usted tomara el seminario para</legend>
-            {SEMINARIO_PURPOSE_OPTIONS.map((option) => (
+            {seminarPurposeOptions.map((option) => (
               <label className="choice-option" key={option}>
                 <input name="seminarPurpose" type="radio" value={option} required />
                 <span>{option}</span>
