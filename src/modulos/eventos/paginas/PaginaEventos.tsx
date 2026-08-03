@@ -7,6 +7,10 @@ import { EventoAcademico } from '@/tipos/dominio';
 import { getEstadoEventoClassName, getEstadoEventoLabel } from '@/utilidades/estado-evento';
 import { formatDateTime, toTitleCase } from '@/utilidades/formato';
 
+function getCapacityLabel(event: EventoAcademico) {
+  return event.isPermanent ? 'Sin limite' : `${event.capacity} cupos`;
+}
+
 export function PaginaEventos() {
   const [events, setEvents] = useState<EventoAcademico[]>([]);
 
@@ -39,7 +43,7 @@ export function PaginaEventos() {
             <div className="event-meta">
               <span>{event.location}</span>
               <span>{formatDateTime(event.startsAt)}</span>
-              <span>{event.capacity} cupos</span>
+              <span>{getCapacityLabel(event)}</span>
             </div>
           </Link>
         ))}

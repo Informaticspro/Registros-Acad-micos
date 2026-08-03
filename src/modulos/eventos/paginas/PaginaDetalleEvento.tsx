@@ -35,6 +35,10 @@ function getQrDownloadName(event: EventoAcademico) {
   return `qr-registro-${safeTitle || event.id}.png`;
 }
 
+function getCapacityLabel(event: EventoAcademico) {
+  return event.isPermanent ? 'Sin limite' : `${event.capacity} participantes`;
+}
+
 function normalizeText(value: string) {
   return value
     .toLowerCase()
@@ -358,7 +362,7 @@ export function PaginaDetalleEvento() {
             </div>
             <div>
               <dt>Capacidad</dt>
-              <dd>{event.capacity} participantes</dd>
+              <dd>{getCapacityLabel(event)}</dd>
             </div>
           </dl>
         </article>

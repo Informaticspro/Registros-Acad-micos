@@ -26,6 +26,9 @@ export function PaginaFormularioEvento() {
   const { profile } = useAutenticacion();
   const [eventToEdit, setEventToEdit] = useState<EventoAcademico | null>(null);
   const [selectedEventType, setSelectedEventType] = useState<EventoAcademico['eventType']>('congreso');
+  const [selectedRegistrationFormType, setSelectedRegistrationFormType] =
+    useState<EventoAcademico['registrationFormType']>('seminario_general');
+  const [isPermanentSelected, setIsPermanentSelected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = Boolean(eventId);
@@ -64,6 +67,15 @@ export function PaginaFormularioEvento() {
     setSelectedEventType(initialValues.eventType);
   }, [initialValues.eventType]);
 
+  useEffect(() => {
+    setSelectedRegistrationFormType(initialValues.registrationFormType);
+    setIsPermanentSelected(initialValues.isPermanent);
+  }, [initialValues.registrationFormType, initialValues.isPermanent]);
+
+  const isEducacionContinuaSelected =
+    selectedEventType === 'seminario' && selectedRegistrationFormType === 'educacion_continua';
+  const allowsOptionalCapacity = isPermanentSelected || isEducacionContinuaSelected;
+
   function getRequiredText(form: FormData, field: string, label: string) {
     const value = String(form.get(field) ?? '').trim();
     if (!value) throw new Error(`${label} es obligatorio`);
@@ -92,20 +104,24 @@ export function PaginaFormularioEvento() {
     setIsSaving(true);
 
     try {
-      const capacity = Number(form.get('capacity') ?? 0);
+      const eventType = String(form.get('eventType') ?? 'seminario') as EventoAcademico['eventType'];
+      const registrationFormType =
+        eventType === 'seminario'
+          ? (String(form.get('registrationFormType') ?? 'seminario_general') as EventoAcademico['registrationFormType'])
+          : null;
+      const isPermanent = form.get('isPermanent') === 'on' || registrationFormType === 'educacion_continua';
+      const capacityValue = String(form.get('capacity') ?? '').trim();
+      const capacity = capacityValue ? Number(capacityValue) : isPermanent ? 9999 : 0;
       if (!Number.isFinite(capacity) || capacity <= 0) throw new Error('La capacidad debe ser mayor que cero');
 
-      const eventType = String(form.get('eventType') ?? 'seminario') as EventoAcademico['eventType'];
+      const locationValue = String(form.get('location') ?? '').trim();
       const payload = {
         title: getRequiredText(form, 'title', 'El nombre del evento'),
         eventType,
-        registrationFormType:
-          eventType === 'seminario'
-            ? (String(form.get('registrationFormType') ?? 'seminario_general') as EventoAcademico['registrationFormType'])
-            : null,
-        isPermanent: form.get('isPermanent') === 'on',
+        registrationFormType,
+        isPermanent,
         description: String(form.get('description') ?? '').trim(),
-        location: getRequiredText(form, 'location', 'El lugar'),
+        location: locationValue || (isPermanent ? 'Virtual' : getRequiredText(form, 'location', 'El lugar')),
         startsAt: getOptionalDateTime(form, 'startsAt'),
         endsAt: getOptionalDateTime(form, 'endsAt'),
         capacity,
@@ -146,7 +162,16 @@ export function PaginaFormularioEvento() {
             name="eventType"
             value={selectedEventType}
             required
-            onChange={(event) => setSelectedEventType(event.currentTarget.value as EventoAcademico['eventType'])}
+            onChange={(event) => {
+              const nextType = event.currentTarget.value as EventoAcademico['eventType'];
+              setSelectedEventType(nextType);
+              if (nextType !== 'seminario') {
+                setSelectedRegistrationFormType(null);
+                setIsPermanentSelected(false);
+              } else if (!selectedRegistrationFormType) {
+                setSelectedRegistrationFormType('seminario_general');
+              }
+            }}
           >
             <option value="seminario">Seminario</option>
             <option value="congreso">Congreso</option>
@@ -160,8 +185,12 @@ export function PaginaFormularioEvento() {
             Formulario del seminario
             <select
               name="registrationFormType"
-              defaultValue={initialValues.registrationFormType ?? 'seminario_general'}
-              key={`seminar-form-${initialValues.registrationFormType ?? 'seminario_general'}`}
+              value={selectedRegistrationFormType ?? 'seminario_general'}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value as EventoAcademico['registrationFormType'];
+                setSelectedRegistrationFormType(nextValue);
+                if (nextValue === 'educacion_continua') setIsPermanentSelected(true);
+              }}
             >
               <option value="seminario_general">Seminario general UNACHI</option>
               <option value="educacion_continua">Educacion continua / Informatica intermedia</option>
@@ -172,12 +201,29 @@ export function PaginaFormularioEvento() {
           </label>
         ) : null}
         <label>
-          Lugar
-          <input name="location" required placeholder="Auditorio, salon o campus" defaultValue={initialValues.location} />
+          {allowsOptionalCapacity ? 'Lugar opcional' : 'Lugar'}
+          <input
+            name="location"
+            required={!allowsOptionalCapacity}
+            placeholder={allowsOptionalCapacity ? 'Virtual' : 'Auditorio, salon o campus'}
+            defaultValue={initialValues.location}
+          />
         </label>
         <label>
-          Capacidad
-          <input name="capacity" required min="1" type="number" placeholder="120" defaultValue={initialValues.capacity} />
+          {allowsOptionalCapacity ? 'Capacidad opcional' : 'Capacidad'}
+          <input
+            name="capacity"
+            required={!allowsOptionalCapacity}
+            min="1"
+            type="number"
+            placeholder={allowsOptionalCapacity ? 'Sin limite' : '120'}
+            defaultValue={initialValues.capacity === 9999 ? '' : initialValues.capacity}
+          />
+          {allowsOptionalCapacity ? (
+            <span className="field-hint">
+              Para Educacion Continua el cupo se controla por fecha disponible. Puede dejar este campo vacio.
+            </span>
+          ) : null}
         </label>
         <label>
           Inicio opcional
@@ -188,7 +234,13 @@ export function PaginaFormularioEvento() {
           <input name="endsAt" type="datetime-local" step="60" defaultValue={initialValues.endsAt} />
         </label>
         <label className="checkbox-field">
-          <input name="isPermanent" type="checkbox" defaultChecked={initialValues.isPermanent} />
+          <input
+            name="isPermanent"
+            type="checkbox"
+            checked={allowsOptionalCapacity}
+            disabled={isEducacionContinuaSelected}
+            onChange={(event) => setIsPermanentSelected(event.currentTarget.checked)}
+          />
           <span>
             Registro permanente
             <small>
