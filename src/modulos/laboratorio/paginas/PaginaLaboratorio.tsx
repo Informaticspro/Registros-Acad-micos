@@ -247,7 +247,7 @@ function getNaturalInventorySortKey(item: EquipoLaboratorio) {
   return { prefix, number, label: normalized };
 }
 
-function getInventoryStatusPriority(item: EquipoLaboratorio) {
+function getInventoryStatusPriorityValue(estado: string) {
   const priority: Record<string, number> = {
     en_reparacion: 0,
     pendiente_revision: 1,
@@ -257,7 +257,11 @@ function getInventoryStatusPriority(item: EquipoLaboratorio) {
     baja: 6,
   };
 
-  return priority[item.estado] ?? 4;
+  return priority[estado] ?? 4;
+}
+
+function getInventoryStatusPriority(item: EquipoLaboratorio) {
+  return getInventoryStatusPriorityValue(item.estado);
 }
 
 function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
@@ -504,6 +508,19 @@ export function PaginaLaboratorio() {
       .filter((value): value is string => Boolean(value));
     return ['Todas', ...Array.from(new Set([...catalogLocations, ...importedLocations]))];
   }, [state.equipos, state.secciones]);
+
+  const estadosAlertaPorUbicacion = useMemo(() => {
+    return ubicacionesInventario.reduce<Record<string, string[]>>((acc, ubicacion) => {
+      const items =
+        ubicacion === 'Todas' ? state.equipos : state.equipos.filter((equipo) => equipo.ubicacion === ubicacion);
+      const estados = Array.from(
+        new Set(items.map((equipo) => equipo.estado).filter((estado) => estado && estado !== 'operativo')),
+      ).sort((first, second) => getInventoryStatusPriorityValue(first) - getInventoryStatusPriorityValue(second));
+
+      acc[ubicacion] = estados;
+      return acc;
+    }, {});
+  }, [state.equipos, ubicacionesInventario]);
 
   const equiposInventarioFiltrados = useMemo(() => {
     const filtered =
@@ -1936,6 +1953,17 @@ export function PaginaLaboratorio() {
                     onClick={() => setSelectedInventoryLocation(ubicacion)}
                   >
                     {ubicacion}
+                    {estadosAlertaPorUbicacion[ubicacion]?.length ? (
+                      <span className="inventory-filter-alerts" aria-label="Estados con atencion">
+                        {estadosAlertaPorUbicacion[ubicacion].map((estado) => (
+                          <i
+                            className={`equipment-${getEstadoEquipoClass(estado)}`}
+                            key={estado}
+                            title={estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
+                          />
+                        ))}
+                      </span>
+                    ) : null}
                     <span>
                       {ubicacion === 'Todas'
                         ? state.equipos.length

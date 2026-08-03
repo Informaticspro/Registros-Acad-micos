@@ -2451,6 +2451,25 @@ textarea {
   font-size: 0.74rem;
 }
 
+.lab-inventory-filter button .inventory-filter-alerts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.inventory-filter-alerts i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.04);
+}
+
 .lab-inventory-table-wrap {
   max-height: 620px;
   overflow: auto;
