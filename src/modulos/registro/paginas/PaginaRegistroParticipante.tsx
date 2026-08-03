@@ -27,6 +27,10 @@ function getEventDateLabel(event: EventoAcademico) {
   return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
 }
 
+function shouldShowPublicEventDate(event: EventoAcademico) {
+  return !isRegistroPermanenteEvento(event);
+}
+
 function getPublicRegisterCopy(event: EventoAcademico | null) {
   if (event?.eventType === 'seminario') {
     return {
@@ -359,7 +363,7 @@ export function PaginaRegistroParticipante() {
           <div className="public-event-meta">
             <span>Tipo: {toTitleCase(event.eventType)}</span>
             <span>{event.location}</span>
-            <span>{getEventDateLabel(event)}</span>
+            {shouldShowPublicEventDate(event) ? <span>{getEventDateLabel(event)}</span> : null}
           </div>
         ) : null}
       </div>
@@ -367,7 +371,7 @@ export function PaginaRegistroParticipante() {
       {loadError ? <p className="form-error">{loadError}</p> : null}
       {!isLoadingEvent && !loadError && event ? (
         <form className="panel stack-form" onSubmit={handleSubmit}>
-          <span className="form-hint">{getInscripcionFormHint(formKind)}</span>
+          {formKind === 'seminario' ? null : <span className="form-hint">{getInscripcionFormHint(formKind)}</span>}
           {showDraftWarning ? (
             <p className="form-hint">
               Este evento esta en estado "{getEstadoEventoLabel(event.status)}" y no acepta registros en este momento.
