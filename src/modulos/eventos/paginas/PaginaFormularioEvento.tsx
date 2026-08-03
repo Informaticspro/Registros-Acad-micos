@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Save } from 'lucide-react';
+import { Plus, Save, Trash2 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { createEvent, getEvent, updateEvent } from '@/servicios/eventos.servicio';
-import { EventoAcademico } from '@/tipos/dominio';
+import { CampoFormularioPersonalizado, EventoAcademico, TipoCampoFormularioPersonalizado } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 
 function getEditableStatus(status: EventoAcademico['status']) {
@@ -24,9 +24,46 @@ type DuplicateEventState = {
   duplicateFrom?: EventoAcademico;
 };
 
+const customFieldTypeOptions: Array<{ value: TipoCampoFormularioPersonalizado; label: string }> = [
+  { value: 'text', label: 'Texto corto' },
+  { value: 'textarea', label: 'Texto largo' },
+  { value: 'email', label: 'Correo' },
+  { value: 'phone', label: 'Telefono' },
+  { value: 'select', label: 'Lista desplegable' },
+  { value: 'radio', label: 'Seleccion unica' },
+  { value: 'checkbox', label: 'Seleccion multiple' },
+];
+
 function getDuplicateEventTitle(event?: EventoAcademico | null) {
   if (!event) return '';
   return `Copia de ${event.title}`;
+}
+
+function createCustomField(): CampoFormularioPersonalizado {
+  const id =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `campo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return {
+    id,
+    label: '',
+    type: 'text',
+    required: false,
+    helpText: '',
+    options: [],
+  };
+}
+
+function needsOptions(type: TipoCampoFormularioPersonalizado) {
+  return type === 'select' || type === 'radio' || type === 'checkbox';
+}
+
+function parseOptions(value: string) {
+  return value
+    .split('\n')
+    .map((option) => option.trim())
+    .filter(Boolean);
 }
 
 export function PaginaFormularioEvento() {
@@ -40,6 +77,7 @@ export function PaginaFormularioEvento() {
   const [selectedRegistrationFormType, setSelectedRegistrationFormType] =
     useState<EventoAcademico['registrationFormType']>('seminario_general');
   const [isPermanentSelected, setIsPermanentSelected] = useState(false);
+  const [customFields, setCustomFields] = useState<CampoFormularioPersonalizado[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = Boolean(eventId);
@@ -56,6 +94,7 @@ export function PaginaFormularioEvento() {
       endsAt: toDateTimeLocal(eventToEdit?.endsAt ?? duplicateFrom?.endsAt ?? null),
       status: getEditableStatus(eventToEdit?.status ?? duplicateFrom?.status ?? 'published'),
       description: eventToEdit?.description ?? duplicateFrom?.description ?? '',
+      customFormSchema: eventToEdit?.customFormSchema ?? duplicateFrom?.customFormSchema ?? { fields: [] },
     }),
     [duplicateFrom, eventToEdit],
   );
@@ -81,7 +120,8 @@ export function PaginaFormularioEvento() {
   useEffect(() => {
     setSelectedRegistrationFormType(initialValues.registrationFormType);
     setIsPermanentSelected(initialValues.isPermanent);
-  }, [initialValues.registrationFormType, initialValues.isPermanent]);
+    setCustomFields(initialValues.customFormSchema?.fields ?? []);
+  }, [initialValues.customFormSchema, initialValues.registrationFormType, initialValues.isPermanent]);
 
   const isEducacionContinuaSelected =
     selectedEventType === 'seminario' && selectedRegistrationFormType === 'educacion_continua';
@@ -144,7 +184,31 @@ export function PaginaFormularioEvento() {
         endsAt: getOptionalDateTime(form, 'endsAt'),
         capacity,
         status: String(form.get('status') ?? 'published') as EventoAcademico['status'],
+        customFormSchema:
+          registrationFormType === 'personalizado'
+            ? {
+                fields: customFields
+                  .map((field) => ({
+                    ...field,
+                    label: field.label.trim(),
+                    helpText: field.helpText?.trim() ?? '',
+                    options: needsOptions(field.type) ? field.options?.map((option) => option.trim()).filter(Boolean) : [],
+                  }))
+                  .filter((field) => field.label.length > 0),
+              }
+            : null,
       };
+
+      if (payload.customFormSchema && payload.customFormSchema.fields.length === 0) {
+        throw new Error('Agregue al menos un campo al formulario personalizado');
+      }
+
+      const invalidOptionsField = payload.customFormSchema?.fields.find(
+        (field) => needsOptions(field.type) && (!field.options || field.options.length === 0),
+      );
+      if (invalidOptionsField) {
+        throw new Error(`Agregue opciones para el campo "${invalidOptionsField.label}"`);
+      }
 
       const savedEvent = isEditing && eventId
         ? await updateEvent({ id: eventId, ...payload })
@@ -218,6 +282,7 @@ export function PaginaFormularioEvento() {
             >
               <option value="seminario_general">Seminario general UNACHI</option>
               <option value="educacion_continua">Educacion continua / Informatica intermedia</option>
+              <option value="personalizado">Formulario personalizado</option>
             </select>
             <span className="field-hint">
               Educacion continua usa fechas, aula virtual y motivo. General UNACHI usa un formulario mas corto.
@@ -233,6 +298,134 @@ export function PaginaFormularioEvento() {
             defaultValue={initialValues.location}
           />
         </label>
+        {selectedEventType === 'seminario' && selectedRegistrationFormType === 'personalizado' ? (
+          <section className="custom-form-builder full-field">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">Editor de formulario</span>
+                <h2>Campos personalizados</h2>
+              </div>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setCustomFields((currentFields) => [...currentFields, createCustomField()])}
+              >
+                <Plus size={18} />
+                Agregar campo
+              </button>
+            </div>
+            {customFields.length === 0 ? (
+              <p className="form-hint">Agregue campos para crear un formulario tipo Microsoft Forms.</p>
+            ) : null}
+            <div className="custom-form-fields">
+              {customFields.map((field, index) => (
+                <article className="custom-form-field-card" key={field.id}>
+                  <div className="custom-form-field-header">
+                    <strong>Campo {index + 1}</strong>
+                    <button
+                      className="icon-button danger-button"
+                      type="button"
+                      aria-label="Eliminar campo"
+                      onClick={() => setCustomFields((currentFields) => currentFields.filter((item) => item.id !== field.id))}
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  </div>
+                  <div className="form-grid compact-form-grid">
+                    <label>
+                      Titulo del campo
+                      <input
+                        value={field.label}
+                        placeholder="Ej. Facultad, telefono, modalidad..."
+                        onChange={(changeEvent) =>
+                          setCustomFields((currentFields) =>
+                            currentFields.map((item) =>
+                              item.id === field.id ? { ...item, label: changeEvent.currentTarget.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Tipo de respuesta
+                      <select
+                        value={field.type}
+                        onChange={(changeEvent) =>
+                          setCustomFields((currentFields) =>
+                            currentFields.map((item) =>
+                              item.id === field.id
+                                ? {
+                                    ...item,
+                                    type: changeEvent.currentTarget.value as TipoCampoFormularioPersonalizado,
+                                    options: needsOptions(changeEvent.currentTarget.value as TipoCampoFormularioPersonalizado)
+                                      ? item.options
+                                      : [],
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        {customFieldTypeOptions.map((option) => (
+                          <option value={option.value} key={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="checkbox-field">
+                      <input
+                        type="checkbox"
+                        checked={field.required}
+                        onChange={(changeEvent) =>
+                          setCustomFields((currentFields) =>
+                            currentFields.map((item) =>
+                              item.id === field.id ? { ...item, required: changeEvent.currentTarget.checked } : item,
+                            ),
+                          )
+                        }
+                      />
+                      <span>Campo obligatorio</span>
+                    </label>
+                    <label>
+                      Ayuda opcional
+                      <input
+                        value={field.helpText ?? ''}
+                        placeholder="Texto breve para orientar al participante"
+                        onChange={(changeEvent) =>
+                          setCustomFields((currentFields) =>
+                            currentFields.map((item) =>
+                              item.id === field.id ? { ...item, helpText: changeEvent.currentTarget.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    {needsOptions(field.type) ? (
+                      <label className="full-field">
+                        Opciones, una por linea
+                        <textarea
+                          rows={4}
+                          value={(field.options ?? []).join('\n')}
+                          placeholder={'Opcion 1\nOpcion 2\nOpcion 3'}
+                          onChange={(changeEvent) =>
+                            setCustomFields((currentFields) =>
+                              currentFields.map((item) =>
+                                item.id === field.id
+                                  ? { ...item, options: parseOptions(changeEvent.currentTarget.value) }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
         <label>
           {allowsOptionalCapacity ? 'Capacidad opcional' : 'Capacidad'}
           <input

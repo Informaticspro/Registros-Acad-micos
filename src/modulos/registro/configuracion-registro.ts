@@ -1,6 +1,6 @@
 ﻿import { EventoAcademico } from '@/tipos/dominio';
 
-export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario' | 'seminario_general';
+export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario' | 'seminario_general' | 'personalizado';
 
 export type TipoFormularioSeminario = NonNullable<EventoAcademico['registrationFormType']>;
 
@@ -33,6 +33,7 @@ export function getInscripcionFormKind(
   const eventType = typeof eventOrType === 'string' ? eventOrType : eventOrType?.eventType;
   if (eventType === 'congreso') return 'congreso';
   if (eventType === 'seminario') {
+    if (typeof eventOrType !== 'string' && eventOrType?.registrationFormType === 'personalizado') return 'personalizado';
     return typeof eventOrType !== 'string' && isEducacionContinuaSeminar(eventOrType)
       ? 'seminario'
       : 'seminario_general';
@@ -49,6 +50,9 @@ export function getInscripcionFormHint(kind: InscripcionFormKind): string {
   }
   if (kind === 'seminario_general') {
     return 'Formulario de seminario general: datos de contacto, facultad, centro universitario y tipo de participante.';
+  }
+  if (kind === 'personalizado') {
+    return 'Formulario personalizado: complete los datos solicitados por la organizacion.';
   }
   return 'Formulario simple: nombre, apellido, cedula y correo institucional.';
 }

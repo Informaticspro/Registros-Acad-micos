@@ -53,6 +53,14 @@ function validateMetadataWithSchema(
   throw new Error(firstIssue?.message ?? 'Complete los campos requeridos del formulario');
 }
 
+function validateCustomMetadata(event: EventoAcademico, metadata: Record<string, string> | undefined) {
+  for (const field of event.customFormSchema?.fields ?? []) {
+    if (!field.required) continue;
+    const value = metadata?.[`custom:${field.label}`]?.trim() ?? '';
+    if (!value) throw new Error(`Complete el campo "${field.label}"`);
+  }
+}
+
 export const publicCheckInSchema = z
   .object({
     eventId: z.string().min(1, 'Evento requerido'),
@@ -108,8 +116,11 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
   if (formKind === 'seminario_general') {
     validateMetadataWithSchema(seminarioGeneralMetadataSchema, parsed.metadata);
   }
+  if (formKind === 'personalizado') {
+    validateCustomMetadata(event, parsed.metadata);
+  }
   const metadata =
-    formKind === 'congreso' || formKind === 'seminario' || formKind === 'seminario_general'
+    formKind === 'congreso' || formKind === 'seminario' || formKind === 'seminario_general' || formKind === 'personalizado'
       ? Object.fromEntries(
           Object.entries(parsed.metadata ?? {}).filter(([, value]) => value.trim().length > 0),
         )

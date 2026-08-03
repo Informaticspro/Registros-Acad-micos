@@ -720,6 +720,36 @@ p {
   font-size: 0.86rem;
 }
 
+.custom-form-builder {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(243, 189, 34, 0.24);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(243, 189, 34, 0.08), transparent 44%), var(--surface-deep);
+}
+
+.custom-form-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.custom-form-field-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.custom-form-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .table-list,
 .timeline,
 .workflow-list {

@@ -16,9 +16,11 @@ import {
   SEMINARIO_REGIONAL_CENTER_OPTIONS,
   SEMINARIO_SEX_OPTIONS,
 } from '@/modulos/registro/configuracion-registro';
+import { FormularioPersonalizado } from '@/tipos/dominio';
 
 type Props = {
   formKind: InscripcionFormKind;
+  customFormSchema?: FormularioPersonalizado | null;
 };
 
 type RadioGroupProps = {
@@ -41,7 +43,69 @@ function RadioGroup({ legend, name, options }: RadioGroupProps) {
   );
 }
 
-export function CamposFormularioRegistro({ formKind }: Props) {
+function CustomField({ field }: { field: FormularioPersonalizado['fields'][number] }) {
+  const fieldName = `custom_${field.id}`;
+  const help = field.helpText ? <span className="field-hint">{field.helpText}</span> : null;
+
+  if (field.type === 'textarea') {
+    return (
+      <label className="full-field">
+        {field.label}
+        <textarea name={fieldName} required={field.required} rows={4} />
+        {help}
+      </label>
+    );
+  }
+
+  if (field.type === 'select') {
+    return (
+      <label>
+        {field.label}
+        <select name={fieldName} required={field.required} defaultValue="">
+          <option value="" disabled>
+            Seleccione una opcion
+          </option>
+          {(field.options ?? []).map((option) => (
+            <option value={option} key={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        {help}
+      </label>
+    );
+  }
+
+  if (field.type === 'radio' || field.type === 'checkbox') {
+    return (
+      <fieldset className="choice-group full-field">
+        <legend>{field.label}</legend>
+        {(field.options ?? []).map((option) => (
+          <label className="choice-option" key={option}>
+            <input name={fieldName} type={field.type} value={option} required={field.required && field.type === 'radio'} />
+            <span>{option}</span>
+          </label>
+        ))}
+        {help}
+      </fieldset>
+    );
+  }
+
+  return (
+    <label>
+      {field.label}
+      <input
+        name={fieldName}
+        required={field.required}
+        type={field.type === 'email' ? 'email' : 'text'}
+        inputMode={field.type === 'phone' ? 'tel' : undefined}
+      />
+      {help}
+    </label>
+  );
+}
+
+export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) {
   return (
     <>
       <label>
@@ -96,6 +160,13 @@ export function CamposFormularioRegistro({ formKind }: Props) {
             <input name="otherUniversity" placeholder="Ej. Universidad, institucion o centro externo" />
           </label>
           <RadioGroup legend="Es usted" name="participantType" options={SEMINARIO_GENERAL_PARTICIPANT_TYPE_OPTIONS} />
+        </>
+      ) : null}
+      {formKind === 'personalizado' ? (
+        <>
+          {(customFormSchema?.fields ?? []).map((field) => (
+            <CustomField field={field} key={field.id} />
+          ))}
         </>
       ) : null}
       {formKind === 'seminario' ? (

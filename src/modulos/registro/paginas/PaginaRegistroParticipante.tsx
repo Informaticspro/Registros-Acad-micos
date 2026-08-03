@@ -23,6 +23,18 @@ function getValue(form: FormData, field: string) {
   return String(form.get(field) ?? '').trim();
 }
 
+function collectCustomMetadata(form: FormData, event: EventoAcademico | null): Record<string, string> {
+  const fields = event?.customFormSchema?.fields ?? [];
+
+  return Object.fromEntries(
+    fields.map((field) => {
+      const formKey = `custom_${field.id}`;
+      const values = form.getAll(formKey).map((value) => String(value).trim()).filter(Boolean);
+      return [`custom:${field.label}`, values.join(', ')];
+    }),
+  );
+}
+
 function getEventDateLabel(event: EventoAcademico) {
   return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
 }
@@ -115,6 +127,10 @@ function collectMetadata(form: FormData, event: EventoAcademico | null): Record<
       otherUniversity: getValue(form, 'otherUniversity'),
       participantType: getValue(form, 'participantType'),
     };
+  }
+
+  if (formKind === 'personalizado') {
+    return collectCustomMetadata(form, event);
   }
 
   return {};
@@ -380,7 +396,7 @@ export function PaginaRegistroParticipante() {
                 : null}
             </p>
           ) : null}
-          <CamposFormularioRegistro formKind={formKind} />
+          <CamposFormularioRegistro formKind={formKind} customFormSchema={event.customFormSchema} />
           {error ? <p className="form-error">{error}</p> : null}
           <button className="primary-button" type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Registrando...' : 'Registrar asistencia'}

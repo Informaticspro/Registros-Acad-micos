@@ -14,11 +14,27 @@ export type PerfilUsuario = {
   organizationId: string | null;
 };
 
+export type TipoCampoFormularioPersonalizado = 'text' | 'textarea' | 'email' | 'phone' | 'select' | 'radio' | 'checkbox';
+
+export type CampoFormularioPersonalizado = {
+  id: string;
+  label: string;
+  type: TipoCampoFormularioPersonalizado;
+  required: boolean;
+  helpText?: string;
+  options?: string[];
+};
+
+export type FormularioPersonalizado = {
+  fields: CampoFormularioPersonalizado[];
+};
+
 export type EventoAcademico = {
   id: string;
   title: string;
   eventType: 'seminario' | 'congreso' | 'taller' | 'capacitacion' | 'universitario';
-  registrationFormType?: 'educacion_continua' | 'seminario_general' | null;
+  registrationFormType?: 'educacion_continua' | 'seminario_general' | 'personalizado' | null;
+  customFormSchema?: FormularioPersonalizado | null;
   isPermanent?: boolean;
   description: string;
   location: string;

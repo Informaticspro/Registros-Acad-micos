@@ -391,6 +391,19 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
       };
     }
 
+    if (formKind === 'personalizado') {
+      const customAnswers = Object.fromEntries(
+        Object.entries(metadata)
+          .filter(([key]) => key.startsWith('custom:'))
+          .map(([key, value]) => [key.replace(/^custom:/, ''), value]),
+      );
+
+      return {
+        ...base,
+        ...customAnswers,
+      };
+    }
+
     if (formKind !== 'congreso') return base;
 
     return {
