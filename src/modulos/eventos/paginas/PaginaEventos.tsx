@@ -66,7 +66,7 @@ export function PaginaEventos() {
             <h2>
               <Link to={`/eventos/${event.id}`}>{event.title}</Link>
             </h2>
-            <p>{event.description}</p>
+            <p className="event-card-description">{event.description}</p>
             <div className="event-meta">
               <span>{event.location}</span>
               <span>{getEventDateLabel(event)}</span>

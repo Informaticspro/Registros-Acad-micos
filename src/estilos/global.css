@@ -681,6 +681,7 @@ p {
 
 .event-card {
   display: grid;
+  grid-template-rows: auto auto minmax(58px, auto) auto auto;
   gap: 16px;
   min-height: 260px;
   padding: 22px;
@@ -697,6 +698,16 @@ p {
 
 .event-card h2 a:hover {
   color: var(--gold);
+}
+
+.event-card-description {
+  display: -webkit-box;
+  min-height: 58px;
+  max-height: 78px;
+  overflow: hidden;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .event-meta {
