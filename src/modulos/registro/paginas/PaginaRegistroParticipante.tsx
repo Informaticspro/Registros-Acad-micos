@@ -12,11 +12,19 @@ import { getEvent } from '@/servicios/eventos.servicio';
 import { registerPublicCheckIn, PublicCheckInResult } from '@/servicios/registro-publico.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
-import { getEstadoEventoLabel, isPublicRegistrationOpen } from '@/utilidades/estado-evento';
+import {
+  getEstadoEventoLabel,
+  isPublicRegistrationOpen,
+  isRegistroPermanenteEvento,
+} from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
 
 function getValue(form: FormData, field: string) {
   return String(form.get(field) ?? '').trim();
+}
+
+function getEventDateLabel(event: EventoAcademico) {
+  return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
 }
 
 function collectMetadata(form: FormData, event: EventoAcademico | null): Record<string, string> {
@@ -309,7 +317,7 @@ export function PaginaRegistroParticipante() {
           <div className="public-event-meta">
             <span>Tipo: {event.eventType}</span>
             <span>{event.location}</span>
-            <span>{formatDateTime(event.startsAt)}</span>
+            <span>{getEventDateLabel(event)}</span>
           </div>
         ) : null}
       </div>

@@ -2,7 +2,7 @@
 import { isDemoMode } from '@/infraestructura/entorno';
 import { mockEvents } from '@/datos/datosPrueba';
 import { EventoAcademico } from '@/tipos/dominio';
-import { getEstadoEventoPorFecha, normalizeEventStatusForSave } from '@/utilidades/estado-evento';
+import { getEstadoEventoPorFecha, isRegistroPermanenteEvento, normalizeEventStatusForSave } from '@/utilidades/estado-evento';
 
 export type SaveEventInput = {
   title: string;
@@ -56,6 +56,7 @@ const mapEvent = (row: EventRow): EventoAcademico => {
 
   return {
     ...event,
+    isPermanent: isRegistroPermanenteEvento(event),
     status: getEstadoEventoPorFecha(event),
   };
 };

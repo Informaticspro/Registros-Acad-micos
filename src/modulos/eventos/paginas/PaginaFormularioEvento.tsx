@@ -111,7 +111,14 @@ export function PaginaFormularioEvento() {
           : null;
       const isPermanent = form.get('isPermanent') === 'on' || registrationFormType === 'educacion_continua';
       const capacityValue = String(form.get('capacity') ?? '').trim();
-      const capacity = capacityValue ? Number(capacityValue) : isPermanent ? 9999 : 0;
+      const capacity =
+        registrationFormType === 'educacion_continua'
+          ? 9999
+          : capacityValue
+            ? Number(capacityValue)
+            : isPermanent
+              ? 9999
+              : 0;
       if (!Number.isFinite(capacity) || capacity <= 0) throw new Error('La capacidad debe ser mayor que cero');
 
       const locationValue = String(form.get('location') ?? '').trim();

@@ -16,7 +16,7 @@ import { CONGRESO_CATEGORY_OPTIONS } from '@/modulos/registro/configuracion-regi
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { EventoAcademico, JornadaAsistencia } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
-import { getEstadoEventoLabel } from '@/utilidades/estado-evento';
+import { getEstadoEventoVisualLabel, isRegistroPermanenteEvento } from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
 
 function getInscripcionFormDescription(eventType: EventoAcademico['eventType']) {
@@ -36,7 +36,11 @@ function getQrDownloadName(event: EventoAcademico) {
 }
 
 function getCapacityLabel(event: EventoAcademico) {
-  return event.isPermanent ? 'Sin limite' : `${event.capacity} participantes`;
+  return isRegistroPermanenteEvento(event) ? 'Sin limite' : `${event.capacity} participantes`;
+}
+
+function getEventDateLabel(event: EventoAcademico, value: string | null) {
+  return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(value);
 }
 
 function normalizeText(value: string) {
@@ -222,7 +226,7 @@ export function PaginaDetalleEvento() {
   return (
     <div className="page-stack">
       <PageEncabezado
-        eyebrow={getEstadoEventoLabel(event.status)}
+        eyebrow={getEstadoEventoVisualLabel(event)}
         title={event.title}
         description={event.description}
         actions={
@@ -354,11 +358,11 @@ export function PaginaDetalleEvento() {
             </div>
             <div>
               <dt>Inicio</dt>
-              <dd>{formatDateTime(event.startsAt)}</dd>
+              <dd>{getEventDateLabel(event, event.startsAt)}</dd>
             </div>
             <div>
               <dt>Cierre</dt>
-              <dd>{formatDateTime(event.endsAt)}</dd>
+              <dd>{getEventDateLabel(event, event.endsAt)}</dd>
             </div>
             <div>
               <dt>Capacidad</dt>

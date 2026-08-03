@@ -2,7 +2,7 @@ import { listAttendance } from '@/servicios/asistencia.servicio';
 import { listEvents } from '@/servicios/eventos.servicio';
 import { listInscripcions, listParticipantes } from '@/servicios/participantes.servicio';
 import { Inscripcion, Participante } from '@/tipos/dominio';
-import { getEstadoEventoLabel } from '@/utilidades/estado-evento';
+import { getEstadoEventoVisualLabel } from '@/utilidades/estado-evento';
 import { formatDateTime, toTitleCase } from '@/utilidades/formato';
 
 export type TipoResultadoBusqueda = 'evento' | 'participante' | 'asistencia';
@@ -76,7 +76,7 @@ export async function buscarGlobal(query: string): Promise<ResultadoBusqueda[]> 
           event.eventType,
           event.description,
           event.location,
-          getEstadoEventoLabel(event.status),
+          getEstadoEventoVisualLabel(event),
         ],
         query,
       ),
@@ -86,7 +86,7 @@ export async function buscarGlobal(query: string): Promise<ResultadoBusqueda[]> 
       id: `evento-${event.id}`,
       kind: 'evento',
       title: event.title,
-      description: `${toTitleCase(event.eventType)} | ${event.location || 'Sin lugar'} | ${getEstadoEventoLabel(event.status)}`,
+      description: `${toTitleCase(event.eventType)} | ${event.location || 'Sin lugar'} | ${getEstadoEventoVisualLabel(event)}`,
       to: `/eventos/${event.id}`,
     }));
 

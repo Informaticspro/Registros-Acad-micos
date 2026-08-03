@@ -4,11 +4,19 @@ import { Plus } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { listEvents } from '@/servicios/eventos.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
-import { getEstadoEventoClassName, getEstadoEventoLabel } from '@/utilidades/estado-evento';
+import {
+  getEstadoEventoVisualClassName,
+  getEstadoEventoVisualLabel,
+  isRegistroPermanenteEvento,
+} from '@/utilidades/estado-evento';
 import { formatDateTime, toTitleCase } from '@/utilidades/formato';
 
 function getCapacityLabel(event: EventoAcademico) {
-  return event.isPermanent ? 'Sin limite' : `${event.capacity} cupos`;
+  return isRegistroPermanenteEvento(event) ? 'Sin limite' : `${event.capacity} cupos`;
+}
+
+function getEventDateLabel(event: EventoAcademico) {
+  return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
 }
 
 export function PaginaEventos() {
@@ -36,13 +44,13 @@ export function PaginaEventos() {
           <Link className="event-card" to={`/eventos/${event.id}`} key={event.id}>
             <div className="card-topline">
               <span>{toTitleCase(event.eventType)}</span>
-              <strong className={getEstadoEventoClassName(event.status)}>{getEstadoEventoLabel(event.status)}</strong>
+              <strong className={getEstadoEventoVisualClassName(event)}>{getEstadoEventoVisualLabel(event)}</strong>
             </div>
             <h2>{event.title}</h2>
             <p>{event.description}</p>
             <div className="event-meta">
               <span>{event.location}</span>
-              <span>{formatDateTime(event.startsAt)}</span>
+              <span>{getEventDateLabel(event)}</span>
               <span>{getCapacityLabel(event)}</span>
             </div>
           </Link>

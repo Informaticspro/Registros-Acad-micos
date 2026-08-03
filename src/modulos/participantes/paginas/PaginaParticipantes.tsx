@@ -25,7 +25,7 @@ import {
 } from '@/servicios/participantes.servicio';
 import { EventoAcademico, Inscripcion, Participante } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
-import { getEstadoEventoClassName, getEstadoEventoLabel } from '@/utilidades/estado-evento';
+import { getEstadoEventoVisualClassName, getEstadoEventoVisualLabel } from '@/utilidades/estado-evento';
 import { formatDateTime, toTitleCase } from '@/utilidades/formato';
 
 type ParticipanteInscrito = {
@@ -333,8 +333,8 @@ export function PaginaParticipantes() {
                   <article className="event-participants-card" key={eventGroup.event.id}>
                     <div className="event-participants-header">
                       <div>
-                        <span className={getEstadoEventoClassName(eventGroup.event.status)}>
-                          {getEstadoEventoLabel(eventGroup.event.status)}
+                        <span className={getEstadoEventoVisualClassName(eventGroup.event)}>
+                          {getEstadoEventoVisualLabel(eventGroup.event)}
                         </span>
                         <h3>{eventGroup.event.title}</h3>
                       </div>

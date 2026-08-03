@@ -6,6 +6,7 @@ import { isTodayInPanama, listAttendance } from '@/servicios/asistencia.servicio
 import { listEvents } from '@/servicios/eventos.servicio';
 import { listInscripcions, listParticipantes } from '@/servicios/participantes.servicio';
 import { EventoAcademico, Inscripcion, Participante, RegistroAsistencia } from '@/tipos/dominio';
+import { isRegistroPermanenteEvento } from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
 
 const recentActivityLimit = 6;
@@ -21,6 +22,14 @@ type ActividadReciente = {
 function getParticipantName(participant?: Participante) {
   if (!participant) return 'Participante';
   return `${participant.firstName} ${participant.lastName}`.trim() || 'Participante';
+}
+
+function getEventDateLabel(event: EventoAcademico) {
+  return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
+}
+
+function isOpenEvent(event: EventoAcademico) {
+  return event.status === 'active' || (isRegistroPermanenteEvento(event) && event.status === 'published');
 }
 
 export function PaginaPanel() {
@@ -40,7 +49,7 @@ export function PaginaPanel() {
     );
   }, []);
 
-  const activeEvents = events.filter((event) => event.status === 'active');
+  const activeEvents = events.filter(isOpenEvent);
   const todayAttendance = attendance.filter((item) => isTodayInPanama(item.checkedInAt));
   const congressEvent =
     events.find((event) => event.eventType === 'congreso' && event.status === 'active') ??
@@ -123,7 +132,7 @@ export function PaginaPanel() {
                   <strong>{event.title}</strong>
                   {event.location ? <span>{event.location}</span> : null}
                 </div>
-                <small>{formatDateTime(event.startsAt)}</small>
+                <small>{getEventDateLabel(event)}</small>
               </div>
             ))}
           </div>

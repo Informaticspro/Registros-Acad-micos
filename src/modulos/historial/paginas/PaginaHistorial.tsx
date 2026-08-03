@@ -1,7 +1,11 @@
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { mockEvents } from '@/datos/datosPrueba';
-import { getEstadoEventoLabel, getEstadoEventoPorFecha } from '@/utilidades/estado-evento';
+import { getEstadoEventoVisualLabel, isRegistroPermanenteEvento } from '@/utilidades/estado-evento';
 import { formatDateTime } from '@/utilidades/formato';
+
+function getEventDateLabel(event: (typeof mockEvents)[number]) {
+  return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
+}
 
 export function PaginaHistorial() {
   return (
@@ -17,7 +21,7 @@ export function PaginaHistorial() {
             <span />
             <div>
               <strong>{event.title}</strong>
-              <p>{formatDateTime(event.startsAt)} - {getEstadoEventoLabel(getEstadoEventoPorFecha(event))}</p>
+              <p>{getEventDateLabel(event)} - {getEstadoEventoVisualLabel(event)}</p>
             </div>
           </div>
         ))}

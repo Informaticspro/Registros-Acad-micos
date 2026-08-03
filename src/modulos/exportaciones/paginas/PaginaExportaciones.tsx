@@ -3,8 +3,12 @@ import { Download } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { exportEventExcel, ExportableEvent, listExportableEvents } from '@/servicios/exportaciones.servicio';
 import { getErrorMessage } from '@/utilidades/errores';
-import { getEstadoEventoLabel } from '@/utilidades/estado-evento';
+import { getEstadoEventoVisualLabel, isRegistroPermanenteEvento } from '@/utilidades/estado-evento';
 import { formatDateTime, toTitleCase } from '@/utilidades/formato';
+
+function getEventDateLabel(event: ExportableEvent) {
+  return isRegistroPermanenteEvento(event) ? 'Registro permanente' : formatDateTime(event.startsAt);
+}
 
 export function PaginaExportaciones() {
   const [events, setEvents] = useState<ExportableEvent[]>([]);
@@ -50,11 +54,11 @@ export function PaginaExportaciones() {
             <div>
               <h2>{event.title}</h2>
               <p>
-                {toTitleCase(event.eventType)} - {getEstadoEventoLabel(event.status)} - {event.registrationCount} inscrito
+                {toTitleCase(event.eventType)} - {getEstadoEventoVisualLabel(event)} - {event.registrationCount} inscrito
                 {event.registrationCount === 1 ? '' : 's'}
               </p>
               <p className="form-hint">
-                {event.location} - {formatDateTime(event.startsAt)}
+                {event.location} - {getEventDateLabel(event)}
               </p>
             </div>
             <button
