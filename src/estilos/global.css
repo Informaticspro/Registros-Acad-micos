@@ -2070,6 +2070,85 @@ textarea {
   background: var(--surface-deep);
 }
 
+.lab-equipment-detail-modal {
+  width: min(1040px, calc(100vw - 32px));
+}
+
+.lab-equipment-detail-header {
+  padding: 0;
+}
+
+.lab-equipment-detail-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.lab-equipment-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lab-equipment-detail-grid {
+  padding: 0;
+}
+
+.lab-equipment-detail-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab-equipment-detail-section h3,
+.lab-equipment-detail-section p {
+  margin: 0;
+}
+
+.lab-equipment-detail-list {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.lab-equipment-detail-list button,
+.lab-equipment-detail-list article {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+  color: var(--text);
+  text-align: left;
+}
+
+.lab-equipment-detail-list button {
+  cursor: pointer;
+}
+
+.lab-equipment-detail-list button:hover {
+  border-color: rgba(243, 189, 34, 0.42);
+}
+
+.lab-equipment-detail-list span,
+.lab-equipment-detail-list small {
+  color: var(--muted);
+}
+
+.lab-equipment-detail-list article {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.lab-equipment-detail-list article p {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
 .lab-modal-form {
   padding: 0;
   border: 0;
@@ -4226,6 +4305,21 @@ textarea {
   .lab-workspace-header .secondary-button {
     width: 100%;
     min-height: 38px;
+  }
+
+  .lab-equipment-detail-modal {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: 12px;
+  }
+
+  .lab-equipment-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .lab-equipment-detail-list article {
+    grid-template-columns: 1fr;
   }
 
   .lab-workspace-badge {

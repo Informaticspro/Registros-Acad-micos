@@ -459,6 +459,7 @@ export function PaginaLaboratorio() {
   const [editingEstadoEquipo, setEditingEstadoEquipo] = useState<CatalogoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
+  const [selectedEquipoDetalle, setSelectedEquipoDetalle] = useState<EquipoLaboratorio | null>(null);
   const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
@@ -597,11 +598,12 @@ export function PaginaLaboratorio() {
   }, [message, error]);
 
   useEffect(() => {
-    if (!selectedFicha && !showEquipoFormModal && !activeCatalogManager) return undefined;
+    if (!selectedFicha && !selectedEquipoDetalle && !showEquipoFormModal && !activeCatalogManager) return undefined;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
       setSelectedFicha(null);
+      setSelectedEquipoDetalle(null);
       setShowEquipoFormModal(false);
       setEditingEquipo(null);
       closeCatalogManager();
@@ -609,7 +611,7 @@ export function PaginaLaboratorio() {
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [activeCatalogManager, selectedFicha, showEquipoFormModal]);
+  }, [activeCatalogManager, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
@@ -1171,6 +1173,45 @@ export function PaginaLaboratorio() {
     }
     exportHistorialEquipoLaboratorioExcel(state, selectedReportEquipoId);
     setMessage('Historial tecnico del equipo descargado correctamente.');
+  }
+
+  function matchesEquipoDetalle(equipo: EquipoLaboratorio, value: string) {
+    const normalizedValue = value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    const keys = [equipo.codigo, equipo.nombre, equipo.serie, equipo.marcaModelo]
+      .filter(Boolean)
+      .map((item) =>
+        item
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase(),
+      );
+    return keys.some((key) => key && normalizedValue.includes(key));
+  }
+
+  function getFichasEquipo(equipo: EquipoLaboratorio) {
+    return state.fichas
+      .filter((item) => matchesEquipoDetalle(equipo, `${item.pc} ${item.inventario.map((field) => field.numero).join(' ')}`))
+      .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  }
+
+  function getBitacorasEquipo(equipo: EquipoLaboratorio) {
+    return state.bitacoras
+      .filter(
+        (item) =>
+          item.equipoId === equipo.id ||
+          matchesEquipoDetalle(equipo, `${item.equipoOrigen} ${item.equipoDestino} ${item.titulo} ${item.descripcion}`),
+      )
+      .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  }
+
+  function openFichaForEquipo(equipo: EquipoLaboratorio) {
+    setSelectedEquipoDetalle(null);
+    setEditingFicha(null);
+    setSelectedEquipoFichaId(equipo.id);
+    setActiveTab('fichas');
   }
 
   function closeCatalogManager() {
@@ -1950,6 +1991,14 @@ export function PaginaLaboratorio() {
                             <button
                               className="icon-button"
                               type="button"
+                              title="Ver expediente tecnico"
+                              onClick={() => setSelectedEquipoDetalle(item)}
+                            >
+                              <ClipboardList size={16} />
+                            </button>
+                            <button
+                              className="icon-button"
+                              type="button"
                               title="Editar"
                               onClick={() => {
                                 setEditingEquipo(item);
@@ -1974,6 +2023,124 @@ export function PaginaLaboratorio() {
                 </div>
               ) : null}
             </section>
+
+            {selectedEquipoDetalle ? (
+              <div className="modal-backdrop" role="presentation" onClick={() => setSelectedEquipoDetalle(null)}>
+                <article
+                  className="modal-panel lab-equipment-modal lab-equipment-detail-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-equipment-detail-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {(() => {
+                    const { marca, modelo } = splitMarcaModelo(selectedEquipoDetalle.marcaModelo);
+                    const fichasEquipo = getFichasEquipo(selectedEquipoDetalle);
+                    const bitacorasEquipo = getBitacorasEquipo(selectedEquipoDetalle);
+                    return (
+                      <>
+                        <div className="modal-header lab-equipment-detail-header">
+                          <div>
+                            <span className="eyebrow">Expediente tecnico</span>
+                            <h2 id="lab-equipment-detail-title">{selectedEquipoDetalle.nombre}</h2>
+                            <p>
+                              {selectedEquipoDetalle.codigo || 'Sin inventario'} | {selectedEquipoDetalle.ubicacion || 'Sin ubicacion'} |{' '}
+                              {estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado)}
+                            </p>
+                          </div>
+                          <button className="icon-button" type="button" aria-label="Cerrar detalle" onClick={() => setSelectedEquipoDetalle(null)}>
+                            <XCircle size={18} />
+                          </button>
+                        </div>
+
+                        <div className="lab-equipment-detail-actions">
+                          <button className="primary-button" type="button" onClick={() => openFichaForEquipo(selectedEquipoDetalle)}>
+                            <ClipboardList size={18} />
+                            Nueva ficha tecnica
+                          </button>
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={() => {
+                              exportHistorialEquipoLaboratorioExcel(state, selectedEquipoDetalle.id);
+                              setMessage('Historial tecnico del equipo descargado correctamente.');
+                            }}
+                          >
+                            <Download size={18} />
+                            Descargar historial
+                          </button>
+                        </div>
+
+                        <dl className="lab-definition-grid lab-equipment-detail-grid">
+                          <div><dt>Numero de inventario</dt><dd>{selectedEquipoDetalle.codigo || 'S/N'}</dd></div>
+                          <div><dt>Categoria</dt><dd>{selectedEquipoDetalle.categoria || 'No indicada'}</dd></div>
+                          <div><dt>Marca</dt><dd>{marca}</dd></div>
+                          <div><dt>Modelo</dt><dd>{modelo}</dd></div>
+                          <div><dt>Serie</dt><dd>{selectedEquipoDetalle.serie || 'S/N'}</dd></div>
+                          <div><dt>Ubicacion</dt><dd>{selectedEquipoDetalle.ubicacion || 'No indicada'}</dd></div>
+                          <div><dt>Estado</dt><dd>{estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado)}</dd></div>
+                          <div><dt>Actualizado</dt><dd>{formatDateTime(selectedEquipoDetalle.updatedAt)}</dd></div>
+                        </dl>
+
+                        <section className="lab-equipment-detail-section">
+                          <div className="lab-home-section-header">
+                            <div>
+                              <span className="eyebrow">Fichas tecnicas</span>
+                              <h3>{fichasEquipo.length} registros</h3>
+                            </div>
+                          </div>
+                          {fichasEquipo.length === 0 ? <p className="form-hint">Este equipo todavia no tiene fichas tecnicas relacionadas.</p> : null}
+                          <div className="lab-equipment-detail-list">
+                            {fichasEquipo.map((ficha) => (
+                              <button
+                                key={ficha.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedEquipoDetalle(null);
+                                  setActiveTab('fichas');
+                                  setSelectedFicha(ficha);
+                                }}
+                              >
+                                <strong>{ficha.pc}</strong>
+                                <span>{formatDateTime(ficha.fecha)} | {ficha.responsable || 'Sin responsable'}</span>
+                                <small>{ficha.observacionGeneral || `${ficha.acciones.length} acciones registradas`}</small>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="lab-equipment-detail-section">
+                          <div className="lab-home-section-header">
+                            <div>
+                              <span className="eyebrow">Bitacoras e incidencias</span>
+                              <h3>{bitacorasEquipo.length} movimientos</h3>
+                            </div>
+                          </div>
+                          {bitacorasEquipo.length === 0 ? <p className="form-hint">No hay bitacoras o incidencias relacionadas con este equipo.</p> : null}
+                          <div className="lab-equipment-detail-list">
+                            {bitacorasEquipo.map((bitacora) => (
+                              <article key={bitacora.id}>
+                                <div>
+                                  <strong>{bitacora.titulo}</strong>
+                                  <span>{formatDateTime(bitacora.fecha)} | {bitacora.responsable || 'Sin responsable'}</span>
+                                </div>
+                                <span className={`status-pill priority-${bitacora.prioridad}`}>{estadoTrabajoLabels[bitacora.estado]}</span>
+                                <p>{bitacora.descripcion}</p>
+                              </article>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="lab-equipment-detail-section">
+                          <span className="eyebrow">Observaciones del inventario</span>
+                          <p>{selectedEquipoDetalle.observaciones || 'Sin observaciones registradas en inventario.'}</p>
+                        </section>
+                      </>
+                    );
+                  })()}
+                </article>
+              </div>
+            ) : null}
 
             {showEquipoFormModal ? (
               <div
