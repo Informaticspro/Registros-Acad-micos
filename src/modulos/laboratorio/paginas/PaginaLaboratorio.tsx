@@ -416,7 +416,7 @@ function buildBitacoraInput(form: HTMLFormElement): BitacoraLaboratorioInput {
     estado: readString(data, 'estado') as EstadoTrabajoLaboratorio,
     clase,
     equipoId,
-    equipoOrigen: readString(data, 'equipoOrigen'),
+    equipoOrigen: readString(data, 'equipoOrigenInventario') || readString(data, 'equipoOrigen'),
     equipoDestino: equipoLabel || readString(data, 'equipoDestino'),
     ubicacion: readString(data, 'ubicacion'),
     evidenciaTitulo: readString(data, 'evidenciaTitulo'),
@@ -1963,8 +1963,22 @@ export function PaginaLaboratorio() {
               <div className="form-grid compact-form-grid">
                 <label>
                   Equipo origen / pieza usada opcional
-                  <input name="equipoOrigen" placeholder="Solo si se uso otro equipo o pieza como referencia" defaultValue={editingBitacora?.equipoOrigen} />
+                  <select name="equipoOrigenInventario" defaultValue="">
+                    <option value="">Seleccione equipo origen si aplica</option>
+                    {state.equipos.map((equipo) => (
+                      <option value={`${equipo.codigo || 'S/N'} - ${equipo.nombre} (${equipo.ubicacion})`} key={equipo.id}>
+                        {equipo.codigo || 'S/N'} - {equipo.nombre} ({equipo.ubicacion}) - {estadoEquipoNombre[equipo.estado] ?? getEstadoEquipoLabel(equipo.estado)}
+                      </option>
+                    ))}
+                  </select>
+                  <small>Use esto cuando una pantalla, memoria, disco u otra pieza sale de un equipo registrado.</small>
                 </label>
+                <label>
+                  Origen manual opcional
+                  <input name="equipoOrigen" placeholder="Ej. pantalla de equipo descartado, pieza suelta o referencia fisica" defaultValue={editingBitacora?.equipoOrigen} />
+                </label>
+              </div>
+              <div className="form-grid compact-form-grid">
                 <label>
                   Equipo atendido
                   <select name="equipoId" defaultValue={editingBitacora?.equipoId ?? ''} required>
