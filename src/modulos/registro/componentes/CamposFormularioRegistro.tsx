@@ -153,15 +153,6 @@ export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) 
             Celular con WhatsApp
             <input name="phone" required placeholder="Ej. 6123-4567" inputMode="tel" />
           </label>
-          <fieldset className="choice-group full-field">
-            <legend>Facultad donde esta realizando su especializacion</legend>
-            {SEMINARIO_FACULTY_OPTIONS.map((option) => (
-              <label className="choice-option" key={option}>
-                <input name="faculty" type="radio" value={option} required />
-                <span>{option}</span>
-              </label>
-            ))}
-          </fieldset>
           <RadioGroup
             legend="Centro universitario al que pertenece"
             name="regionalCenter"

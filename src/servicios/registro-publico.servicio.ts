@@ -36,7 +36,6 @@ const seminarioGeneralMetadataSchema = z.object({
   personalEmail: z.string().email('Correo personal invalido'),
   sex: z.string().min(1, 'Sexo requerido'),
   phone: z.string().min(6, 'Celular con WhatsApp requerido'),
-  faculty: z.string().min(1, 'Facultad requerida'),
   regionalCenter: z.string().min(1, 'Centro universitario requerido'),
   otherUniversity: z.string().optional(),
   participantType: z.string().min(1, 'Tipo de participante requerido'),

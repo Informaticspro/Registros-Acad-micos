@@ -49,7 +49,7 @@ export function getInscripcionFormHint(kind: InscripcionFormKind): string {
     return 'Formulario de seminario de educacion continua: datos academicos, contacto, fecha disponible y motivo de participacion.';
   }
   if (kind === 'seminario_general') {
-    return 'Formulario de seminario general: datos de contacto, facultad, centro universitario y tipo de participante.';
+    return 'Formulario de seminario general: datos de contacto, centro universitario y tipo de participante.';
   }
   if (kind === 'personalizado') {
     return 'Formulario personalizado: complete los datos solicitados por la organizacion.';

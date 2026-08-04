@@ -384,7 +384,6 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
         Sexo: metadata.sex ?? '',
         'Correo personal': metadata.personalEmail ?? '',
         'Celular WhatsApp': metadata.phone ?? '',
-        Facultad: metadata.faculty ?? '',
         'Centro universitario': metadata.regionalCenter ?? '',
         'Otra universidad': metadata.otherUniversity ?? '',
         'Tipo participante': metadata.participantType ?? '',

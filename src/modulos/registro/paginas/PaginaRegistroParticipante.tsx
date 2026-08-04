@@ -122,7 +122,6 @@ function collectMetadata(form: FormData, event: EventoAcademico | null): Record<
       personalEmail: getValue(form, 'personalEmail'),
       sex: getValue(form, 'sex'),
       phone: getValue(form, 'phone'),
-      faculty: getValue(form, 'faculty'),
       regionalCenter: getValue(form, 'regionalCenter'),
       otherUniversity: getValue(form, 'otherUniversity'),
       participantType: getValue(form, 'participantType'),
