@@ -2036,14 +2036,14 @@ export function PaginaLaboratorio() {
                       const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
                       return (
                         <div className="lab-inventory-row" key={item.id}>
-                          <span>{index + 1}</span>
-                          <strong>{item.nombre || item.categoria}</strong>
-                          <span>{marca}</span>
-                          <span>{modelo}</span>
-                          <span>{item.codigo || 'S/N'}</span>
-                          <span>{item.serie || 'S/N'}</span>
-                          <span>{item.ubicacion || 'Sin ubicacion'}</span>
-                          <span>
+                          <span className="inventory-cell-fila">{index + 1}</span>
+                          <strong className="inventory-cell-equipo">{item.nombre || item.categoria}</strong>
+                          <span className="inventory-cell-marca">{marca}</span>
+                          <span className="inventory-cell-modelo">{modelo}</span>
+                          <span className="inventory-cell-codigo">{item.codigo || 'S/N'}</span>
+                          <span className="inventory-cell-serie">{item.serie || 'S/N'}</span>
+                          <span className="inventory-cell-ubicacion">{item.ubicacion || 'Sin ubicacion'}</span>
+                          <span className="inventory-cell-estado">
                             <select
                               className={`inventory-status inventory-status-select equipment-${getEstadoEquipoClass(item.estado)}`}
                               value={item.estado}
