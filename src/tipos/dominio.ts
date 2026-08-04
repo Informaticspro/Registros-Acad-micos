@@ -202,5 +202,7 @@ export type DescarteLaboratorio = {
   detalle: string;
   ubicacion: string;
   responsable: string;
+  evidenciaTitulo: string;
+  evidenciaUrl: string;
   createdAt: string;
 };

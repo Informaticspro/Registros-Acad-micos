@@ -440,6 +440,8 @@ function mapDescarte(row: {
   detail: string;
   location: string;
   responsible: string;
+  evidence_title?: string;
+  evidence_url?: string;
   created_at: string;
 }): DescarteLaboratorio {
   return {
@@ -454,6 +456,8 @@ function mapDescarte(row: {
     detalle: row.detail,
     ubicacion: row.location,
     responsable: row.responsible,
+    evidenciaTitulo: row.evidence_title ?? '',
+    evidenciaUrl: row.evidence_url ?? '',
     createdAt: row.created_at,
   };
 }
@@ -1198,6 +1202,8 @@ export async function createDescarteLaboratorio(
       detail: input.detalle,
       location: input.ubicacion,
       responsible: input.responsable,
+      evidence_title: input.evidenciaTitulo,
+      evidence_url: input.evidenciaUrl,
       created_by: context.userId,
     })
     .select('*')
@@ -1511,7 +1517,7 @@ export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
 }
 
 export function exportDescartesLaboratorioExcel(state: LaboratorioState) {
-  const headers = ['Fila', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Detalle', 'Ubicacion'];
+  const headers = ['Fila', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Detalle', 'Ubicacion', 'Evidencia', 'Referencia'];
   const rows = [...state.descartes]
     .sort((first, second) => first.fecha.localeCompare(second.fecha))
     .map((item, index) => [
@@ -1523,6 +1529,8 @@ export function exportDescartesLaboratorioExcel(state: LaboratorioState) {
       item.serie || 'S/N',
       item.detalle,
       item.ubicacion || 'Sin ubicacion',
+      item.evidenciaTitulo || '',
+      item.evidenciaUrl || '',
     ]);
 
   const generatedAt = new Date().toLocaleDateString('es-PA');
@@ -1554,9 +1562,11 @@ export function exportDescartesLaboratorioExcel(state: LaboratorioState) {
     { wch: 26 },
     { wch: 42 },
     { wch: 26 },
+    { wch: 24 },
+    { wch: 36 },
   ];
   worksheet['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 18 }, { hpt: 8 }];
-  worksheet['!autofilter'] = { ref: `A7:H${Math.max(7, rows.length + 7)}` };
+  worksheet['!autofilter'] = { ref: `A7:J${Math.max(7, rows.length + 7)}` };
   applyInventoryWorksheetStyles(worksheet, rows.length, headers.length);
   utils.book_append_sheet(workbook, worksheet, 'Descartes');
   writeFile(workbook, `descarte-equipos-${slugifyFileName(new Date().toISOString().slice(0, 10))}.xlsx`);
@@ -1650,7 +1660,7 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
     workbook,
     createFormalWorksheet(
       'DESCARTES DEL MES',
-      ['Fecha', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle'],
+      ['Fecha', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle', 'Evidencia', 'Referencia'],
       descartes.map((item) => [
         formatExcelDate(item.fecha),
         item.inventario,
@@ -1661,8 +1671,10 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
         item.ubicacion,
         item.responsable,
         item.detalle,
+        item.evidenciaTitulo,
+        item.evidenciaUrl,
       ]),
-      [20, 18, 24, 18, 24, 24, 24, 22, 52],
+      [20, 18, 24, 18, 24, 24, 24, 22, 52, 24, 36],
     ),
     'Descartes',
   );
@@ -1748,7 +1760,7 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
     workbook,
     createFormalWorksheet(
       'DESCARTES DEL PERIODO',
-      ['Fecha', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle'],
+      ['Fecha', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle', 'Evidencia', 'Referencia'],
       descartes.map((item) => [
         formatExcelDate(item.fecha),
         item.inventario,
@@ -1759,8 +1771,10 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
         item.ubicacion,
         item.responsable,
         item.detalle,
+        item.evidenciaTitulo,
+        item.evidenciaUrl,
       ]),
-      [20, 18, 24, 18, 24, 24, 24, 22, 52],
+      [20, 18, 24, 18, 24, 24, 24, 22, 52, 24, 36],
     ),
     'Descartes',
   );
@@ -2053,7 +2067,7 @@ export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, e
     workbook,
     createFormalWorksheet(
       'DESCARTES RELACIONADOS',
-      ['Fecha', 'Inventario', 'Equipo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle'],
+      ['Fecha', 'Inventario', 'Equipo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle', 'Evidencia', 'Referencia'],
       descartes.map((item) => [
         formatExcelDate(item.fecha),
         item.inventario,
@@ -2062,8 +2076,10 @@ export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, e
         item.ubicacion,
         item.responsable,
         item.detalle,
+        item.evidenciaTitulo,
+        item.evidenciaUrl,
       ]),
-      [20, 18, 24, 22, 22, 22, 48],
+      [20, 18, 24, 22, 22, 22, 48, 24, 36],
     ),
     'Descartes',
   );
@@ -2094,7 +2110,7 @@ export function exportLaboratorioCsv(state: LaboratorioState) {
         .join(','),
     ),
     ...state.descartes.map((item) =>
-      ['DESCARTE', item.fecha, `${item.inventario} - ${item.equipo}`, item.responsable, 'baja', item.detalle]
+      ['DESCARTE', item.fecha, `${item.inventario} - ${item.equipo}`, item.responsable, 'fuera de inventario', `${item.detalle} ${item.evidenciaTitulo || item.evidenciaUrl ? `| Evidencia: ${[item.evidenciaTitulo, item.evidenciaUrl].filter(Boolean).join(' - ')}` : ''}`.trim()]
         .map(csvEscape)
         .join(','),
     ),

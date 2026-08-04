@@ -488,6 +488,8 @@ function buildDescarteInput(form: HTMLFormElement, responsableSesion: string) {
     detalle: readString(data, 'detalle'),
     ubicacion: readString(data, 'ubicacion'),
     responsable: readString(data, 'responsable') || responsableSesion,
+    evidenciaTitulo: readString(data, 'evidenciaTitulo'),
+    evidenciaUrl: readString(data, 'evidenciaUrl'),
   };
 }
 
@@ -1056,6 +1058,11 @@ export function PaginaLaboratorio() {
       return;
     }
 
+    if (equipo && !normalizeExcelKey(equipo.ubicacion).includes('deposito')) {
+      setError('Para descartar un equipo registrado, primero debe estar ubicado en Deposito.');
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
     setMessage(null);
@@ -1063,16 +1070,6 @@ export function PaginaLaboratorio() {
       await createDescarteLaboratorio(input, saveContext);
 
       if (equipo) {
-        await updateEquipoLaboratorio(equipo.id, {
-          codigo: equipo.codigo,
-          nombre: equipo.nombre,
-          categoria: equipo.categoria,
-          marcaModelo: equipo.marcaModelo,
-          serie: equipo.serie,
-          ubicacion: 'Deposito',
-          estado: 'baja',
-          observaciones: [equipo.observaciones, `Descartado: ${input.detalle}`].filter(Boolean).join('\n'),
-        });
         await createBitacoraLaboratorio(
           {
             fecha: new Date().toISOString(),
@@ -1086,17 +1083,18 @@ export function PaginaLaboratorio() {
             equipoId: equipo.id,
             equipoOrigen: equipo.estado,
             equipoDestino: `${input.inventario} - ${input.equipo}`,
-            ubicacion: 'Deposito',
-            evidenciaTitulo: '',
-            evidenciaUrl: '',
+            ubicacion: input.ubicacion || equipo.ubicacion || 'Deposito',
+            evidenciaTitulo: input.evidenciaTitulo,
+            evidenciaUrl: input.evidenciaUrl,
           },
           saveContext,
         );
+        await deleteEquipoLaboratorio(equipo.id);
       }
 
       setSelectedDescarteEquipoId('');
       form.reset();
-      setMessage(equipo ? 'Descarte registrado, equipo marcado como baja y movido a Deposito.' : 'Descarte registrado correctamente.');
+      setMessage(equipo ? 'Descarte registrado y equipo retirado del inventario activo.' : 'Descarte registrado correctamente.');
       await refresh();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el descarte. Ejecuta la migracion de descartes en Supabase si aun no existe la tabla.');
@@ -2502,7 +2500,7 @@ export function PaginaLaboratorio() {
             <form className="stack-form lab-form" onSubmit={handleDescarteSubmit}>
               <h2>Registrar descarte</h2>
               <p className="form-hint">
-                Use esta seccion cuando un equipo sale del inventario activo. Si selecciona un equipo registrado, se marca como baja y pasa a Deposito.
+                Use esta seccion cuando un equipo en Deposito sale definitivamente de la facultad. Si selecciona un equipo registrado, se guarda la evidencia y se retira del inventario activo.
               </p>
               <div className="form-grid compact-form-grid">
                 <label>
@@ -2513,7 +2511,7 @@ export function PaginaLaboratorio() {
                   Equipo del inventario
                   <select name="equipoId" value={selectedDescarteEquipoId} onChange={(event) => setSelectedDescarteEquipoId(event.target.value)}>
                     <option value="">Registro manual</option>
-                    {state.equipos.map((equipo) => (
+                    {state.equipos.filter((equipo) => normalizeExcelKey(equipo.ubicacion).includes('deposito')).map((equipo) => (
                       <option value={equipo.id} key={equipo.id}>
                         {equipo.codigo || 'S/N'} - {equipo.nombre} - {equipo.ubicacion}
                       </option>
@@ -2559,6 +2557,16 @@ export function PaginaLaboratorio() {
                       Responsable
                       <input name="responsable" defaultValue={responsableSesion} required />
                     </label>
+                    <div className="form-grid compact-form-grid">
+                      <label>
+                        Evidencia
+                        <input name="evidenciaTitulo" placeholder="Acta, foto, memorando, factura..." />
+                      </label>
+                      <label>
+                        Enlace o referencia
+                        <input name="evidenciaUrl" placeholder="URL, carpeta, archivo o referencia fisica" />
+                      </label>
+                    </div>
                   </>
                 );
               })()}
@@ -2597,7 +2605,10 @@ export function PaginaLaboratorio() {
                     </div>
                   </div>
                   <p>{item.marca || 'S/N'} | {item.modelo || 'S/N'} | Serie: {item.serie || 'S/N'}</p>
-                  <small>{item.detalle || 'Sin detalle'} | Responsable: {item.responsable || 'No indicado'}</small>
+                  <small>
+                    {item.detalle || 'Sin detalle'} | Responsable: {item.responsable || 'No indicado'}
+                    {item.evidenciaTitulo || item.evidenciaUrl ? ` | Evidencia: ${[item.evidenciaTitulo, item.evidenciaUrl].filter(Boolean).join(' - ')}` : ''}
+                  </small>
                 </article>
               ))}
             </div>

@@ -14,9 +14,15 @@ create table if not exists public.laboratory_discards (
   detail text not null default '',
   location text not null default '',
   responsible text not null default '',
+  evidence_title text not null default '',
+  evidence_url text not null default '',
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table public.laboratory_discards
+add column if not exists evidence_title text not null default '',
+add column if not exists evidence_url text not null default '';
 
 create index if not exists laboratory_discards_org_date_idx
 on public.laboratory_discards (organization_id, discard_date desc);
