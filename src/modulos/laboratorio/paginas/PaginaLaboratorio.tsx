@@ -78,6 +78,12 @@ import { formatDateTime } from '@/utilidades/formato';
 type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'descartes' | 'prestamos' | 'informes';
 type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
 type TemaVisual = 'dark' | 'light';
+type ConfirmacionOperativoPendiente = {
+  input: BitacoraLaboratorioInput;
+  equipoAtendido: EquipoLaboratorio;
+  nextEquipoEstado: EstadoEquipoLaboratorio;
+  form: HTMLFormElement;
+};
 
 const emptyState: LaboratorioState = {
   fichas: [],
@@ -547,6 +553,7 @@ export function PaginaLaboratorio() {
   const [profileNamesById, setProfileNamesById] = useState<Record<string, string>>({});
   const [showMoreActivity, setShowMoreActivity] = useState(false);
   const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
+  const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -689,20 +696,21 @@ export function PaginaLaboratorio() {
   }, [message, error]);
 
   useEffect(() => {
-    if (!selectedFicha && !selectedEquipoDetalle && !showEquipoFormModal && !activeCatalogManager) return undefined;
+    if (!selectedFicha && !selectedEquipoDetalle && !showEquipoFormModal && !activeCatalogManager && !confirmacionOperativo) return undefined;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
       setSelectedFicha(null);
       setSelectedEquipoDetalle(null);
       setShowEquipoFormModal(false);
+      setConfirmacionOperativo(null);
       setEditingEquipo(null);
       closeCatalogManager();
     }
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [activeCatalogManager, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
+  }, [activeCatalogManager, confirmacionOperativo, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
 
   const indicadores = useMemo(() => {
     const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
@@ -802,28 +810,13 @@ export function PaginaLaboratorio() {
     }
   }
 
-  async function handleBitacoraSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const input = buildBitacoraInput(form);
-    const equipoAtendido = state.equipos.find((item) => item.id === input.equipoId);
-    const nextEquipoEstado = equipoAtendido ? resolveInventoryStatusFromBitacora(input) : null;
-    let shouldSyncEquipoEstado = Boolean(equipoAtendido && nextEquipoEstado);
-
-    if (equipoAtendido) {
-      input.equipoDestino = `${equipoAtendido.codigo} - ${equipoAtendido.nombre}`;
-      input.ubicacion = input.ubicacion || equipoAtendido.ubicacion;
-    }
-
-    if (
-      equipoAtendido &&
-      nextEquipoEstado === 'operativo' &&
-      equipoAtendido.estado !== 'operativo' &&
-      !window.confirm('Este registro esta resuelto o cerrado. Desea devolver el equipo a operativo en el inventario?')
-    ) {
-      shouldSyncEquipoEstado = false;
-    }
-
+  async function guardarBitacoraConInventario(
+    input: BitacoraLaboratorioInput,
+    equipoAtendido: EquipoLaboratorio | undefined,
+    nextEquipoEstado: EstadoEquipoLaboratorio | null,
+    shouldSyncEquipoEstado: boolean,
+    form: HTMLFormElement,
+  ) {
     if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
       const previousEstadoLabel = estadoEquipoNombre[equipoAtendido.estado] ?? getEstadoEquipoLabel(equipoAtendido.estado);
       const nextEstadoLabel = estadoEquipoNombre[nextEquipoEstado] ?? getEstadoEquipoLabel(nextEquipoEstado);
@@ -951,6 +944,27 @@ export function PaginaLaboratorio() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleBitacoraSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = buildBitacoraInput(form);
+    const equipoAtendido = state.equipos.find((item) => item.id === input.equipoId);
+    const nextEquipoEstado = equipoAtendido ? resolveInventoryStatusFromBitacora(input) : null;
+    const shouldSyncEquipoEstado = Boolean(equipoAtendido && nextEquipoEstado);
+
+    if (equipoAtendido) {
+      input.equipoDestino = `${equipoAtendido.codigo} - ${equipoAtendido.nombre}`;
+      input.ubicacion = input.ubicacion || equipoAtendido.ubicacion;
+    }
+
+    if (equipoAtendido && nextEquipoEstado === 'operativo' && equipoAtendido.estado !== 'operativo') {
+      setConfirmacionOperativo({ input, equipoAtendido, nextEquipoEstado, form });
+      return;
+    }
+
+    await guardarBitacoraConInventario(input, equipoAtendido, nextEquipoEstado, shouldSyncEquipoEstado, form);
   }
 
   async function handleQuickEstadoEquipo(item: EquipoLaboratorio, estado: EstadoEquipoLaboratorio) {
@@ -2865,6 +2879,58 @@ export function PaginaLaboratorio() {
           </div>
         ) : null}
 
+
+            {confirmacionOperativo ? (
+              <div className="modal-backdrop" role="presentation" onClick={() => setConfirmacionOperativo(null)}>
+                <article
+                  className="modal-panel lab-confirm-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="lab-confirm-operativo-title"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <header className="lab-catalog-modal-header">
+                    <div>
+                      <span className="eyebrow">Confirmacion de inventario</span>
+                      <h2 id="lab-confirm-operativo-title">Devolver equipo a operativo</h2>
+                    </div>
+                    <button className="icon-button" type="button" onClick={() => setConfirmacionOperativo(null)} title="Cerrar">
+                      <XCircle size={18} />
+                    </button>
+                  </header>
+                  <p>
+                    Este registro esta resuelto o cerrado. Desea devolver el equipo{' '}
+                    <strong>{confirmacionOperativo.equipoAtendido.codigo} - {confirmacionOperativo.equipoAtendido.nombre}</strong> a estado operativo en el inventario?
+                  </p>
+                  <div className="lab-confirm-actions">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() => {
+                        const pending = confirmacionOperativo;
+                        setConfirmacionOperativo(null);
+                        void guardarBitacoraConInventario(pending.input, pending.equipoAtendido, pending.nextEquipoEstado, true, pending.form);
+                      }}
+                    >
+                      Si, devolver a operativo
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() => {
+                        const pending = confirmacionOperativo;
+                        setConfirmacionOperativo(null);
+                        void guardarBitacoraConInventario(pending.input, pending.equipoAtendido, pending.nextEquipoEstado, false, pending.form);
+                      }}
+                    >
+                      No, solo guardar bitacora
+                    </button>
+                  </div>
+                </article>
+              </div>
+            ) : null}
 
             {activeCatalogManager === 'categorias' ? (
               <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>

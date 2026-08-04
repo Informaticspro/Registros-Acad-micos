@@ -2390,6 +2390,32 @@ textarea {
   max-height: min(360px, 42vh);
 }
 
+.modal-panel.lab-confirm-modal {
+  width: min(520px, calc(100vw - 32px));
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  background:
+    linear-gradient(135deg, rgba(243, 189, 34, 0.12), transparent 46%),
+    var(--surface-deep);
+}
+
+.lab-confirm-modal p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.lab-confirm-modal strong {
+  color: var(--text);
+}
+
+.lab-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .modal-panel.lab-inventory-modal {
   width: min(1320px, calc(100vw - 48px));
   max-height: min(900px, calc(100vh - 48px));
@@ -4011,6 +4037,14 @@ textarea {
     width: calc(100vw - 28px);
     max-height: calc(100vh - 28px);
     padding: 16px;
+  }
+
+  .modal-panel.lab-confirm-modal {
+    width: calc(100vw - 28px);
+  }
+
+  .lab-confirm-actions {
+    grid-template-columns: 1fr;
   }
 
   .lab-catalog-modal-header {
