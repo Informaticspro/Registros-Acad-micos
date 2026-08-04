@@ -396,6 +396,65 @@ function shouldImportEquipoRow(input: EquipoLaboratorioInput) {
   return Boolean(input.codigo && input.nombre) && !isNoteRow && !looksLikeNote && !(isGenericEquipmentName && hasLongNoteAsModel);
 }
 
+function stringifyExcelValue(value: unknown) {
+  if (value instanceof Date) return value.toISOString();
+  return String(value ?? '').trim();
+}
+
+function formatImportedExcelDate(value: unknown) {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'number') {
+    const epoch = Date.UTC(1899, 11, 30);
+    return new Date(epoch + value * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  const raw = stringifyExcelValue(value);
+  if (!raw) return new Date().toISOString();
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+}
+
+function parseDescartesExcelRows(rows: unknown[][], fileName: string, responsable: string) {
+  const headerIndex = rows.findIndex((row) => {
+    const keys = row.map((cell) => normalizeExcelKey(stringifyExcelValue(cell)));
+    return keys.includes('inventario') && keys.includes('equipo') && keys.includes('serie');
+  });
+
+  if (headerIndex < 0) {
+    throw new Error('No se encontro la fila de encabezados del descarte. Debe incluir Inventario, Equipo y Serie.');
+  }
+
+  const header = rows[headerIndex].map((cell) => normalizeExcelKey(stringifyExcelValue(cell)));
+  const columnIndex = (aliases: string[]) => header.findIndex((key) => aliases.map(normalizeExcelKey).includes(key));
+  const readColumn = (row: unknown[], aliases: string[]) => {
+    const index = columnIndex(aliases);
+    return index >= 0 ? stringifyExcelValue(row[index]) : '';
+  };
+  const sheetDate = rows
+    .slice(0, headerIndex)
+    .flat()
+    .find((cell) => cell instanceof Date || typeof cell === 'number' || /\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(stringifyExcelValue(cell)));
+  const fecha = formatImportedExcelDate(sheetDate);
+
+  return rows
+    .slice(headerIndex + 1)
+    .map((row) => ({
+      fecha,
+      equipoId: '',
+      inventario: readColumn(row, ['inventario', 'numero inventario', 'n inventario']),
+      equipo: readColumn(row, ['equipo', 'dispositivo', 'tipo']),
+      marca: readColumn(row, ['marca']),
+      modelo: readColumn(row, ['modelo']),
+      serie: readColumn(row, ['serie', 'serial']),
+      detalle: readColumn(row, ['detalle', 'observacion', 'observaciones']) || `Importado desde ${fileName}`,
+      ubicacion: readColumn(row, ['ubicacion', 'ubicación', 'lugar']) || 'Deposito',
+      responsable,
+      evidenciaTitulo: `Excel importado: ${fileName}`,
+      evidenciaUrl: '',
+    }))
+    .filter((item) => item.inventario || item.equipo || item.serie || item.detalle);
+}
+
 function downloadTextFile(content: string, fileName: string, type = 'text/plain;charset=utf-8') {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -1291,6 +1350,49 @@ export function PaginaLaboratorio() {
       );
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'No se pudo importar el inventario.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDescartesExcelUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const { read, utils } = await import('xlsx');
+      const workbook = read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      if (!worksheet) throw new Error('El archivo no tiene hojas disponibles.');
+
+      const rows = utils.sheet_to_json<unknown[]>(worksheet, { header: 1, defval: '' });
+      const inputs = parseDescartesExcelRows(rows, file.name, responsableSesion);
+      const existingKeys = new Set(
+        state.descartes.map((item) => normalizeExcelKey(`${item.inventario}|${item.equipo}|${item.serie}`)),
+      );
+      const uniqueInputs = inputs.filter((item) => {
+        const key = normalizeExcelKey(`${item.inventario}|${item.equipo}|${item.serie}`);
+        if (existingKeys.has(key)) return false;
+        existingKeys.add(key);
+        return true;
+      });
+
+      for (const input of uniqueInputs) {
+        await createDescarteLaboratorio(input, saveContext);
+      }
+
+      await refresh();
+      setActiveTab('descartes');
+      setMessage(`Descartes importados: ${uniqueInputs.length} registros nuevos y ${inputs.length - uniqueInputs.length} duplicados ignorados.`);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'No se pudo importar el Excel de descartes.');
     } finally {
       setIsSaving(false);
     }
@@ -2603,6 +2705,16 @@ export function PaginaLaboratorio() {
                   <Save size={18} />
                   Guardar descarte
                 </button>
+                <label className="secondary-button file-action-button">
+                  <Upload size={18} />
+                  Cargar Excel
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={(event) => void handleDescartesExcelUpload(event)}
+                    disabled={isSaving}
+                  />
+                </label>
                 <button className="secondary-button" type="button" onClick={exportDiscardsExcel}>
                   <Download size={18} />
                   Descargar Excel
