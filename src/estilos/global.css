@@ -1504,9 +1504,17 @@ textarea {
   align-content: start;
 }
 
+.event-participants-card.has-participants {
+  grid-column: 1 / -1;
+}
+
 .event-participants-card .participants-mini-table {
   max-height: 430px;
   overscroll-behavior: contain;
+}
+
+.event-participants-card.has-participants .participants-mini-table {
+  max-height: 520px;
 }
 
 .event-participants-header {
@@ -2964,23 +2972,24 @@ textarea {
   display: grid;
   gap: 2px;
   max-height: 560px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-right: 6px;
 }
 
 .participants-mini-head,
 .participants-mini-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) minmax(120px, 0.7fr) minmax(220px, 1fr) minmax(120px, 0.6fr);
-  min-width: 860px;
+  grid-template-columns: minmax(260px, 1.35fr) minmax(120px, 0.55fr) minmax(220px, 1fr) minmax(110px, 0.48fr);
+  min-width: 0;
   gap: 14px;
   padding: 13px 14px;
 }
 
 .participants-mini-head.with-actions,
 .participants-mini-row.with-actions {
-  grid-template-columns: minmax(220px, 1.2fr) minmax(120px, 0.7fr) minmax(220px, 1fr) minmax(120px, 0.6fr) 156px;
-  min-width: 980px;
+  grid-template-columns: minmax(280px, 1.45fr) minmax(118px, 0.55fr) minmax(220px, 0.95fr) minmax(100px, 0.45fr) 128px;
+  min-width: 0;
 }
 
 .participants-mini-head {
@@ -2994,13 +3003,26 @@ textarea {
 }
 
 .participants-mini-row {
-  align-items: center;
+  align-items: start;
   border-top: 1px solid var(--line);
 }
 
 .participants-mini-row > div {
   display: grid;
   gap: 5px;
+}
+
+.participants-mini-row > span {
+  overflow-wrap: anywhere;
+}
+
+.participants-mini-row small {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-height: 1.35;
 }
 
 .participant-edit-form {

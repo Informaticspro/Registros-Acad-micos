@@ -332,7 +332,7 @@ export function PaginaParticipantes() {
                 {typeGroup.events.map((eventGroup) => (
                   <article
                     className={`event-participants-card ${
-                      eventGroup.participants.length === 0 ? 'is-empty' : ''
+                      eventGroup.participants.length === 0 ? 'is-empty' : 'has-participants'
                     }`}
                     key={eventGroup.event.id}
                   >
@@ -363,7 +363,7 @@ export function PaginaParticipantes() {
                     {eventGroup.participants.length === 0 ? (
                       <div className="participants-empty-state">
                         <Users size={18} />
-                        <p>Este evento aun no tiene participantes.</p>
+                        <p>Sin participantes registrados todavia.</p>
                       </div>
                     ) : (
                       <ParticipantsTable
