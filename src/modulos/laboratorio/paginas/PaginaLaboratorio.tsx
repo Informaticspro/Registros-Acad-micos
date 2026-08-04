@@ -29,17 +29,20 @@ import {
   buildInformeMantenimientoPorRango,
   createBitacoraLaboratorio,
   createCatalogoLaboratorio,
+  createDescarteLaboratorio,
   createEquipoLaboratorio,
   createFichaTecnicaLaboratorio,
   createPrestamoLaboratorio,
   createSeccionLaboratorio,
   deleteBitacoraLaboratorio,
   deleteCatalogoLaboratorio,
+  deleteDescarteLaboratorio,
   deleteEquipoLaboratorio,
   deleteFichaTecnicaLaboratorio,
   deletePrestamoLaboratorio,
   deleteSeccionLaboratorio,
   exportHistorialEquipoLaboratorioExcel,
+  exportDescartesLaboratorioExcel,
   exportInformeMensualMantenimientoExcel,
   exportInformeMantenimientoPorRangoExcel,
   exportInformePendientesLaboratorioExcel,
@@ -58,6 +61,7 @@ import {
 import {
   BitacoraLaboratorio,
   CatalogoLaboratorio,
+  DescarteLaboratorio,
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
   EstadoTrabajoLaboratorio,
@@ -71,7 +75,7 @@ import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion
 import { supabase } from '@/infraestructura/supabase';
 import { formatDateTime } from '@/utilidades/formato';
 
-type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'prestamos' | 'informes';
+type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'descartes' | 'prestamos' | 'informes';
 type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
 type TemaVisual = 'dark' | 'light';
 
@@ -83,6 +87,7 @@ const emptyState: LaboratorioState = {
   estadosEquipo: [],
   bitacoras: [],
   prestamos: [],
+  descartes: [],
 };
 
 const tabLabels: Record<LabTab, string> = {
@@ -90,11 +95,12 @@ const tabLabels: Record<LabTab, string> = {
   fichas: 'Ficha tecnica',
   bitacoras: 'Mantenimientos e incidencias',
   inventario: 'Inventario',
+  descartes: 'Descartes',
   prestamos: 'Prestamos',
   informes: 'Informes',
 };
 
-const labTabOrder: LabTab[] = ['inicio', 'inventario', 'fichas', 'bitacoras', 'prestamos', 'informes'];
+const labTabOrder: LabTab[] = ['inicio', 'inventario', 'fichas', 'bitacoras', 'descartes', 'prestamos', 'informes'];
 
 const aplicacionesBase = [
   'Windows',
@@ -468,6 +474,23 @@ function buildEquipoInput(form: HTMLFormElement): EquipoLaboratorioInput {
   };
 }
 
+function buildDescarteInput(form: HTMLFormElement, responsableSesion: string) {
+  const data = new FormData(form);
+  const fecha = readString(data, 'fecha');
+  return {
+    fecha: fecha ? new Date(`${fecha}T12:00:00`).toISOString() : new Date().toISOString(),
+    equipoId: readString(data, 'equipoId'),
+    inventario: readString(data, 'inventario'),
+    equipo: readString(data, 'equipo'),
+    marca: readString(data, 'marca'),
+    modelo: readString(data, 'modelo'),
+    serie: readString(data, 'serie'),
+    detalle: readString(data, 'detalle'),
+    ubicacion: readString(data, 'ubicacion'),
+    responsable: readString(data, 'responsable') || responsableSesion,
+  };
+}
+
 function buildSeccionInput(form: HTMLFormElement) {
   const data = new FormData(form);
   return {
@@ -510,6 +533,7 @@ export function PaginaLaboratorio() {
   const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
+  const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
   const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -537,6 +561,11 @@ export function PaginaLaboratorio() {
   const selectedEquipoFicha = useMemo(
     () => state.equipos.find((item) => item.id === selectedEquipoFichaId) ?? null,
     [selectedEquipoFichaId, state.equipos],
+  );
+
+  const selectedDescarteEquipo = useMemo(
+    () => state.equipos.find((item) => item.id === selectedDescarteEquipoId) ?? null,
+    [selectedDescarteEquipoId, state.equipos],
   );
 
   const ubicacionesInventario = useMemo(() => {
@@ -708,6 +737,14 @@ export function PaginaLaboratorio() {
       detalle: `${item.entregadoA} | ${item.estado}`,
       tab: 'prestamos' as LabTab,
     }));
+    const descartes = state.descartes.map((item) => ({
+      id: `descarte-${item.id}`,
+      fecha: item.fecha,
+      tipo: 'Descarte',
+      titulo: item.equipo,
+      detalle: `${item.responsable || 'Sin responsable'} | ${item.ubicacion || 'Sin ubicacion'}`,
+      tab: 'descartes' as LabTab,
+    }));
     const equipos = state.equipos.map((item) => {
       const isCreation = Math.abs(new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime()) < 2000;
       const responsable =
@@ -728,10 +765,10 @@ export function PaginaLaboratorio() {
       };
     });
 
-    return [...bitacoras, ...fichas, ...prestamos, ...equipos]
+    return [...bitacoras, ...fichas, ...prestamos, ...descartes, ...equipos]
       .sort((first, second) => second.fecha.localeCompare(first.fecha))
       .slice(0, showMoreActivity ? 20 : 8);
-  }, [estadoEquipoNombre, profile?.fullName, profile?.id, profileNamesById, showMoreActivity, state.bitacoras, state.equipos, state.fichas, state.prestamos]);
+  }, [estadoEquipoNombre, profile?.fullName, profile?.id, profileNamesById, showMoreActivity, state.bitacoras, state.descartes, state.equipos, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1003,6 +1040,71 @@ export function PaginaLaboratorio() {
     }
   }
 
+  async function handleDescarteSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = buildDescarteInput(form, responsableSesion);
+    const equipo = input.equipoId ? state.equipos.find((item) => item.id === input.equipoId) : null;
+
+    if (!input.inventario.trim() || !input.equipo.trim()) {
+      setError('Indique el numero de inventario y el equipo a descartar.');
+      return;
+    }
+
+    if (!input.detalle.trim()) {
+      setError('Escriba el detalle o motivo del descarte.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await createDescarteLaboratorio(input, saveContext);
+
+      if (equipo) {
+        await updateEquipoLaboratorio(equipo.id, {
+          codigo: equipo.codigo,
+          nombre: equipo.nombre,
+          categoria: equipo.categoria,
+          marcaModelo: equipo.marcaModelo,
+          serie: equipo.serie,
+          ubicacion: 'Deposito',
+          estado: 'baja',
+          observaciones: [equipo.observaciones, `Descartado: ${input.detalle}`].filter(Boolean).join('\n'),
+        });
+        await createBitacoraLaboratorio(
+          {
+            fecha: new Date().toISOString(),
+            tipoTrabajo: 'Descarte de equipo',
+            titulo: `Equipo descartado: ${input.inventario} - ${input.equipo}`,
+            descripcion: input.detalle,
+            responsable: input.responsable,
+            prioridad: 'alta',
+            estado: 'cerrado',
+            clase: 'incidencia',
+            equipoId: equipo.id,
+            equipoOrigen: equipo.estado,
+            equipoDestino: `${input.inventario} - ${input.equipo}`,
+            ubicacion: 'Deposito',
+            evidenciaTitulo: '',
+            evidenciaUrl: '',
+          },
+          saveContext,
+        );
+      }
+
+      setSelectedDescarteEquipoId('');
+      form.reset();
+      setMessage(equipo ? 'Descarte registrado, equipo marcado como baja y movido a Deposito.' : 'Descarte registrado correctamente.');
+      await refresh();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el descarte. Ejecuta la migracion de descartes en Supabase si aun no existe la tabla.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function handleSeccionSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -1143,6 +1245,12 @@ export function PaginaLaboratorio() {
     await refresh();
   }
 
+  async function handleDeleteDescarte(item: DescarteLaboratorio) {
+    if (!window.confirm(`Desea eliminar el descarte de "${item.equipo}"?`)) return;
+    await deleteDescarteLaboratorio(item.id);
+    await refresh();
+  }
+
   async function handleInventarioExcelUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = '';
@@ -1191,6 +1299,15 @@ export function PaginaLaboratorio() {
     }
     exportInventarioLaboratorioExcel(state);
     setMessage('Informe de inventario descargado correctamente.');
+  }
+
+  function exportDiscardsExcel() {
+    if (state.descartes.length === 0) {
+      setError('No hay descartes registrados para generar el informe.');
+      return;
+    }
+    exportDescartesLaboratorioExcel(state);
+    setMessage('Informe de descartes descargado correctamente.');
   }
 
   function exportMonthlyReport() {
@@ -2380,6 +2497,113 @@ export function PaginaLaboratorio() {
           </div>
         ) : null}
 
+        {activeTab === 'descartes' ? (
+          <div className="lab-grid">
+            <form className="stack-form lab-form" onSubmit={handleDescarteSubmit}>
+              <h2>Registrar descarte</h2>
+              <p className="form-hint">
+                Use esta seccion cuando un equipo sale del inventario activo. Si selecciona un equipo registrado, se marca como baja y pasa a Deposito.
+              </p>
+              <div className="form-grid compact-form-grid">
+                <label>
+                  Fecha
+                  <input name="fecha" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+                </label>
+                <label>
+                  Equipo del inventario
+                  <select name="equipoId" value={selectedDescarteEquipoId} onChange={(event) => setSelectedDescarteEquipoId(event.target.value)}>
+                    <option value="">Registro manual</option>
+                    {state.equipos.map((equipo) => (
+                      <option value={equipo.id} key={equipo.id}>
+                        {equipo.codigo || 'S/N'} - {equipo.nombre} - {equipo.ubicacion}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {(() => {
+                const selectedBrandModel = selectedDescarteEquipo ? splitMarcaModelo(selectedDescarteEquipo.marcaModelo) : null;
+                return (
+                  <>
+                    <div className="form-grid compact-form-grid" key={selectedDescarteEquipoId || 'manual'}>
+                      <label>
+                        Inventario
+                        <input name="inventario" required defaultValue={selectedDescarteEquipo?.codigo ?? ''} placeholder="Ej. 16332 o S/N" />
+                      </label>
+                      <label>
+                        Equipo
+                        <input name="equipo" required defaultValue={selectedDescarteEquipo?.nombre ?? ''} placeholder="Monitor, PC, impresora..." />
+                      </label>
+                      <label>
+                        Marca
+                        <input name="marca" defaultValue={selectedBrandModel?.marca ?? ''} placeholder="HP, Dell..." />
+                      </label>
+                      <label>
+                        Modelo
+                        <input name="modelo" defaultValue={selectedBrandModel?.modelo ?? ''} placeholder="L1710, 400 G9..." />
+                      </label>
+                      <label>
+                        Serie
+                        <input name="serie" defaultValue={selectedDescarteEquipo?.serie ?? ''} placeholder="S/N" />
+                      </label>
+                      <label>
+                        Ubicacion
+                        <input name="ubicacion" defaultValue={selectedDescarteEquipo?.ubicacion ?? 'Deposito'} />
+                      </label>
+                    </div>
+                    <label>
+                      Detalle del descarte
+                      <textarea name="detalle" rows={4} required placeholder="Motivo, condicion del equipo, daño encontrado o referencia administrativa." />
+                    </label>
+                    <label>
+                      Responsable
+                      <input name="responsable" defaultValue={responsableSesion} required />
+                    </label>
+                  </>
+                );
+              })()}
+              <div className="page-actions">
+                <button className="primary-button" type="submit" disabled={isSaving}>
+                  <Save size={18} />
+                  Guardar descarte
+                </button>
+                <button className="secondary-button" type="button" onClick={exportDiscardsExcel}>
+                  <Download size={18} />
+                  Descargar Excel
+                </button>
+              </div>
+            </form>
+
+            <div className="lab-list">
+              <h2>Descartes registrados</h2>
+              {state.descartes.length === 0 ? <p className="form-hint">Todavia no hay descartes registrados.</p> : null}
+              {state.descartes.map((item) => (
+                <article className="lab-record compact" key={item.id}>
+                  <div className="lab-record-header">
+                    <div>
+                      <span className="status-pill equipment-baja">Descarte</span>
+                      <h3>{item.inventario} - {item.equipo}</h3>
+                      <small>{formatDateTime(item.fecha)} | {item.ubicacion || 'Sin ubicacion'}</small>
+                    </div>
+                    <div className="row-actions">
+                      <button
+                        className="icon-button danger-button"
+                        type="button"
+                        title="Eliminar descarte"
+                        onClick={() => void handleDeleteDescarte(item)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <p>{item.marca || 'S/N'} | {item.modelo || 'S/N'} | Serie: {item.serie || 'S/N'}</p>
+                  <small>{item.detalle || 'Sin detalle'} | Responsable: {item.responsable || 'No indicado'}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {activeTab === 'prestamos' ? (
           <div className="lab-grid">
             <form className="stack-form lab-form" onSubmit={handlePrestamoSubmit}>
@@ -2578,6 +2802,15 @@ export function PaginaLaboratorio() {
               <h2>Informe de inventario</h2>
               <p>Excel formal con inventario ordenado por ubicacion, categoria y equipo, mas resumen por areas.</p>
               <button className="primary-button" type="button" onClick={exportInventoryExcel}>
+                <Download size={18} />
+                Descargar Excel
+              </button>
+            </article>
+            <article className="lab-report-card">
+              <Trash2 size={26} />
+              <h2>Informe de descartes</h2>
+              <p>Excel formal con equipos descartados, inventario, serie, detalle y ubicacion, siguiendo el formato institucional.</p>
+              <button className="primary-button" type="button" onClick={exportDiscardsExcel}>
                 <Download size={18} />
                 Descargar Excel
               </button>

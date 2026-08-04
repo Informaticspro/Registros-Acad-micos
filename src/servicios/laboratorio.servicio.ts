@@ -7,6 +7,7 @@ import {
   ClaseRegistroLaboratorio,
   CatalogoLaboratorio,
   CaracteristicaFichaLaboratorio,
+  DescarteLaboratorio,
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
   EstadoTrabajoLaboratorio,
@@ -28,6 +29,7 @@ export type LaboratorioState = {
   estadosEquipo: CatalogoLaboratorio[];
   bitacoras: BitacoraLaboratorio[];
   prestamos: PrestamoLaboratorio[];
+  descartes: DescarteLaboratorio[];
 };
 
 export type LaboratorioSaveContext = {
@@ -46,6 +48,8 @@ export type CatalogoLaboratorioInput = Omit<CatalogoLaboratorio, 'id' | 'tipo' |
 export type BitacoraLaboratorioInput = Omit<BitacoraLaboratorio, 'id' | 'createdAt'>;
 
 export type PrestamoLaboratorioInput = Omit<PrestamoLaboratorio, 'id' | 'createdAt'>;
+
+export type DescarteLaboratorioInput = Omit<DescarteLaboratorio, 'id' | 'createdAt'>;
 
 export type ImportEquiposLaboratorioResult = {
   total: number;
@@ -200,6 +204,7 @@ function emptyState(): LaboratorioState {
     estadosEquipo: defaultCatalogos('estado_equipo'),
     bitacoras: [],
     prestamos: [],
+    descartes: [],
   };
 }
 
@@ -227,6 +232,7 @@ function readState(): LaboratorioState {
         : defaultCatalogos('estado_equipo'),
       bitacoras: Array.isArray(parsed.bitacoras) ? parsed.bitacoras : [],
       prestamos: Array.isArray(parsed.prestamos) ? parsed.prestamos : [],
+      descartes: Array.isArray(parsed.descartes) ? parsed.descartes : [],
     };
   } catch {
     return emptyState();
@@ -422,6 +428,36 @@ function mapPrestamo(row: {
   };
 }
 
+function mapDescarte(row: {
+  id: string;
+  discard_date: string;
+  equipment_id?: string | null;
+  inventory_code: string;
+  equipment: string;
+  brand: string;
+  model: string;
+  serial_number: string;
+  detail: string;
+  location: string;
+  responsible: string;
+  created_at: string;
+}): DescarteLaboratorio {
+  return {
+    id: row.id,
+    fecha: row.discard_date,
+    equipoId: row.equipment_id ?? '',
+    inventario: row.inventory_code,
+    equipo: row.equipment,
+    marca: row.brand,
+    modelo: row.model,
+    serie: row.serial_number,
+    detalle: row.detail,
+    ubicacion: row.location,
+    responsable: row.responsible,
+    createdAt: row.created_at,
+  };
+}
+
 export async function listLaboratorioData(): Promise<LaboratorioState> {
   if (useLocalStorageFallback()) {
     const state = readState();
@@ -433,17 +469,19 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
       estadosEquipo: [...state.estadosEquipo].sort((first, second) => first.nombre.localeCompare(second.nombre)),
       bitacoras: [...state.bitacoras].sort((first, second) => second.fecha.localeCompare(first.fecha)),
       prestamos: [...state.prestamos].sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo)),
+      descartes: [...state.descartes].sort((first, second) => second.fecha.localeCompare(first.fecha)),
     };
   }
 
   const client = requireSupabase();
-  const [fichas, equipos, secciones, catalogos, bitacoras, prestamos] = await Promise.all([
+  const [fichas, equipos, secciones, catalogos, bitacoras, prestamos, descartes] = await Promise.all([
     client.from('laboratory_technical_sheets').select('*').order('updated_at', { ascending: false }),
     client.from('laboratory_equipment').select('*').order('updated_at', { ascending: false }),
     client.from('laboratory_sections').select('*').order('name', { ascending: true }),
     client.from('laboratory_catalogs').select('*').order('name', { ascending: true }),
     client.from('laboratory_logs').select('*').order('work_date', { ascending: false }),
     client.from('laboratory_loans').select('*').order('loaned_at', { ascending: false }),
+    (client as any).from('laboratory_discards').select('*').order('discard_date', { ascending: false }),
   ]);
 
   if (fichas.error) throw fichas.error;
@@ -454,6 +492,9 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
   const estadosEquipo = catalogosData.filter((item) => item.tipo === 'estado_equipo');
   if (bitacoras.error) throw bitacoras.error;
   if (prestamos.error) throw prestamos.error;
+  if (descartes.error && !String(descartes.error.message).toLowerCase().includes('laboratory_discards')) {
+    throw descartes.error;
+  }
 
   return {
     fichas: (fichas.data ?? []).map(mapFicha),
@@ -463,6 +504,7 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
     estadosEquipo: estadosEquipo.length > 0 ? estadosEquipo : defaultCatalogos('estado_equipo'),
     bitacoras: (bitacoras.data ?? []).map(mapBitacora),
     prestamos: (prestamos.data ?? []).map(mapPrestamo),
+    descartes: descartes.error ? [] : (descartes.data ?? []).map(mapDescarte),
   };
 }
 
@@ -1130,6 +1172,52 @@ export async function deletePrestamoLaboratorio(id: string) {
   if (error) throw error;
 }
 
+export async function createDescarteLaboratorio(
+  input: DescarteLaboratorioInput,
+  context: LaboratorioSaveContext,
+): Promise<DescarteLaboratorio> {
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const descarte: DescarteLaboratorio = { ...input, id: createId('descarte'), createdAt: new Date().toISOString() };
+    writeState({ ...state, descartes: [descarte, ...state.descartes] });
+    return descarte;
+  }
+
+  requireContext(context);
+  const { data, error } = await (requireSupabase() as any)
+    .from('laboratory_discards')
+    .insert({
+      organization_id: context.organizationId,
+      discard_date: input.fecha,
+      equipment_id: input.equipoId || null,
+      inventory_code: input.inventario,
+      equipment: input.equipo,
+      brand: input.marca,
+      model: input.modelo,
+      serial_number: input.serie,
+      detail: input.detalle,
+      location: input.ubicacion,
+      responsible: input.responsable,
+      created_by: context.userId,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapDescarte(data);
+}
+
+export async function deleteDescarteLaboratorio(id: string) {
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    writeState({ ...state, descartes: state.descartes.filter((descarte) => descarte.id !== id) });
+    return;
+  }
+
+  const { error } = await (requireSupabase() as any).from('laboratory_discards').delete().eq('id', id);
+  if (error) throw error;
+}
+
 function csvEscape(value: string | number | null | undefined) {
   const normalized = String(value ?? '');
   return `"${normalized.replace(/"/g, '""')}"`;
@@ -1422,6 +1510,58 @@ export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
   writeFile(workbook, `inventario-facultad-${slugifyFileName(new Date().toISOString().slice(0, 10))}.xlsx`);
 }
 
+export function exportDescartesLaboratorioExcel(state: LaboratorioState) {
+  const headers = ['Fila', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Detalle', 'Ubicacion'];
+  const rows = [...state.descartes]
+    .sort((first, second) => first.fecha.localeCompare(second.fecha))
+    .map((item, index) => [
+      index + 1,
+      item.inventario || 'S/N',
+      item.equipo,
+      item.marca || 'S/N',
+      item.modelo || 'S/N',
+      item.serie || 'S/N',
+      item.detalle,
+      item.ubicacion || 'Sin ubicacion',
+    ]);
+
+  const generatedAt = new Date().toLocaleDateString('es-PA');
+  const worksheetRows = [
+    ['UNIVERSIDAD AUTONOMA DE CHIRIQUI'],
+    ['FACULTAD DE ECONOMIA'],
+    [],
+    ['DESCARTE DE EQUIPOS'],
+    [generatedAt],
+    [],
+    headers,
+    ...rows,
+  ];
+
+  const workbook = utils.book_new();
+  const worksheet = utils.aoa_to_sheet(worksheetRows);
+  worksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: headers.length - 1 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: headers.length - 1 } },
+  ];
+  worksheet['!cols'] = [
+    { wch: 8 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 26 },
+    { wch: 42 },
+    { wch: 26 },
+  ];
+  worksheet['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 18 }, { hpt: 8 }];
+  worksheet['!autofilter'] = { ref: `A7:H${Math.max(7, rows.length + 7)}` };
+  applyInventoryWorksheetStyles(worksheet, rows.length, headers.length);
+  utils.book_append_sheet(workbook, worksheet, 'Descartes');
+  writeFile(workbook, `descarte-equipos-${slugifyFileName(new Date().toISOString().slice(0, 10))}.xlsx`);
+}
+
 export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, month: string) {
   const selectedMonth = month || new Date().toISOString().slice(0, 7);
   const workbook = utils.book_new();
@@ -1435,12 +1575,16 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
   const prestamos = state.prestamos
     .filter((item) => item.fechaPrestamo.startsWith(selectedMonth))
     .sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo));
+  const descartes = state.descartes
+    .filter((item) => item.fecha.startsWith(selectedMonth))
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
 
   const resumenRows = [
     ['Bitacoras registradas', bitacoras.length],
     ['Cambios de estado auditados', movimientosEstado.length],
     ['Fichas tecnicas registradas', fichas.length],
     ['Prestamos registrados', prestamos.length],
+    ['Descartes registrados', descartes.length],
     ['Trabajos abiertos al generar', state.bitacoras.filter((item) => item.estado !== 'cerrado').length],
     ['Equipos no operativos', state.equipos.filter((item) => item.estado !== 'operativo').length],
   ];
@@ -1502,6 +1646,26 @@ export function exportInformeMensualMantenimientoExcel(state: LaboratorioState, 
     ),
     'Fichas tecnicas',
   );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'DESCARTES DEL MES',
+      ['Fecha', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle'],
+      descartes.map((item) => [
+        formatExcelDate(item.fecha),
+        item.inventario,
+        item.equipo,
+        item.marca,
+        item.modelo,
+        item.serie,
+        item.ubicacion,
+        item.responsable,
+        item.detalle,
+      ]),
+      [20, 18, 24, 18, 24, 24, 24, 22, 52],
+    ),
+    'Descartes',
+  );
   writeFile(workbook, `informe-mantenimiento-${slugifyFileName(selectedMonth)}.xlsx`);
 }
 
@@ -1514,6 +1678,7 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
     return time >= start && time <= end;
   };
   const registros = state.bitacoras.filter((item) => inRange(item.fecha)).sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const descartes = state.descartes.filter((item) => inRange(item.fecha)).sort((first, second) => second.fecha.localeCompare(first.fecha));
   const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
   const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
   const movimientosEstado = registros.map(getMovimientoEstadoLaboratorio).filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -1539,6 +1704,7 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
       ['Cambios de estado auditados', movimientosEstado.length],
       ['Equipos atendidos', atendidos.size],
       ['Daños o incidencias encontrados', incidencias.length],
+      ['Descartes registrados', descartes.length],
       ['Reparaciones pendientes o en proceso', abiertos.length],
       ['Equipos no operativos al generar', equiposNoOperativos.length],
     ], [42, 32]),
@@ -1577,6 +1743,26 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
       [20, 30, 22, 22, 24, 56],
     ),
     'Auditoria',
+  );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'DESCARTES DEL PERIODO',
+      ['Fecha', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle'],
+      descartes.map((item) => [
+        formatExcelDate(item.fecha),
+        item.inventario,
+        item.equipo,
+        item.marca,
+        item.modelo,
+        item.serie,
+        item.ubicacion,
+        item.responsable,
+        item.detalle,
+      ]),
+      [20, 18, 24, 18, 24, 24, 24, 22, 52],
+    ),
+    'Descartes',
   );
   utils.book_append_sheet(
     workbook,
@@ -1626,6 +1812,7 @@ export function exportInformeMantenimientoPorRangoExcel(state: LaboratorioState,
       [
         [`Durante el periodo seleccionado se registraron ${registros.length} movimientos tecnicos.`],
         [`Se atendieron ${atendidos.size} equipos entre mantenimientos, incidencias, cierres o cambios de estado.`],
+        [`Se documentaron ${descartes.length} descartes de equipos en el periodo.`],
         [`Al generar este informe quedan ${equiposNoOperativos.length} equipos no operativos o pendientes de seguimiento.`],
         [`Las reparaciones o incidencias abiertas suman ${abiertos.length} registros.`],
       ],
@@ -1640,11 +1827,12 @@ export function buildInformeMantenimientoPorRango(state: LaboratorioState, desde
   const start = desde ? new Date(`${desde}T00:00:00`).getTime() : Number.NEGATIVE_INFINITY;
   const end = hasta ? new Date(`${hasta}T23:59:59.999`).getTime() : Number.POSITIVE_INFINITY;
   const registros = state.bitacoras.filter((item) => { const time = new Date(item.fecha).getTime(); return time >= start && time <= end; });
+  const descartes = state.descartes.filter((item) => { const time = new Date(item.fecha).getTime(); return time >= start && time <= end; });
   const mantenimientos = registros.filter((item) => item.tipoTrabajo !== 'Incidencia');
   const incidencias = registros.filter((item) => item.tipoTrabajo === 'Incidencia');
   const equipos = new Set(registros.map((item) => item.equipoId || item.equipoDestino || item.equipoOrigen).filter(Boolean));
   const abiertos = state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia' && !['resuelto', 'cerrado'].includes(item.estado));
-  return [`INFORME DE MANTENIMIENTO`, `Periodo: ${desde || 'Inicio'} a ${hasta || 'Hoy'}`, '', `Movimientos tecnicos registrados: ${registros.length}`, `Mantenimientos efectuados: ${mantenimientos.length}`, `Equipos atendidos: ${equipos.size}`, `Daños/incidencias encontrados: ${incidencias.length}`, `Reparaciones pendientes o en proceso: ${abiertos.length}`, '', ...registros.map((item) => `- ${item.fecha.slice(0, 10)} | ${item.tipoTrabajo === 'Incidencia' ? 'INCIDENCIA' : 'MANTENIMIENTO'} | ${item.equipoDestino || item.equipoOrigen || 'Equipo no indicado'} | ${item.titulo} | ${estadoTrabajoLabels[item.estado]}`)].join('\n');
+  return [`INFORME DE MANTENIMIENTO`, `Periodo: ${desde || 'Inicio'} a ${hasta || 'Hoy'}`, '', `Movimientos tecnicos registrados: ${registros.length}`, `Mantenimientos efectuados: ${mantenimientos.length}`, `Equipos atendidos: ${equipos.size}`, `Daños/incidencias encontrados: ${incidencias.length}`, `Descartes registrados: ${descartes.length}`, `Reparaciones pendientes o en proceso: ${abiertos.length}`, '', ...registros.map((item) => `- ${item.fecha.slice(0, 10)} | ${item.tipoTrabajo === 'Incidencia' ? 'INCIDENCIA' : 'MANTENIMIENTO'} | ${item.equipoDestino || item.equipoOrigen || 'Equipo no indicado'} | ${item.titulo} | ${estadoTrabajoLabels[item.estado]}`), ...descartes.map((item) => `- ${item.fecha.slice(0, 10)} | DESCARTE | ${item.inventario} - ${item.equipo} | ${item.responsable}`)].join('\n');
 }
 
 export function exportInformeUbicacionLaboratorioExcel(state: LaboratorioState, ubicacion: string) {
@@ -1803,6 +1991,9 @@ export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, e
   const bitacoras = state.bitacoras
     .filter((item) => item.equipoId === equipo.id || matchesEquipo(`${item.equipoOrigen} ${item.equipoDestino} ${item.titulo} ${item.descripcion}`))
     .sort((first, second) => second.fecha.localeCompare(first.fecha));
+  const descartes = state.descartes
+    .filter((item) => item.equipoId === equipo.id || matchesEquipo(`${item.inventario} ${item.equipo} ${item.serie} ${item.detalle}`))
+    .sort((first, second) => second.fecha.localeCompare(first.fecha));
 
   const workbook = utils.book_new();
   utils.book_append_sheet(
@@ -1858,6 +2049,24 @@ export function exportHistorialEquipoLaboratorioExcel(state: LaboratorioState, e
     ),
     'Bitacoras',
   );
+  utils.book_append_sheet(
+    workbook,
+    createFormalWorksheet(
+      'DESCARTES RELACIONADOS',
+      ['Fecha', 'Inventario', 'Equipo', 'Serie', 'Ubicacion', 'Responsable', 'Detalle'],
+      descartes.map((item) => [
+        formatExcelDate(item.fecha),
+        item.inventario,
+        item.equipo,
+        item.serie,
+        item.ubicacion,
+        item.responsable,
+        item.detalle,
+      ]),
+      [20, 18, 24, 22, 22, 22, 48],
+    ),
+    'Descartes',
+  );
   writeFile(workbook, `historial-${slugifyFileName(equipo.nombre || equipo.codigo)}.xlsx`);
 }
 
@@ -1884,6 +2093,11 @@ export function exportLaboratorioCsv(state: LaboratorioState) {
         .map(csvEscape)
         .join(','),
     ),
+    ...state.descartes.map((item) =>
+      ['DESCARTE', item.fecha, `${item.inventario} - ${item.equipo}`, item.responsable, 'baja', item.detalle]
+        .map(csvEscape)
+        .join(','),
+    ),
   ];
 
   return lines.join('\n');
@@ -1905,6 +2119,7 @@ export function buildLaboratorioReport(state: LaboratorioState) {
     `Fichas tecnicas registradas: ${state.fichas.length}`,
     `Trabajos abiertos: ${abiertas}`,
     `Equipos inventariados: ${state.equipos.length}`,
+    `Descartes registrados: ${state.descartes.length}`,
     `Equipos con atencion pendiente: ${pendientes}`,
     `Prestamos activos: ${prestamosActivos}`,
     '',

@@ -189,3 +189,18 @@ export type PrestamoLaboratorio = {
   observaciones: string;
   createdAt: string;
 };
+
+export type DescarteLaboratorio = {
+  id: string;
+  fecha: string;
+  equipoId: string;
+  inventario: string;
+  equipo: string;
+  marca: string;
+  modelo: string;
+  serie: string;
+  detalle: string;
+  ubicacion: string;
+  responsable: string;
+  createdAt: string;
+};
