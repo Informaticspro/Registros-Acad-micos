@@ -1621,12 +1621,17 @@ textarea {
 
 .priority-alta,
 .equipment-mantenimiento,
-.equipment-en_reparacion,
 .equipment-prestado,
 .loan-vencido {
   background: rgba(43, 103, 199, 0.16);
   border-color: rgba(43, 103, 199, 0.42);
   color: #9fc2ff;
+}
+
+.equipment-en_reparacion {
+  background: rgba(249, 115, 22, 0.2);
+  border-color: rgba(249, 115, 22, 0.58);
+  color: #ffb26b;
 }
 
 .priority-critica,
