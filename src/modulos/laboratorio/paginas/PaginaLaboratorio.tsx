@@ -292,6 +292,18 @@ function getInventoryStatusPriority(item: EquipoLaboratorio) {
   return getInventoryStatusPriorityValue(item.estado);
 }
 
+function isRepairInventoryFilter(value: string) {
+  return normalizeExcelKey(value).includes('repar');
+}
+
+function matchesInventoryLocationFilter(item: EquipoLaboratorio, ubicacion: string) {
+  if (ubicacion === 'Todas') return true;
+  if (isRepairInventoryFilter(ubicacion)) {
+    return item.ubicacion === ubicacion || normalizeExcelKey(item.estado).includes('repar');
+  }
+  return item.ubicacion === ubicacion;
+}
+
 function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
   const tipo = input.tipoTrabajo
     .normalize('NFD')
@@ -540,7 +552,7 @@ export function PaginaLaboratorio() {
   const estadosAlertaPorUbicacion = useMemo(() => {
     return ubicacionesInventario.reduce<Record<string, string[]>>((acc, ubicacion) => {
       const items =
-        ubicacion === 'Todas' ? state.equipos : state.equipos.filter((equipo) => equipo.ubicacion === ubicacion);
+        ubicacion === 'Todas' ? state.equipos : state.equipos.filter((equipo) => matchesInventoryLocationFilter(equipo, ubicacion));
       const estados = Array.from(
         new Set(items.map((equipo) => equipo.estado).filter((estado) => estado && estado !== 'operativo')),
       ).sort((first, second) => getInventoryStatusPriorityValue(first) - getInventoryStatusPriorityValue(second));
@@ -554,7 +566,7 @@ export function PaginaLaboratorio() {
     const filtered =
       selectedInventoryLocation === 'Todas'
         ? state.equipos
-        : state.equipos.filter((item) => item.ubicacion === selectedInventoryLocation);
+        : state.equipos.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
     return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
   }, [selectedInventoryLocation, state.equipos]);
 
@@ -2007,7 +2019,7 @@ export function PaginaLaboratorio() {
                     <span>
                       {ubicacion === 'Todas'
                         ? state.equipos.length
-                        : state.equipos.filter((item) => item.ubicacion === ubicacion).length}
+                        : state.equipos.filter((item) => matchesInventoryLocationFilter(item, ubicacion)).length}
                     </span>
                   </button>
                 ))}
