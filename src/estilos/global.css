@@ -1770,6 +1770,9 @@ textarea {
 }
 
 .lab-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 36px;
   padding: 0 13px;
   border: 1px solid var(--line);
@@ -1778,6 +1781,11 @@ textarea {
   color: var(--muted);
   cursor: pointer;
   font-weight: 800;
+  text-align: center;
+}
+
+.lab-tab-label-short {
+  display: none;
 }
 
 .lab-tabs .lab-tab-inicio {
@@ -4569,11 +4577,22 @@ textarea {
     width: 100%;
     min-width: 0;
     min-height: 31px;
-    padding: 0 5px;
+    padding: 0 4px;
     border-radius: 10px;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     line-height: 1.05;
-    white-space: nowrap;
+    overflow: hidden;
+    white-space: normal;
+  }
+
+  .lab-tab-label-full {
+    display: none;
+  }
+
+  .lab-tab-label-short {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .lab-tabs button.active,

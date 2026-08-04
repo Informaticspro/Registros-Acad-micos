@@ -1340,8 +1340,10 @@ export function PaginaLaboratorio() {
               className={`lab-tab-${tab}${activeTab === tab ? ' active' : ''}`}
               key={tab}
               onClick={() => setActiveTab(tab)}
+              title={tabLabels[tab]}
             >
-              {tabLabels[tab]}
+              <span className="lab-tab-label-full">{tabLabels[tab]}</span>
+              <span className="lab-tab-label-short">{tab === 'bitacoras' ? 'Mant. e incid.' : tabLabels[tab]}</span>
             </button>
           ))}
         </div>
