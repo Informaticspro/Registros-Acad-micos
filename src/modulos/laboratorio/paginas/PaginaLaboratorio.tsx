@@ -11,6 +11,7 @@ import {
   PackageCheck,
   Pencil,
   Save,
+  Search,
   Settings2,
   Sun,
   Trash2,
@@ -316,6 +317,26 @@ function matchesInventoryLocationFilter(item: EquipoLaboratorio, ubicacion: stri
   return item.ubicacion === ubicacion;
 }
 
+function matchesInventorySearch(item: EquipoLaboratorio, search: string) {
+  const query = normalizeExcelKey(search);
+  if (!query) return true;
+
+  const haystack = normalizeExcelKey(
+    [
+      item.codigo,
+      item.nombre,
+      item.categoria,
+      item.marcaModelo,
+      item.serie,
+      item.ubicacion,
+      item.estado,
+      item.observaciones,
+    ].join(' '),
+  );
+
+  return haystack.includes(query);
+}
+
 function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
   const tipo = input.tipoTrabajo
     .normalize('NFD')
@@ -394,6 +415,87 @@ function shouldImportEquipoRow(input: EquipoLaboratorioInput) {
   const isGenericEquipmentName = normalizedName === 'computadora' || normalizedName.startsWith('equipo');
 
   return Boolean(input.codigo && input.nombre) && !isNoteRow && !looksLikeNote && !(isGenericEquipmentName && hasLongNoteAsModel);
+}
+
+type CampoUnicoEquipo = 'codigo' | 'serie';
+
+function normalizeUniqueEquipoValue(value: string, campo: CampoUnicoEquipo) {
+  const normalized = normalizeExcelKey(value);
+  const genericInventoryValues = new Set(['sn', 'na', 'noaplica', 'sininventario', 'sincodigo']);
+  const genericSerialValues = new Set(['sn', 'na', 'noaplica', 'sinserie', 'sinserial', 'sindato', 'sininformacion']);
+
+  if (!normalized) return '';
+  if (campo === 'codigo' && genericInventoryValues.has(normalized)) return '';
+  if (campo === 'serie' && genericSerialValues.has(normalized)) return '';
+  return normalized;
+}
+
+function findDuplicateEquipoIdentity(
+  input: EquipoLaboratorioInput,
+  equipos: EquipoLaboratorio[],
+  currentId?: string,
+) {
+  const checks: Array<{ campo: CampoUnicoEquipo; valor: string; etiqueta: string }> = [
+    { campo: 'codigo', valor: input.codigo, etiqueta: 'numero de inventario' },
+    { campo: 'serie', valor: input.serie, etiqueta: 'numero de serie' },
+  ];
+
+  for (const check of checks) {
+    const key = normalizeUniqueEquipoValue(check.valor, check.campo);
+    if (!key) continue;
+
+    const duplicate = equipos.find((equipo) => {
+      if (equipo.id === currentId) return false;
+      const value = check.campo === 'codigo' ? equipo.codigo : equipo.serie;
+      return normalizeUniqueEquipoValue(value, check.campo) === key;
+    });
+
+    if (duplicate) {
+      return { ...check, duplicate };
+    }
+  }
+
+  return null;
+}
+
+function buildDuplicateEquipoMessage(duplicate: NonNullable<ReturnType<typeof findDuplicateEquipoIdentity>>) {
+  return `Ya existe un equipo con ese ${duplicate.etiqueta}: ${duplicate.duplicate.codigo} - ${duplicate.duplicate.nombre}.`;
+}
+
+function filterUniqueEquipoInputsForImport(inputs: EquipoLaboratorioInput[], equipos: EquipoLaboratorio[]) {
+  const existingByCodigo = new Map(
+    equipos
+      .map((equipo) => [normalizeUniqueEquipoValue(equipo.codigo, 'codigo'), equipo] as const)
+      .filter(([key]) => Boolean(key)),
+  );
+  const existingBySerie = new Map(
+    equipos
+      .map((equipo) => [normalizeUniqueEquipoValue(equipo.serie, 'serie'), equipo] as const)
+      .filter(([key]) => Boolean(key)),
+  );
+  const seenCodigo = new Set<string>();
+  const seenSerie = new Set<string>();
+  let ignoredDuplicates = 0;
+
+  const uniqueInputs = inputs.filter((input) => {
+    const codigoKey = normalizeUniqueEquipoValue(input.codigo, 'codigo');
+    const serieKey = normalizeUniqueEquipoValue(input.serie, 'serie');
+    const existingBySameCode = codigoKey ? existingByCodigo.get(codigoKey) : undefined;
+    const existingBySameSerie = serieKey ? existingBySerie.get(serieKey) : undefined;
+    const serialBelongsToAnotherEquipo =
+      existingBySameSerie && (!existingBySameCode || existingBySameSerie.id !== existingBySameCode.id);
+
+    if ((codigoKey && seenCodigo.has(codigoKey)) || (serieKey && seenSerie.has(serieKey)) || serialBelongsToAnotherEquipo) {
+      ignoredDuplicates += 1;
+      return false;
+    }
+
+    if (codigoKey) seenCodigo.add(codigoKey);
+    if (serieKey) seenSerie.add(serieKey);
+    return true;
+  });
+
+  return { uniqueInputs, ignoredDuplicates };
 }
 
 function stringifyExcelValue(value: unknown) {
@@ -602,6 +704,7 @@ export function PaginaLaboratorio() {
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
   const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
+  const [inventorySearch, setInventorySearch] = useState('');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -660,12 +763,13 @@ export function PaginaLaboratorio() {
   }, [state.equipos, ubicacionesInventario]);
 
   const equiposInventarioFiltrados = useMemo(() => {
-    const filtered =
+    const filteredByLocation =
       selectedInventoryLocation === 'Todas'
         ? state.equipos
         : state.equipos.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
+    const filtered = filteredByLocation.filter((item) => matchesInventorySearch(item, inventorySearch));
     return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
-  }, [selectedInventoryLocation, state.equipos]);
+  }, [inventorySearch, selectedInventoryLocation, state.equipos]);
 
   const categoriasEquipo = useMemo(() => {
     const catalogItems = state.categoriasEquipo
@@ -922,6 +1026,13 @@ export function PaginaLaboratorio() {
     event.preventDefault();
     const form = event.currentTarget;
     const input = buildEquipoInput(form);
+    const duplicate = findDuplicateEquipoIdentity(input, state.equipos, editingEquipo?.id);
+
+    if (duplicate) {
+      setError(buildDuplicateEquipoMessage(duplicate));
+      return;
+    }
+
     const hasEstadoChange = Boolean(editingEquipo && editingEquipo.estado !== input.estado);
     const previousEstadoLabel = editingEquipo ? estadoEquipoNombre[editingEquipo.estado] ?? getEstadoEquipoLabel(editingEquipo.estado) : '';
     const nextEstadoLabel = estadoEquipoNombre[input.estado] ?? getEstadoEquipoLabel(input.estado);
@@ -1341,12 +1452,15 @@ export function PaginaLaboratorio() {
 
       const rows = utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
       const inputs = rows.map(parseEquipoExcelRow).filter(shouldImportEquipoRow);
-      const result = await importEquiposLaboratorio(inputs, saveContext);
+      const { uniqueInputs, ignoredDuplicates } = filterUniqueEquipoInputsForImport(inputs, state.equipos);
+      const result = await importEquiposLaboratorio(uniqueInputs, saveContext);
 
       await refresh();
       setActiveTab('inventario');
       setMessage(
-        `Inventario importado: ${result.created} equipos nuevos, ${result.updated} actualizados y ${result.ignored} filas ignoradas.`,
+        `Inventario importado: ${result.created} equipos nuevos, ${result.updated} actualizados y ${
+          result.ignored + ignoredDuplicates
+        } filas ignoradas. ${ignoredDuplicates ? `${ignoredDuplicates} fueron duplicadas por inventario o serie.` : ''}`,
       );
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'No se pudo importar el inventario.');
@@ -2241,6 +2355,20 @@ export function PaginaLaboratorio() {
                 <h2>Inventario de la facultad</h2>
                 <small>{new Date().toLocaleDateString('es-PA')}</small>
               </div>
+              <div className="lab-inventory-search">
+                <Search size={18} />
+                <input
+                  value={inventorySearch}
+                  onChange={(event) => setInventorySearch(event.target.value)}
+                  placeholder="Buscar por equipo, inventario, serie, marca o ubicacion"
+                  aria-label="Buscar equipo en inventario"
+                />
+                {inventorySearch ? (
+                  <button type="button" onClick={() => setInventorySearch('')}>
+                    Limpiar
+                  </button>
+                ) : null}
+              </div>
               <div className="lab-inventory-filter" aria-label="Filtrar inventario por ubicacion">
                 {ubicacionesInventario.map((ubicacion) => (
                   <button
@@ -2286,7 +2414,7 @@ export function PaginaLaboratorio() {
                     </div>
                     {equiposInventarioFiltrados.length === 0 ? (
                       <div className="lab-inventory-row lab-inventory-empty-row">
-                        <span>No hay equipos registrados en esta ubicacion.</span>
+                        <span>No hay equipos que coincidan con este filtro.</span>
                       </div>
                     ) : null}
                     {equiposInventarioFiltrados.map((item, index) => {

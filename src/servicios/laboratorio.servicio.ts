@@ -150,6 +150,14 @@ const seccionesBaseLaboratorio = [
   'Biblioteca',
   'Laboratorio 1',
   'Laboratorio 2',
+  '3A',
+  '3B',
+  '3C',
+  '3D',
+  '3E',
+  '3F',
+  '3G',
+  '3H',
   'Decanato',
   'Reparacion',
   'Deposito',
@@ -176,6 +184,79 @@ function defaultSecciones(): SeccionLaboratorio[] {
     createdAt: now,
     updatedAt: now,
   }));
+}
+
+function mergeSeccionesBase(secciones: SeccionLaboratorio[]) {
+  const existing = new Set(secciones.map((item) => item.nombre.trim().toLowerCase()).filter(Boolean));
+  const missing = defaultSecciones().filter((item) => !existing.has(item.nombre.trim().toLowerCase()));
+  return [...secciones, ...missing].sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
+}
+
+type CampoUnicoEquipo = 'codigo' | 'serie';
+
+function normalizeUniqueEquipoValue(value: unknown, campo: CampoUnicoEquipo) {
+  const normalized = String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+  const genericInventoryValues = new Set(['sn', 'na', 'noaplica', 'sininventario', 'sincodigo']);
+  const genericSerialValues = new Set(['sn', 'na', 'noaplica', 'sinserie', 'sinserial', 'sindato', 'sininformacion']);
+
+  if (!normalized) return '';
+  if (campo === 'codigo' && genericInventoryValues.has(normalized)) return '';
+  if (campo === 'serie' && genericSerialValues.has(normalized)) return '';
+  return normalized;
+}
+
+function findDuplicateEquipoIdentity(
+  input: Pick<EquipoLaboratorioInput, 'codigo' | 'serie'>,
+  equipos: Array<{ id: string; codigo: string; nombre: string; serie: string }>,
+  currentId?: string,
+) {
+  const checks: Array<{ campo: CampoUnicoEquipo; valor: string; etiqueta: string }> = [
+    { campo: 'codigo', valor: input.codigo, etiqueta: 'numero de inventario' },
+    { campo: 'serie', valor: input.serie, etiqueta: 'numero de serie' },
+  ];
+
+  for (const check of checks) {
+    const key = normalizeUniqueEquipoValue(check.valor, check.campo);
+    if (!key) continue;
+
+    const duplicate = equipos.find((equipo) => {
+      if (equipo.id === currentId) return false;
+      const value = check.campo === 'codigo' ? equipo.codigo : equipo.serie;
+      return normalizeUniqueEquipoValue(value, check.campo) === key;
+    });
+
+    if (duplicate) return { ...check, duplicate };
+  }
+
+  return null;
+}
+
+function buildDuplicateEquipoMessage(duplicate: NonNullable<ReturnType<typeof findDuplicateEquipoIdentity>>) {
+  return `Ya existe un equipo con ese ${duplicate.etiqueta}: ${duplicate.duplicate.codigo} - ${duplicate.duplicate.nombre}.`;
+}
+
+async function assertUniqueEquipoIdentity(input: EquipoLaboratorioInput, currentId?: string) {
+  if (useLocalStorageFallback()) {
+    const duplicate = findDuplicateEquipoIdentity(input, readState().equipos, currentId);
+    if (duplicate) throw new Error(buildDuplicateEquipoMessage(duplicate));
+    return;
+  }
+
+  const { data, error } = await requireSupabase().from('laboratory_equipment').select('id, code, name, serial_number');
+  if (error) throw error;
+
+  const equipos = (data ?? []).map((item) => ({
+    id: String(item.id),
+    codigo: String(item.code ?? ''),
+    nombre: String(item.name ?? ''),
+    serie: String(item.serial_number ?? ''),
+  }));
+  const duplicate = findDuplicateEquipoIdentity(input, equipos, currentId);
+  if (duplicate) throw new Error(buildDuplicateEquipoMessage(duplicate));
 }
 
 function defaultCatalogos(tipo: CatalogoLaboratorio['tipo']): CatalogoLaboratorio[] {
@@ -468,7 +549,7 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
     return {
       fichas: [...state.fichas].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
       equipos: [...state.equipos].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
-      secciones: [...state.secciones].sort((first, second) => first.nombre.localeCompare(second.nombre)),
+      secciones: mergeSeccionesBase(state.secciones),
       categoriasEquipo: [...state.categoriasEquipo].sort((first, second) => first.nombre.localeCompare(second.nombre)),
       estadosEquipo: [...state.estadosEquipo].sort((first, second) => first.nombre.localeCompare(second.nombre)),
       bitacoras: [...state.bitacoras].sort((first, second) => second.fecha.localeCompare(first.fecha)),
@@ -503,7 +584,7 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
   return {
     fichas: (fichas.data ?? []).map(mapFicha),
     equipos: (equipos.data ?? []).map(mapEquipo),
-    secciones: seccionesData.length > 0 ? seccionesData : defaultSecciones(),
+    secciones: mergeSeccionesBase(seccionesData),
     categoriasEquipo: categoriasEquipo.length > 0 ? categoriasEquipo : defaultCatalogos('categoria_equipo'),
     estadosEquipo: estadosEquipo.length > 0 ? estadosEquipo : defaultCatalogos('estado_equipo'),
     bitacoras: (bitacoras.data ?? []).map(mapBitacora),
@@ -603,6 +684,8 @@ export async function createEquipoLaboratorio(
   input: EquipoLaboratorioInput,
   context: LaboratorioSaveContext,
 ): Promise<EquipoLaboratorio> {
+  await assertUniqueEquipoIdentity(input);
+
   if (useLocalStorageFallback()) {
     const state = readState();
     const now = new Date().toISOString();
@@ -634,6 +717,8 @@ export async function createEquipoLaboratorio(
 }
 
 export async function updateEquipoLaboratorio(id: string, input: EquipoLaboratorioInput): Promise<EquipoLaboratorio> {
+  await assertUniqueEquipoIdentity(input, id);
+
   if (useLocalStorageFallback()) {
     const state = readState();
     const current = state.equipos.find((equipo) => equipo.id === id);

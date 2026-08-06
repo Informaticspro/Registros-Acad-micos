@@ -2468,6 +2468,44 @@ textarea {
   color: var(--muted);
 }
 
+.lab-inventory-search {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface);
+}
+
+.lab-inventory-search svg {
+  color: var(--muted);
+}
+
+.lab-inventory-search input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-deep);
+  color: var(--text);
+  padding: 0 12px;
+  font: inherit;
+  font-weight: 700;
+}
+
+.lab-inventory-search button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+  padding: 0 12px;
+}
+
 .lab-inventory-filter {
   display: flex;
   flex-wrap: wrap;
@@ -4169,6 +4207,23 @@ textarea {
     font-size: 0.95rem;
     line-height: 1.12;
     overflow-wrap: anywhere;
+  }
+
+  .lab-inventory-search {
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .lab-inventory-search input {
+    min-height: 38px;
+    font-size: 0.9rem;
+  }
+
+  .lab-inventory-search button {
+    grid-column: 1 / -1;
+    min-height: 34px;
+    font-size: 0.86rem;
   }
 
   .lab-inventory-filter {
