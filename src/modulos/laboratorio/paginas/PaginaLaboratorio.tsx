@@ -742,20 +742,32 @@ export function PaginaLaboratorio() {
     [selectedDescarteEquipoId, state.equipos],
   );
 
+  const componentesAsignadosActivosIds = useMemo(
+    () => new Set(state.asignacionesComponentes.filter((item) => !item.fechaRetiro).map((item) => item.componenteId)),
+    [state.asignacionesComponentes],
+  );
+
+  const equiposInventarioVisibles = useMemo(
+    () => state.equipos.filter((item) => !componentesAsignadosActivosIds.has(item.id)),
+    [componentesAsignadosActivosIds, state.equipos],
+  );
+
   const ubicacionesInventario = useMemo(() => {
     const catalogLocations = state.secciones
       .map((item) => item.nombre.trim())
       .filter((value): value is string => Boolean(value));
-    const importedLocations = state.equipos
+    const importedLocations = equiposInventarioVisibles
       .map((item) => item.ubicacion?.trim())
       .filter((value): value is string => Boolean(value));
     return ['Todas', ...Array.from(new Set([...catalogLocations, ...importedLocations]))];
-  }, [state.equipos, state.secciones]);
+  }, [equiposInventarioVisibles, state.secciones]);
 
   const estadosAlertaPorUbicacion = useMemo(() => {
     return ubicacionesInventario.reduce<Record<string, string[]>>((acc, ubicacion) => {
       const items =
-        ubicacion === 'Todas' ? state.equipos : state.equipos.filter((equipo) => matchesInventoryLocationFilter(equipo, ubicacion));
+        ubicacion === 'Todas'
+          ? equiposInventarioVisibles
+          : equiposInventarioVisibles.filter((equipo) => matchesInventoryLocationFilter(equipo, ubicacion));
       const estados = Array.from(
         new Set(items.map((equipo) => equipo.estado).filter((estado) => estado && estado !== 'operativo')),
       ).sort((first, second) => getInventoryStatusPriorityValue(first) - getInventoryStatusPriorityValue(second));
@@ -763,16 +775,16 @@ export function PaginaLaboratorio() {
       acc[ubicacion] = estados;
       return acc;
     }, {});
-  }, [state.equipos, ubicacionesInventario]);
+  }, [equiposInventarioVisibles, ubicacionesInventario]);
 
   const equiposInventarioFiltrados = useMemo(() => {
     const filteredByLocation =
       selectedInventoryLocation === 'Todas'
-        ? state.equipos
-        : state.equipos.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
+        ? equiposInventarioVisibles
+        : equiposInventarioVisibles.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
     const filtered = filteredByLocation.filter((item) => matchesInventorySearch(item, inventorySearch));
     return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
-  }, [inventorySearch, selectedInventoryLocation, state.equipos]);
+  }, [equiposInventarioVisibles, inventorySearch, selectedInventoryLocation]);
 
   const categoriasEquipo = useMemo(() => {
     const catalogItems = state.categoriasEquipo
@@ -2409,8 +2421,11 @@ export function PaginaLaboratorio() {
                 </p>
               </div>
               <div className="lab-inventory-hero-actions">
-                <strong>{state.equipos.length}</strong>
-                <span>equipos registrados</span>
+                <strong>{equiposInventarioVisibles.length}</strong>
+                <span>equipos visibles</span>
+                {componentesAsignadosActivosIds.size > 0 ? (
+                  <small>{componentesAsignadosActivosIds.size} componentes asignados</small>
+                ) : null}
                 <button
                   className="primary-button"
                   type="button"
@@ -2478,14 +2493,14 @@ export function PaginaLaboratorio() {
                     ) : null}
                     <span>
                       {ubicacion === 'Todas'
-                        ? state.equipos.length
-                        : state.equipos.filter((item) => matchesInventoryLocationFilter(item, ubicacion)).length}
+                        ? equiposInventarioVisibles.length
+                        : equiposInventarioVisibles.filter((item) => matchesInventoryLocationFilter(item, ubicacion)).length}
                     </span>
                   </button>
                 ))}
               </div>
-              {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
-              {state.equipos.length > 0 ? (
+              {equiposInventarioVisibles.length === 0 ? <p className="form-hint">Todavia no hay equipos visibles registrados.</p> : null}
+              {equiposInventarioVisibles.length > 0 ? (
                 <div className="lab-inventory-table-wrap">
                   <div className="lab-inventory-table">
                     <div className="lab-inventory-head">
