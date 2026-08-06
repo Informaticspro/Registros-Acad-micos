@@ -880,9 +880,10 @@ export function PaginaLaboratorio() {
     const equiposMantenimiento = state.equipos.filter((item) => item.estado === 'mantenimiento').length;
     const equiposPendientes = state.equipos.filter((item) => item.estado !== 'operativo').length;
     const prestamosActivos = state.prestamos.filter((item) => item.estado === 'activo').length;
+    const descartesRegistrados = state.descartes.length;
     const evidencias = state.bitacoras.filter((item) => item.evidenciaUrl || item.evidenciaTitulo).length;
 
-    return { trabajosAbiertos, equiposMantenimiento, equiposPendientes, prestamosActivos, evidencias };
+    return { trabajosAbiertos, equiposMantenimiento, equiposPendientes, prestamosActivos, descartesRegistrados, evidencias };
   }, [state]);
 
   const actividadReciente = useMemo(() => {
@@ -1759,6 +1760,11 @@ export function PaginaLaboratorio() {
                 <span>Prestamos activos</span>
                 <strong>{indicadores.prestamosActivos}</strong>
                 <small>Dispositivos por devolver</small>
+              </button>
+              <button type="button" onClick={() => setActiveTab('descartes')}>
+                <span>Descartes registrados</span>
+                <strong>{indicadores.descartesRegistrados}</strong>
+                <small>Equipos retirados del inventario</small>
               </button>
               <button type="button" onClick={() => setActiveTab('fichas')}>
                 <span>Fichas tecnicas</span>
