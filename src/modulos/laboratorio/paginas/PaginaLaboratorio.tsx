@@ -28,6 +28,7 @@ import {
   PrestamoLaboratorioInput,
   buildLaboratorioReport,
   buildInformeMantenimientoPorRango,
+  createAsignacionComponenteLaboratorio,
   createBitacoraLaboratorio,
   createCatalogoLaboratorio,
   createDescarteLaboratorio,
@@ -60,6 +61,7 @@ import {
   updateSeccionLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import {
+  AsignacionComponenteLaboratorio,
   BitacoraLaboratorio,
   CatalogoLaboratorio,
   DescarteLaboratorio,
@@ -95,6 +97,7 @@ const emptyState: LaboratorioState = {
   bitacoras: [],
   prestamos: [],
   descartes: [],
+  asignacionesComponentes: [],
 };
 
 const tabLabels: Record<LabTab, string> = {
@@ -1613,6 +1616,23 @@ export function PaginaLaboratorio() {
       .sort((first, second) => second.fecha.localeCompare(first.fecha));
   }
 
+  function getAsignacionesActivasEquipo(equipo: EquipoLaboratorio) {
+    return state.asignacionesComponentes.filter((item) => item.equipoPadreId === equipo.id && !item.fechaRetiro);
+  }
+
+  function getEquipoById(id: string) {
+    return state.equipos.find((item) => item.id === id) ?? null;
+  }
+
+  function getComponentesDisponibles(equipoPadre: EquipoLaboratorio) {
+    const assignedComponentIds = new Set(
+      state.asignacionesComponentes.filter((item) => !item.fechaRetiro).map((item) => item.componenteId),
+    );
+    return state.equipos
+      .filter((item) => item.id !== equipoPadre.id && !assignedComponentIds.has(item.id))
+      .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
+  }
+
   function getUltimoMantenimientoEquipo(fichas: FichaTecnicaLaboratorio[], bitacoras: BitacoraLaboratorio[]) {
     const fechas = [
       ...fichas.map((item) => item.fecha),
@@ -1628,6 +1648,67 @@ export function PaginaLaboratorio() {
     setEditingFicha(null);
     setSelectedEquipoFichaId(equipo.id);
     setActiveTab('fichas');
+  }
+
+  async function handleAsignarComponente(event: FormEvent<HTMLFormElement>, equipoPadre: EquipoLaboratorio) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const componenteId = readString(data, 'componenteId');
+    const tipo = readString(data, 'tipo') as AsignacionComponenteLaboratorio['tipo'];
+    const detalle = readString(data, 'detalle');
+    const componente = state.equipos.find((item) => item.id === componenteId);
+
+    if (!componente) {
+      setError('Seleccione un componente del inventario.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await createAsignacionComponenteLaboratorio(
+        {
+          equipoPadreId: equipoPadre.id,
+          componenteId,
+          tipo,
+          fechaAsignacion: new Date().toISOString(),
+          fechaRetiro: null,
+          detalle,
+          responsable: responsableSesion,
+        },
+        saveContext,
+      );
+      await createBitacoraLaboratorio(
+        {
+          fecha: new Date().toISOString(),
+          tipoTrabajo: 'Asignacion de componente',
+          titulo: `Componente asignado a ${equipoPadre.nombre}`,
+          descripcion: `${componente.codigo || 'S/N'} - ${componente.nombre} fue asignado a ${
+            equipoPadre.codigo || 'S/N'
+          } - ${equipoPadre.nombre}. ${detalle || 'Sin detalle adicional.'}`,
+          responsable: responsableSesion,
+          prioridad: 'media',
+          estado: 'cerrado',
+          clase: 'mantenimiento',
+          equipoId: equipoPadre.id,
+          equipoOrigen: componente.ubicacion || 'Sin ubicacion',
+          equipoDestino: `${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}`,
+          ubicacion: equipoPadre.ubicacion,
+          evidenciaTitulo: '',
+          evidenciaUrl: '',
+        },
+        saveContext,
+      );
+      form.reset();
+      await refresh();
+      setMessage('Componente asignado y registrado en el historial.');
+    } catch (assignError) {
+      setError(assignError instanceof Error ? assignError.message : 'No se pudo asignar el componente.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function closeCatalogManager() {
@@ -2499,6 +2580,8 @@ export function PaginaLaboratorio() {
                     const { marca, modelo } = splitMarcaModelo(selectedEquipoDetalle.marcaModelo);
                     const fichasEquipo = getFichasEquipo(selectedEquipoDetalle);
                     const bitacorasEquipo = getBitacorasEquipo(selectedEquipoDetalle);
+                    const componentesActivos = getAsignacionesActivasEquipo(selectedEquipoDetalle);
+                    const componentesDisponibles = getComponentesDisponibles(selectedEquipoDetalle);
                     const ultimoMantenimiento = getUltimoMantenimientoEquipo(fichasEquipo, bitacorasEquipo);
                     return (
                       <>
@@ -2548,6 +2631,72 @@ export function PaginaLaboratorio() {
                           </div>
                           <div><dt>Actualizado</dt><dd>{formatDateTime(selectedEquipoDetalle.updatedAt)}</dd></div>
                         </dl>
+
+                        <section className="lab-equipment-detail-section">
+                          <div className="lab-home-section-header">
+                            <div>
+                              <span className="eyebrow">Componentes asignados</span>
+                              <h3>{componentesActivos.length} componentes</h3>
+                            </div>
+                          </div>
+                          {componentesActivos.length === 0 ? (
+                            <p className="form-hint">Este equipo todavia no tiene CPU, monitor u otra pieza relacionada.</p>
+                          ) : null}
+                          <div className="lab-equipment-detail-list">
+                            {componentesActivos.map((asignacion) => {
+                              const componente = getEquipoById(asignacion.componenteId);
+                              return (
+                                <article key={asignacion.id}>
+                                  <div>
+                                    <strong>
+                                      {asignacion.tipo.toUpperCase()} | {componente?.nombre ?? 'Componente no encontrado'}
+                                    </strong>
+                                    <span>
+                                      {componente?.codigo || 'S/N'} | {componente?.serie || 'S/N'} |{' '}
+                                      {componente?.ubicacion || selectedEquipoDetalle.ubicacion}
+                                    </span>
+                                  </div>
+                                  <span className="status-pill">Activo</span>
+                                  <p>{asignacion.detalle || `Asignado el ${formatDateTime(asignacion.fechaAsignacion)}.`}</p>
+                                </article>
+                              );
+                            })}
+                          </div>
+                          <form className="lab-component-form" onSubmit={(event) => void handleAsignarComponente(event, selectedEquipoDetalle)}>
+                            <label>
+                              Componente del inventario
+                              <select name="componenteId" required defaultValue="">
+                                <option value="" disabled>
+                                  Seleccione monitor, CPU, teclado, mouse o pieza
+                                </option>
+                                {componentesDisponibles.map((item) => (
+                                  <option value={item.id} key={item.id}>
+                                    {item.codigo || 'S/N'} - {item.nombre} ({item.ubicacion || 'Sin ubicacion'})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Tipo
+                              <select name="tipo" required defaultValue="monitor">
+                                <option value="cpu">CPU</option>
+                                <option value="monitor">Monitor</option>
+                                <option value="teclado">Teclado</option>
+                                <option value="mouse">Mouse</option>
+                                <option value="proyector">Proyector</option>
+                                <option value="otro">Otro</option>
+                              </select>
+                            </label>
+                            <label>
+                              Detalle
+                              <input name="detalle" placeholder="Ej. Monitor asignado por reemplazo de pantalla" />
+                            </label>
+                            <button className="secondary-button" type="submit" disabled={isSaving || componentesDisponibles.length === 0}>
+                              <PackageCheck size={16} />
+                              Asignar componente
+                            </button>
+                          </form>
+                        </section>
 
                         <section className="lab-equipment-detail-section">
                           <div className="lab-home-section-header">

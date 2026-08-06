@@ -206,3 +206,16 @@ export type DescarteLaboratorio = {
   evidenciaUrl: string;
   createdAt: string;
 };
+
+export type AsignacionComponenteLaboratorio = {
+  id: string;
+  equipoPadreId: string;
+  componenteId: string;
+  tipo: 'cpu' | 'monitor' | 'teclado' | 'mouse' | 'proyector' | 'otro';
+  fechaAsignacion: string;
+  fechaRetiro: string | null;
+  detalle: string;
+  responsable: string;
+  createdAt: string;
+  updatedAt: string;
+};

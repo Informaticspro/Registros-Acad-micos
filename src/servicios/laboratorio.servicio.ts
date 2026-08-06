@@ -3,6 +3,7 @@ import { supabase } from '@/infraestructura/supabase';
 import { utils, writeFile } from 'xlsx-js-style';
 import {
   AplicacionFichaLaboratorio,
+  AsignacionComponenteLaboratorio,
   BitacoraLaboratorio,
   ClaseRegistroLaboratorio,
   CatalogoLaboratorio,
@@ -30,6 +31,7 @@ export type LaboratorioState = {
   bitacoras: BitacoraLaboratorio[];
   prestamos: PrestamoLaboratorio[];
   descartes: DescarteLaboratorio[];
+  asignacionesComponentes: AsignacionComponenteLaboratorio[];
 };
 
 export type LaboratorioSaveContext = {
@@ -50,6 +52,11 @@ export type BitacoraLaboratorioInput = Omit<BitacoraLaboratorio, 'id' | 'created
 export type PrestamoLaboratorioInput = Omit<PrestamoLaboratorio, 'id' | 'createdAt'>;
 
 export type DescarteLaboratorioInput = Omit<DescarteLaboratorio, 'id' | 'createdAt'>;
+
+export type AsignacionComponenteLaboratorioInput = Omit<
+  AsignacionComponenteLaboratorio,
+  'id' | 'createdAt' | 'updatedAt'
+>;
 
 export type ImportEquiposLaboratorioResult = {
   total: number;
@@ -286,6 +293,7 @@ function emptyState(): LaboratorioState {
     bitacoras: [],
     prestamos: [],
     descartes: [],
+    asignacionesComponentes: [],
   };
 }
 
@@ -314,6 +322,7 @@ function readState(): LaboratorioState {
       bitacoras: Array.isArray(parsed.bitacoras) ? parsed.bitacoras : [],
       prestamos: Array.isArray(parsed.prestamos) ? parsed.prestamos : [],
       descartes: Array.isArray(parsed.descartes) ? parsed.descartes : [],
+      asignacionesComponentes: Array.isArray(parsed.asignacionesComponentes) ? parsed.asignacionesComponentes : [],
     };
   } catch {
     return emptyState();
@@ -543,6 +552,32 @@ function mapDescarte(row: {
   };
 }
 
+function mapAsignacionComponente(row: {
+  id: string;
+  parent_equipment_id: string;
+  component_equipment_id: string;
+  component_type: AsignacionComponenteLaboratorio['tipo'];
+  assigned_at: string;
+  removed_at: string | null;
+  detail: string;
+  responsible: string;
+  created_at: string;
+  updated_at: string;
+}): AsignacionComponenteLaboratorio {
+  return {
+    id: row.id,
+    equipoPadreId: row.parent_equipment_id,
+    componenteId: row.component_equipment_id,
+    tipo: row.component_type,
+    fechaAsignacion: row.assigned_at,
+    fechaRetiro: row.removed_at,
+    detalle: row.detail,
+    responsable: row.responsible,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export async function listLaboratorioData(): Promise<LaboratorioState> {
   if (useLocalStorageFallback()) {
     const state = readState();
@@ -555,11 +590,14 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
       bitacoras: [...state.bitacoras].sort((first, second) => second.fecha.localeCompare(first.fecha)),
       prestamos: [...state.prestamos].sort((first, second) => second.fechaPrestamo.localeCompare(first.fechaPrestamo)),
       descartes: [...state.descartes].sort((first, second) => second.fecha.localeCompare(first.fecha)),
+      asignacionesComponentes: [...state.asignacionesComponentes].sort((first, second) =>
+        second.fechaAsignacion.localeCompare(first.fechaAsignacion),
+      ),
     };
   }
 
   const client = requireSupabase();
-  const [fichas, equipos, secciones, catalogos, bitacoras, prestamos, descartes] = await Promise.all([
+  const [fichas, equipos, secciones, catalogos, bitacoras, prestamos, descartes, asignacionesComponentes] = await Promise.all([
     client.from('laboratory_technical_sheets').select('*').order('updated_at', { ascending: false }),
     client.from('laboratory_equipment').select('*').order('updated_at', { ascending: false }),
     client.from('laboratory_sections').select('*').order('name', { ascending: true }),
@@ -567,6 +605,7 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
     client.from('laboratory_logs').select('*').order('work_date', { ascending: false }),
     client.from('laboratory_loans').select('*').order('loaned_at', { ascending: false }),
     (client as any).from('laboratory_discards').select('*').order('discard_date', { ascending: false }),
+    (client as any).from('laboratory_component_assignments').select('*').order('assigned_at', { ascending: false }),
   ]);
 
   if (fichas.error) throw fichas.error;
@@ -580,6 +619,12 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
   if (descartes.error && !String(descartes.error.message).toLowerCase().includes('laboratory_discards')) {
     throw descartes.error;
   }
+  if (
+    asignacionesComponentes.error &&
+    !String(asignacionesComponentes.error.message).toLowerCase().includes('laboratory_component_assignments')
+  ) {
+    throw asignacionesComponentes.error;
+  }
 
   return {
     fichas: (fichas.data ?? []).map(mapFicha),
@@ -590,6 +635,9 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
     bitacoras: (bitacoras.data ?? []).map(mapBitacora),
     prestamos: (prestamos.data ?? []).map(mapPrestamo),
     descartes: descartes.error ? [] : (descartes.data ?? []).map(mapDescarte),
+    asignacionesComponentes: asignacionesComponentes.error
+      ? []
+      : (asignacionesComponentes.data ?? []).map(mapAsignacionComponente),
   };
 }
 
@@ -1307,6 +1355,83 @@ export async function deleteDescarteLaboratorio(id: string) {
 
   const { error } = await (requireSupabase() as any).from('laboratory_discards').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function createAsignacionComponenteLaboratorio(
+  input: AsignacionComponenteLaboratorioInput,
+  context: LaboratorioSaveContext,
+): Promise<AsignacionComponenteLaboratorio> {
+  if (input.equipoPadreId === input.componenteId) {
+    throw new Error('Un equipo no puede asignarse como componente de si mismo.');
+  }
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const parent = state.equipos.find((item) => item.id === input.equipoPadreId);
+    const component = state.equipos.find((item) => item.id === input.componenteId);
+    if (!parent || !component) throw new Error('No se encontro el equipo o componente seleccionado.');
+    const exists = state.asignacionesComponentes.some(
+      (item) => item.componenteId === input.componenteId && !item.fechaRetiro,
+    );
+    if (exists) throw new Error('Este componente ya esta asignado a otro equipo.');
+
+    const now = new Date().toISOString();
+    const asignacion: AsignacionComponenteLaboratorio = {
+      ...input,
+      id: createId('componente'),
+      createdAt: now,
+      updatedAt: now,
+    };
+    writeState({
+      ...state,
+      asignacionesComponentes: [asignacion, ...state.asignacionesComponentes],
+      equipos: state.equipos.map((item) =>
+        item.id === component.id ? { ...item, ubicacion: parent.ubicacion, updatedAt: now } : item,
+      ),
+    });
+    return asignacion;
+  }
+
+  requireContext(context);
+  const client = requireSupabase() as any;
+  const { data: parent, error: parentError } = await client
+    .from('laboratory_equipment')
+    .select('location')
+    .eq('id', input.equipoPadreId)
+    .single();
+  if (parentError) throw parentError;
+
+  const { count, error: countError } = await client
+    .from('laboratory_component_assignments')
+    .select('id', { count: 'exact', head: true })
+    .eq('component_equipment_id', input.componenteId)
+    .is('removed_at', null);
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) throw new Error('Este componente ya esta asignado a otro equipo.');
+
+  const { data, error } = await client
+    .from('laboratory_component_assignments')
+    .insert({
+      organization_id: context.organizationId,
+      parent_equipment_id: input.equipoPadreId,
+      component_equipment_id: input.componenteId,
+      component_type: input.tipo,
+      assigned_at: input.fechaAsignacion,
+      removed_at: input.fechaRetiro,
+      detail: input.detalle,
+      responsible: input.responsable,
+      created_by: context.userId,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+
+  await client
+    .from('laboratory_equipment')
+    .update({ location: parent.location, updated_at: new Date().toISOString() })
+    .eq('id', input.componenteId);
+
+  return mapAsignacionComponente(data);
 }
 
 function csvEscape(value: string | number | null | undefined) {
