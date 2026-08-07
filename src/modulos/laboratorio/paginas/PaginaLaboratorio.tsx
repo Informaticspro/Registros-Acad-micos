@@ -1670,10 +1670,16 @@ export function PaginaLaboratorio() {
 
   function getInventarioCalculadoEquipo(equipo: EquipoLaboratorio) {
     const componentes = getAsignacionesActivasEquipo(equipo)
-      .map((asignacion) => getEquipoById(asignacion.componenteId))
-      .filter((item): item is EquipoLaboratorio => Boolean(item));
+      .map((asignacion) => {
+        const componente = getEquipoById(asignacion.componenteId);
+        return componente ? { asignacion, componente } : null;
+      })
+      .filter((item): item is { asignacion: AsignacionComponenteLaboratorio; componente: EquipoLaboratorio } =>
+        Boolean(item),
+      );
+    const componentesEquipo = componentes.map((item) => item.componente);
     const baseMarcaModelo = splitMarcaModelo(equipo.marcaModelo);
-    const componentesMarcaModelo = componentes.map((item) => splitMarcaModelo(item.marcaModelo));
+    const componentesMarcaModelo = componentesEquipo.map((item) => splitMarcaModelo(item.marcaModelo));
 
     return {
       componentes,
@@ -1687,11 +1693,11 @@ export function PaginaLaboratorio() {
       ),
       codigo: appendUniqueInventoryValue(
         equipo.codigo || 'S/N',
-        componentes.map((item) => item.codigo || 'S/N'),
+        componentesEquipo.map((item) => item.codigo || 'S/N'),
       ),
       serie: appendUniqueInventoryValue(
         equipo.serie || 'S/N',
-        componentes.map((item) => item.serie || 'S/N'),
+        componentesEquipo.map((item) => item.serie || 'S/N'),
       ),
     };
   }
@@ -2572,10 +2578,18 @@ export function PaginaLaboratorio() {
                     ) : null}
                     {equiposInventarioFiltrados.map((item, index) => {
                       const inventarioCalculado = getInventarioCalculadoEquipo(item);
+                      const componentSummary = inventarioCalculado.componentes
+                        .map(
+                          ({ asignacion, componente }) =>
+                            `${asignacion.tipo}: ${componente.codigo || 'S/N'} - ${componente.nombre} - ${
+                              componente.serie || 'S/N'
+                            }`,
+                        )
+                        .join('\n');
                       return (
                         <div className="lab-inventory-row" key={item.id}>
                           <span className="inventory-cell-fila">{index + 1}</span>
-                          <strong className="inventory-cell-equipo">
+                          <strong className="inventory-cell-equipo" title={componentSummary || undefined}>
                             <b>{item.nombre || item.categoria}</b>
                             {inventarioCalculado.componentes.length > 0 ? (
                               <small>
@@ -2583,11 +2597,20 @@ export function PaginaLaboratorio() {
                                 {inventarioCalculado.componentes.length === 1 ? 'componente' : 'componentes'}
                               </small>
                             ) : null}
+                            {inventarioCalculado.componentes.length > 0 ? (
+                              <em className="inventory-component-list">
+                                {inventarioCalculado.componentes.map(({ asignacion, componente }) => (
+                                  <i key={asignacion.id}>
+                                    {asignacion.tipo}: {componente.codigo || 'S/N'} · {componente.nombre}
+                                  </i>
+                                ))}
+                              </em>
+                            ) : null}
                           </strong>
-                          <span className="inventory-cell-marca">{inventarioCalculado.marca}</span>
-                          <span className="inventory-cell-modelo">{inventarioCalculado.modelo}</span>
-                          <span className="inventory-cell-codigo">{inventarioCalculado.codigo}</span>
-                          <span className="inventory-cell-serie">{inventarioCalculado.serie}</span>
+                          <span className="inventory-cell-marca" title={componentSummary || undefined}>{inventarioCalculado.marca}</span>
+                          <span className="inventory-cell-modelo" title={componentSummary || undefined}>{inventarioCalculado.modelo}</span>
+                          <span className="inventory-cell-codigo" title={componentSummary || undefined}>{inventarioCalculado.codigo}</span>
+                          <span className="inventory-cell-serie" title={componentSummary || undefined}>{inventarioCalculado.serie}</span>
                           <span className="inventory-cell-ubicacion">{item.ubicacion || 'Sin ubicacion'}</span>
                           <span className="inventory-cell-estado">
                             <select

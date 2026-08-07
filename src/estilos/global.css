@@ -2723,6 +2723,26 @@ textarea {
   text-transform: uppercase;
 }
 
+.inventory-component-list {
+  display: grid;
+  gap: 3px;
+  max-width: 100%;
+  font-style: normal;
+}
+
+.inventory-component-list i {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .compact-form-grid {
   gap: 12px;
 }
