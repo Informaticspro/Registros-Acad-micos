@@ -171,7 +171,16 @@ const seccionesBaseLaboratorio = [
   'Seccion de Tecnologia',
 ] as const;
 
-const categoriasBaseEquipo = ['Computadora', 'Laptop', 'Monitor', 'Proyector', 'Impresora', 'Redes', 'Accesorio'] as const;
+const categoriasBaseEquipo = [
+  'Computadora',
+  'Laptop',
+  'Monitor',
+  'Televisor',
+  'Proyector',
+  'Impresora',
+  'Redes',
+  'Accesorio',
+] as const;
 
 const estadosBaseEquipo = [
   { nombre: 'operativo', descripcion: 'Operativo' },

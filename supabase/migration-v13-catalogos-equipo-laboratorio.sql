@@ -45,6 +45,7 @@ cross join (
     ('categoria_equipo', 'Computadora', ''),
     ('categoria_equipo', 'Laptop', ''),
     ('categoria_equipo', 'Monitor', ''),
+    ('categoria_equipo', 'Televisor', ''),
     ('categoria_equipo', 'Proyector', ''),
     ('categoria_equipo', 'Impresora', ''),
     ('categoria_equipo', 'Redes', ''),
