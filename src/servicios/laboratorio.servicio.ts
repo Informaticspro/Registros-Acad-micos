@@ -1443,6 +1443,41 @@ export async function createAsignacionComponenteLaboratorio(
   return mapAsignacionComponente(data);
 }
 
+export async function retirarAsignacionComponenteLaboratorio(
+  id: string,
+  context: LaboratorioSaveContext,
+): Promise<AsignacionComponenteLaboratorio> {
+  const now = new Date().toISOString();
+
+  if (useLocalStorageFallback()) {
+    const state = readState();
+    const current = state.asignacionesComponentes.find((item) => item.id === id);
+    if (!current) throw new Error('No se encontro la asignacion del componente.');
+    const updated: AsignacionComponenteLaboratorio = {
+      ...current,
+      fechaRetiro: current.fechaRetiro ?? now,
+      updatedAt: now,
+    };
+    writeState({
+      ...state,
+      asignacionesComponentes: state.asignacionesComponentes.map((item) => (item.id === id ? updated : item)),
+    });
+    return updated;
+  }
+
+  requireContext(context);
+  const { data, error } = await (requireSupabase() as any)
+    .from('laboratory_component_assignments')
+    .update({ removed_at: now, updated_at: now })
+    .eq('id', id)
+    .eq('organization_id', context.organizationId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapAsignacionComponente(data);
+}
+
 function csvEscape(value: string | number | null | undefined) {
   const normalized = String(value ?? '');
   return `"${normalized.replace(/"/g, '""')}"`;

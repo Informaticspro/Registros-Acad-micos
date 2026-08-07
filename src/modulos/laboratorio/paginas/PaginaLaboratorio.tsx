@@ -53,6 +53,7 @@ import {
   exportLaboratorioCsv,
   importEquiposLaboratorio,
   listLaboratorioData,
+  retirarAsignacionComponenteLaboratorio,
   updateBitacoraLaboratorio,
   updateCatalogoLaboratorio,
   updateEquipoLaboratorio,
@@ -730,6 +731,7 @@ export function PaginaLaboratorio() {
   const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedReportLocation, setSelectedReportLocation] = useState('Todas');
   const [selectedReportEquipoId, setSelectedReportEquipoId] = useState('');
+  const [componentMoveTargets, setComponentMoveTargets] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [profileNamesById, setProfileNamesById] = useState<Record<string, string>>({});
@@ -1668,6 +1670,12 @@ export function PaginaLaboratorio() {
       .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
   }
 
+  function getEquiposDestinoComponente(equipoActual: EquipoLaboratorio, componenteId: string) {
+    return equiposInventarioVisibles
+      .filter((item) => item.id !== equipoActual.id && item.id !== componenteId)
+      .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
+  }
+
   function getInventarioCalculadoEquipo(equipo: EquipoLaboratorio) {
     const componentes = getAsignacionesActivasEquipo(equipo)
       .map((asignacion) => {
@@ -1775,6 +1783,114 @@ export function PaginaLaboratorio() {
       setMessage('Componente asignado y registrado en el historial.');
     } catch (assignError) {
       setError(assignError instanceof Error ? assignError.message : 'No se pudo asignar el componente.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleRetirarComponente(asignacion: AsignacionComponenteLaboratorio, equipoPadre: EquipoLaboratorio) {
+    const componente = getEquipoById(asignacion.componenteId);
+    if (!componente) {
+      setError('No se encontro el componente seleccionado.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await retirarAsignacionComponenteLaboratorio(asignacion.id, saveContext);
+      await createBitacoraLaboratorio(
+        {
+          fecha: new Date().toISOString(),
+          tipoTrabajo: 'Retiro de componente',
+          titulo: `Componente retirado de ${equipoPadre.nombre}`,
+          descripcion: `${componente.codigo || 'S/N'} - ${componente.nombre} fue retirado de ${
+            equipoPadre.codigo || 'S/N'
+          } - ${equipoPadre.nombre}.`,
+          responsable: responsableSesion,
+          prioridad: 'media',
+          estado: 'cerrado',
+          clase: 'mantenimiento',
+          equipoId: equipoPadre.id,
+          equipoOrigen: `${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}`,
+          equipoDestino: componente.nombre,
+          ubicacion: equipoPadre.ubicacion,
+          evidenciaTitulo: '',
+          evidenciaUrl: '',
+        },
+        saveContext,
+      );
+      await refresh();
+      setMessage('Componente retirado y registrado en el historial.');
+    } catch (retireError) {
+      setError(retireError instanceof Error ? retireError.message : 'No se pudo retirar el componente.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleMoverComponente(
+    asignacion: AsignacionComponenteLaboratorio,
+    equipoActual: EquipoLaboratorio,
+    nuevoEquipoId: string,
+  ) {
+    const componente = getEquipoById(asignacion.componenteId);
+    const nuevoEquipo = getEquipoById(nuevoEquipoId);
+    if (!componente || !nuevoEquipo) {
+      setError('Seleccione un equipo destino valido.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await retirarAsignacionComponenteLaboratorio(asignacion.id, saveContext);
+      await createAsignacionComponenteLaboratorio(
+        {
+          equipoPadreId: nuevoEquipo.id,
+          componenteId: componente.id,
+          tipo: asignacion.tipo,
+          fechaAsignacion: new Date().toISOString(),
+          fechaRetiro: null,
+          detalle: `Movido desde ${equipoActual.codigo || 'S/N'} - ${equipoActual.nombre} hacia ${
+            nuevoEquipo.codigo || 'S/N'
+          } - ${nuevoEquipo.nombre}.`,
+          responsable: responsableSesion,
+        },
+        saveContext,
+      );
+      await createBitacoraLaboratorio(
+        {
+          fecha: new Date().toISOString(),
+          tipoTrabajo: 'Movimiento de componente',
+          titulo: `Componente movido a ${nuevoEquipo.nombre}`,
+          descripcion: `${componente.codigo || 'S/N'} - ${componente.nombre} fue movido desde ${
+            equipoActual.codigo || 'S/N'
+          } - ${equipoActual.nombre} hacia ${nuevoEquipo.codigo || 'S/N'} - ${nuevoEquipo.nombre}.`,
+          responsable: responsableSesion,
+          prioridad: 'media',
+          estado: 'cerrado',
+          clase: 'mantenimiento',
+          equipoId: nuevoEquipo.id,
+          equipoOrigen: `${equipoActual.codigo || 'S/N'} - ${equipoActual.nombre}`,
+          equipoDestino: `${nuevoEquipo.codigo || 'S/N'} - ${nuevoEquipo.nombre}`,
+          ubicacion: nuevoEquipo.ubicacion,
+          evidenciaTitulo: '',
+          evidenciaUrl: '',
+        },
+        saveContext,
+      );
+      setComponentMoveTargets((current) => {
+        const next = { ...current };
+        delete next[asignacion.id];
+        return next;
+      });
+      await refresh();
+      setMessage('Componente movido y registrado en el historial.');
+    } catch (moveError) {
+      setError(moveError instanceof Error ? moveError.message : 'No se pudo mover el componente.');
     } finally {
       setIsSaving(false);
     }
@@ -2587,7 +2703,20 @@ export function PaginaLaboratorio() {
                         )
                         .join('\n');
                       return (
-                        <div className="lab-inventory-row" key={item.id}>
+                        <div
+                          className="lab-inventory-row clickable"
+                          key={item.id}
+                          role="button"
+                          tabIndex={0}
+                          title="Abrir expediente tecnico del equipo"
+                          onClick={() => setSelectedEquipoDetalle(item)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedEquipoDetalle(item);
+                            }
+                          }}
+                        >
                           <span className="inventory-cell-fila">{index + 1}</span>
                           <strong className="inventory-cell-equipo" title={componentSummary || undefined}>
                             <b>{item.nombre || item.categoria}</b>
@@ -2618,6 +2747,7 @@ export function PaginaLaboratorio() {
                               value={item.estado}
                               disabled={isSaving}
                               title="Cambiar estado"
+                              onClick={(event) => event.stopPropagation()}
                               onChange={(event) => void handleQuickEstadoEquipo(item, event.target.value)}
                             >
                               {estadosEquipo.map((estado) => (
@@ -2632,26 +2762,21 @@ export function PaginaLaboratorio() {
                               className="icon-button"
                               type="button"
                               title="Ver expediente tecnico"
-                              onClick={() => setSelectedEquipoDetalle(item)}
-                            >
-                              <ClipboardList size={16} />
-                            </button>
-                            <button
-                              className="icon-button"
-                              type="button"
-                              title="Editar"
-                              onClick={() => {
-                                setEditingEquipo(item);
-                                setShowEquipoFormModal(true);
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedEquipoDetalle(item);
                               }}
                             >
-                              <Pencil size={16} />
+                              <ClipboardList size={16} />
                             </button>
                             <button
                               className="icon-button danger-button"
                               type="button"
                               title="Eliminar"
-                              onClick={() => void handleDeleteEquipo(item)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleDeleteEquipo(item);
+                              }}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -2697,6 +2822,17 @@ export function PaginaLaboratorio() {
                         </div>
 
                         <div className="lab-equipment-detail-actions">
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={() => {
+                              setEditingEquipo(selectedEquipoDetalle);
+                              setShowEquipoFormModal(true);
+                            }}
+                          >
+                            <Pencil size={18} />
+                            Editar datos
+                          </button>
                           <button className="primary-button" type="button" onClick={() => openFichaForEquipo(selectedEquipoDetalle)}>
                             <ClipboardList size={18} />
                             Nueva ficha tecnica
@@ -2742,6 +2878,8 @@ export function PaginaLaboratorio() {
                           <div className="lab-equipment-detail-list">
                             {componentesActivos.map((asignacion) => {
                               const componente = getEquipoById(asignacion.componenteId);
+                              const destinos = getEquiposDestinoComponente(selectedEquipoDetalle, asignacion.componenteId);
+                              const selectedTarget = componentMoveTargets[asignacion.id] ?? '';
                               return (
                                 <article key={asignacion.id}>
                                   <div>
@@ -2755,6 +2893,41 @@ export function PaginaLaboratorio() {
                                   </div>
                                   <span className="status-pill">Activo</span>
                                   <p>{asignacion.detalle || `Asignado el ${formatDateTime(asignacion.fechaAsignacion)}.`}</p>
+                                  <div className="lab-component-actions">
+                                    <select
+                                      value={selectedTarget}
+                                      disabled={isSaving || destinos.length === 0}
+                                      onChange={(event) =>
+                                        setComponentMoveTargets((current) => ({
+                                          ...current,
+                                          [asignacion.id]: event.target.value,
+                                        }))
+                                      }
+                                    >
+                                      <option value="">Mover a otro equipo...</option>
+                                      {destinos.map((destino) => (
+                                        <option value={destino.id} key={destino.id}>
+                                          {destino.codigo || 'S/N'} - {destino.nombre} ({destino.ubicacion || 'Sin ubicacion'})
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      className="secondary-button"
+                                      type="button"
+                                      disabled={isSaving || !selectedTarget}
+                                      onClick={() => void handleMoverComponente(asignacion, selectedEquipoDetalle, selectedTarget)}
+                                    >
+                                      Mover
+                                    </button>
+                                    <button
+                                      className="secondary-button danger-soft-button"
+                                      type="button"
+                                      disabled={isSaving}
+                                      onClick={() => void handleRetirarComponente(asignacion, selectedEquipoDetalle)}
+                                    >
+                                      Retirar
+                                    </button>
+                                  </div>
                                 </article>
                               );
                             })}
