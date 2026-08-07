@@ -340,6 +340,23 @@ function matchesInventorySearch(item: EquipoLaboratorio, search: string) {
   return haystack.includes(query);
 }
 
+function appendUniqueInventoryValue(baseValue: string, componentValues: string[]) {
+  const values = [baseValue || 'S/N'];
+  const seen = new Set(values.map(normalizeExcelKey).filter(Boolean));
+
+  componentValues.forEach((value) => {
+    const cleanValue = value.trim();
+    const normalized = normalizeExcelKey(cleanValue);
+    if (!cleanValue || !normalized || normalized === 'sn') return;
+    const alreadyInsideBase = values.some((current) => normalizeExcelKey(current).includes(normalized));
+    if (seen.has(normalized) || alreadyInsideBase) return;
+    values.push(cleanValue);
+    seen.add(normalized);
+  });
+
+  return values.join(' / ');
+}
+
 function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
   const tipo = input.tipoTrabajo
     .normalize('NFD')
@@ -782,7 +799,13 @@ export function PaginaLaboratorio() {
       selectedInventoryLocation === 'Todas'
         ? equiposInventarioVisibles
         : equiposInventarioVisibles.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
-    const filtered = filteredByLocation.filter((item) => matchesInventorySearch(item, inventorySearch));
+    const query = normalizeExcelKey(inventorySearch);
+    const filtered = filteredByLocation.filter((item) => {
+      if (matchesInventorySearch(item, inventorySearch)) return true;
+      if (!query) return true;
+      const calculado = getInventarioCalculadoEquipo(item);
+      return normalizeExcelKey([calculado.marca, calculado.modelo, calculado.codigo, calculado.serie].join(' ')).includes(query);
+    });
     return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
   }, [equiposInventarioVisibles, inventorySearch, selectedInventoryLocation]);
 
@@ -1643,6 +1666,34 @@ export function PaginaLaboratorio() {
     return state.equipos
       .filter((item) => item.id !== equipoPadre.id && !assignedComponentIds.has(item.id))
       .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
+  }
+
+  function getInventarioCalculadoEquipo(equipo: EquipoLaboratorio) {
+    const componentes = getAsignacionesActivasEquipo(equipo)
+      .map((asignacion) => getEquipoById(asignacion.componenteId))
+      .filter((item): item is EquipoLaboratorio => Boolean(item));
+    const baseMarcaModelo = splitMarcaModelo(equipo.marcaModelo);
+    const componentesMarcaModelo = componentes.map((item) => splitMarcaModelo(item.marcaModelo));
+
+    return {
+      componentes,
+      marca: appendUniqueInventoryValue(
+        baseMarcaModelo.marca,
+        componentesMarcaModelo.map((item) => item.marca),
+      ),
+      modelo: appendUniqueInventoryValue(
+        baseMarcaModelo.modelo,
+        componentesMarcaModelo.map((item) => item.modelo),
+      ),
+      codigo: appendUniqueInventoryValue(
+        equipo.codigo || 'S/N',
+        componentes.map((item) => item.codigo || 'S/N'),
+      ),
+      serie: appendUniqueInventoryValue(
+        equipo.serie || 'S/N',
+        componentes.map((item) => item.serie || 'S/N'),
+      ),
+    };
   }
 
   function getUltimoMantenimientoEquipo(fichas: FichaTecnicaLaboratorio[], bitacoras: BitacoraLaboratorio[]) {
@@ -2520,15 +2571,23 @@ export function PaginaLaboratorio() {
                       </div>
                     ) : null}
                     {equiposInventarioFiltrados.map((item, index) => {
-                      const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
+                      const inventarioCalculado = getInventarioCalculadoEquipo(item);
                       return (
                         <div className="lab-inventory-row" key={item.id}>
                           <span className="inventory-cell-fila">{index + 1}</span>
-                          <strong className="inventory-cell-equipo">{item.nombre || item.categoria}</strong>
-                          <span className="inventory-cell-marca">{marca}</span>
-                          <span className="inventory-cell-modelo">{modelo}</span>
-                          <span className="inventory-cell-codigo">{item.codigo || 'S/N'}</span>
-                          <span className="inventory-cell-serie">{item.serie || 'S/N'}</span>
+                          <strong className="inventory-cell-equipo">
+                            <b>{item.nombre || item.categoria}</b>
+                            {inventarioCalculado.componentes.length > 0 ? (
+                              <small>
+                                {inventarioCalculado.componentes.length}{' '}
+                                {inventarioCalculado.componentes.length === 1 ? 'componente' : 'componentes'}
+                              </small>
+                            ) : null}
+                          </strong>
+                          <span className="inventory-cell-marca">{inventarioCalculado.marca}</span>
+                          <span className="inventory-cell-modelo">{inventarioCalculado.modelo}</span>
+                          <span className="inventory-cell-codigo">{inventarioCalculado.codigo}</span>
+                          <span className="inventory-cell-serie">{inventarioCalculado.serie}</span>
                           <span className="inventory-cell-ubicacion">{item.ubicacion || 'Sin ubicacion'}</span>
                           <span className="inventory-cell-estado">
                             <select
