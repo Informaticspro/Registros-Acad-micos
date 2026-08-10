@@ -3125,6 +3125,13 @@ export function PaginaLaboratorio() {
                           </button>
                         </div>
 
+                        {message || error ? (
+                          <div className={`lab-modal-feedback ${error ? 'error' : 'success'}`} role="status" aria-live="polite">
+                            {error ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
+                            <span>{error ?? message}</span>
+                          </div>
+                        ) : null}
+
                         <div className="lab-equipment-detail-actions">
                           <button
                             className="secondary-button"
