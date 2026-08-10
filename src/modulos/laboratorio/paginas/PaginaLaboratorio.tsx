@@ -129,6 +129,7 @@ const aplicacionesBase = [
 const caracteristicasBase = ['Tarjeta madre', 'Memoria', 'Procesador', 'Disco duro', 'Sistema operativo'] as const;
 
 const inventarioBase = ['Torre', 'Monitor', 'Teclado', 'Mouse', 'UPS', 'Impresora'] as const;
+const filtroComponentesAsignados = 'Componentes asignados';
 
 const estadoEquipoLabels: Record<string, string> = {
   operativo: 'Operativo',
@@ -313,8 +314,13 @@ function isRepairInventoryFilter(value: string) {
   return normalizeExcelKey(value).includes('repar');
 }
 
+function isAssignedComponentsInventoryFilter(value: string) {
+  return value === filtroComponentesAsignados;
+}
+
 function matchesInventoryLocationFilter(item: EquipoLaboratorio, ubicacion: string) {
   if (ubicacion === 'Todas') return true;
+  if (isAssignedComponentsInventoryFilter(ubicacion)) return true;
   if (isRepairInventoryFilter(ubicacion)) {
     return item.ubicacion === ubicacion || normalizeExcelKey(item.estado).includes('repar');
   }
@@ -766,27 +772,36 @@ export function PaginaLaboratorio() {
     [state.asignacionesComponentes],
   );
 
-  const equiposInventarioVisibles = useMemo(
+  const equiposInventarioPrincipales = useMemo(
     () => state.equipos.filter((item) => !componentesAsignadosActivosIds.has(item.id)),
     [componentesAsignadosActivosIds, state.equipos],
   );
+
+  const equiposComponentesAsignados = useMemo(
+    () => state.equipos.filter((item) => componentesAsignadosActivosIds.has(item.id)),
+    [componentesAsignadosActivosIds, state.equipos],
+  );
+
+  const equiposInventarioVisibles = equiposInventarioPrincipales;
 
   const ubicacionesInventario = useMemo(() => {
     const catalogLocations = state.secciones
       .map((item) => item.nombre.trim())
       .filter((value): value is string => Boolean(value));
-    const importedLocations = equiposInventarioVisibles
+    const importedLocations = equiposInventarioPrincipales
       .map((item) => item.ubicacion?.trim())
       .filter((value): value is string => Boolean(value));
-    return ['Todas', ...Array.from(new Set([...catalogLocations, ...importedLocations]))];
-  }, [equiposInventarioVisibles, state.secciones]);
+    return ['Todas', ...Array.from(new Set([...catalogLocations, ...importedLocations])), filtroComponentesAsignados];
+  }, [equiposInventarioPrincipales, state.secciones]);
 
   const estadosAlertaPorUbicacion = useMemo(() => {
     return ubicacionesInventario.reduce<Record<string, string[]>>((acc, ubicacion) => {
       const items =
         ubicacion === 'Todas'
-          ? equiposInventarioVisibles
-          : equiposInventarioVisibles.filter((equipo) => matchesInventoryLocationFilter(equipo, ubicacion));
+          ? equiposInventarioPrincipales
+          : isAssignedComponentsInventoryFilter(ubicacion)
+            ? equiposComponentesAsignados
+            : equiposInventarioPrincipales.filter((equipo) => matchesInventoryLocationFilter(equipo, ubicacion));
       const estados = Array.from(
         new Set(items.map((equipo) => equipo.estado).filter((estado) => estado && estado !== 'operativo')),
       ).sort((first, second) => getInventoryStatusPriorityValue(first) - getInventoryStatusPriorityValue(second));
@@ -794,13 +809,15 @@ export function PaginaLaboratorio() {
       acc[ubicacion] = estados;
       return acc;
     }, {});
-  }, [equiposInventarioVisibles, ubicacionesInventario]);
+  }, [equiposComponentesAsignados, equiposInventarioPrincipales, ubicacionesInventario]);
 
   const equiposInventarioFiltrados = useMemo(() => {
     const filteredByLocation =
       selectedInventoryLocation === 'Todas'
-        ? equiposInventarioVisibles
-        : equiposInventarioVisibles.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
+        ? equiposInventarioPrincipales
+        : isAssignedComponentsInventoryFilter(selectedInventoryLocation)
+          ? equiposComponentesAsignados
+          : equiposInventarioPrincipales.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
     const query = normalizeExcelKey(inventorySearch);
     const filtered = filteredByLocation.filter((item) => {
       if (matchesInventorySearch(item, inventorySearch)) return true;
@@ -809,7 +826,7 @@ export function PaginaLaboratorio() {
       return normalizeExcelKey([calculado.marca, calculado.modelo, calculado.codigo, calculado.serie].join(' ')).includes(query);
     });
     return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
-  }, [equiposInventarioVisibles, inventorySearch, selectedInventoryLocation]);
+  }, [equiposComponentesAsignados, equiposInventarioPrincipales, inventorySearch, selectedInventoryLocation]);
 
   const categoriasEquipo = useMemo(() => {
     const catalogItems = state.categoriasEquipo
@@ -2594,10 +2611,13 @@ export function PaginaLaboratorio() {
                 </p>
               </div>
               <div className="lab-inventory-hero-actions">
-                <strong>{equiposInventarioVisibles.length}</strong>
-                <span>equipos visibles</span>
+                <strong>{state.equipos.length}</strong>
+                <span>registros de inventario</span>
                 {componentesAsignadosActivosIds.size > 0 ? (
-                  <small>{componentesAsignadosActivosIds.size} componentes asignados</small>
+                  <small>
+                    {equiposInventarioPrincipales.length} equipos principales | {componentesAsignadosActivosIds.size}{' '}
+                    componentes enlazados
+                  </small>
                 ) : null}
                 <button
                   className="primary-button"
@@ -2666,14 +2686,16 @@ export function PaginaLaboratorio() {
                     ) : null}
                     <span>
                       {ubicacion === 'Todas'
-                        ? equiposInventarioVisibles.length
-                        : equiposInventarioVisibles.filter((item) => matchesInventoryLocationFilter(item, ubicacion)).length}
+                        ? equiposInventarioPrincipales.length
+                        : isAssignedComponentsInventoryFilter(ubicacion)
+                          ? equiposComponentesAsignados.length
+                          : equiposInventarioPrincipales.filter((item) => matchesInventoryLocationFilter(item, ubicacion)).length}
                     </span>
                   </button>
                 ))}
               </div>
-              {equiposInventarioVisibles.length === 0 ? <p className="form-hint">Todavia no hay equipos visibles registrados.</p> : null}
-              {equiposInventarioVisibles.length > 0 ? (
+              {state.equipos.length === 0 ? <p className="form-hint">Todavia no hay equipos registrados.</p> : null}
+              {state.equipos.length > 0 ? (
                 <div className="lab-inventory-table-wrap">
                   <div className="lab-inventory-table">
                     <div className="lab-inventory-head">
