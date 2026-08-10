@@ -2423,6 +2423,13 @@ textarea {
   background: linear-gradient(135deg, rgba(243, 189, 34, 0.08), rgba(14, 165, 233, 0.05));
 }
 
+.lab-inline-component-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .lab-inline-component-panel h3,
 .lab-inline-component-panel p {
   margin: 0;
@@ -2452,6 +2459,26 @@ textarea {
 .inline-check input {
   width: 18px;
   height: 18px;
+}
+
+.lab-new-component-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.lab-new-component-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lab-new-component-card strong {
+  color: var(--text);
 }
 
 .lab-section-manager {
