@@ -1241,8 +1241,8 @@ export function PaginaLaboratorio() {
             {
               fecha: new Date().toISOString(),
               tipoTrabajo: 'Registro de equipo con componente',
-              titulo: `Equipo principal registrado: ${createdEquipo.nombre}`,
-              descripcion: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre} fue registrado como equipo principal. ${
+              titulo: `PC registrada: ${createdEquipo.nombre}`,
+              descripcion: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre} fue registrada como PC/CPU. ${
                 createdComponente.codigo || 'S/N'
               } - ${createdComponente.nombre} quedo enlazado como componente inicial.`,
               responsable: responsableSesion,
@@ -1259,7 +1259,7 @@ export function PaginaLaboratorio() {
             saveContext,
           );
         }
-        setMessage(componenteInicial ? 'Equipo principal y componente inicial registrados.' : 'Equipo agregado al inventario.');
+        setMessage(componenteInicial ? 'PC/CPU y componente inicial registrados.' : 'Equipo agregado al inventario.');
         form.reset();
       }
 
@@ -2717,7 +2717,7 @@ export function PaginaLaboratorio() {
                 <span>registros de inventario</span>
                 {componentesAsignadosActivosIds.size > 0 ? (
                   <small>
-                    {equiposInventarioPrincipales.length} equipos principales | {componentesAsignadosActivosIds.size}{' '}
+                    {equiposInventarioPrincipales.length} PC/CPU | {componentesAsignadosActivosIds.size}{' '}
                     componentes enlazados
                   </small>
                 ) : null}
@@ -2852,9 +2852,7 @@ export function PaginaLaboratorio() {
                               <small className="inventory-role-badge component">
                                 Componente de {equipoPadreComponente?.nombre ?? 'equipo'}
                               </small>
-                            ) : (
-                              <small className="inventory-role-badge principal">Equipo principal</small>
-                            )}
+                            ) : null}
                             {inventarioCalculado.componentes.length > 0 ? (
                               <small className="inventory-role-badge linked">
                                 {inventarioCalculado.componentes.length}{' '}
@@ -3349,7 +3347,7 @@ export function PaginaLaboratorio() {
                           <span className="eyebrow">Componente inicial opcional</span>
                           <h3>Registrar monitor junto con la PC</h3>
                           <p>
-                            Use esto cuando el monitor tiene inventario o serie propia. La PC queda como equipo principal y
+                            Use esto cuando el monitor tiene inventario o serie propia. La PC queda como computadora base y
                             el monitor queda enlazado sin alterar el conteo de computadoras.
                           </p>
                         </div>
