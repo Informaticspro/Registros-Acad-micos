@@ -231,7 +231,6 @@ function findDuplicateEquipoIdentity(
   currentId?: string,
 ) {
   const checks: Array<{ campo: CampoUnicoEquipo; valor: string; etiqueta: string }> = [
-    { campo: 'codigo', valor: input.codigo, etiqueta: 'numero de inventario' },
     { campo: 'serie', valor: input.serie, etiqueta: 'numero de serie' },
   ];
 
@@ -253,6 +252,17 @@ function findDuplicateEquipoIdentity(
 
 function buildDuplicateEquipoMessage(duplicate: NonNullable<ReturnType<typeof findDuplicateEquipoIdentity>>) {
   return `Ya existe un equipo con ese ${duplicate.etiqueta}: ${duplicate.duplicate.codigo} - ${duplicate.duplicate.nombre}.`;
+}
+
+function buildImportEquipoIdentityKey(input: Pick<EquipoLaboratorioInput, 'codigo' | 'nombre' | 'categoria' | 'serie'>) {
+  const serieKey = normalizeUniqueEquipoValue(input.serie, 'serie');
+  if (serieKey) return `serie:${serieKey}`;
+
+  return `equipo:${[
+    normalizeUniqueEquipoValue(input.codigo, 'codigo'),
+    String(input.categoria ?? '').trim().toLowerCase(),
+    String(input.nombre ?? '').trim().toLowerCase(),
+  ].join('|')}`;
 }
 
 async function assertUniqueEquipoIdentity(input: EquipoLaboratorioInput, currentId?: string) {
@@ -1074,25 +1084,25 @@ export async function importEquiposLaboratorio(
   if (useLocalStorageFallback()) {
     const state = readState();
     const now = new Date().toISOString();
-    const existingByCode = new Map(state.equipos.map((item) => [item.codigo.trim().toLowerCase(), item]));
+    const existingByIdentity = new Map(state.equipos.map((item) => [buildImportEquipoIdentityKey(item), item]));
     const nextEquipos = [...state.equipos];
 
     validInputs.forEach((input) => {
-      const key = input.codigo.trim().toLowerCase();
-      const current = existingByCode.get(key);
+      const key = buildImportEquipoIdentityKey(input);
+      const current = existingByIdentity.get(key);
 
       if (current) {
         const updated = { ...current, ...input, updatedAt: now };
         const index = nextEquipos.findIndex((item) => item.id === current.id);
         if (index >= 0) nextEquipos[index] = updated;
-        existingByCode.set(key, updated);
+        existingByIdentity.set(key, updated);
         result.updated += 1;
         return;
       }
 
       const created: EquipoLaboratorio = { ...input, id: createId('equipo'), registradoPor: context.userId, createdAt: now, updatedAt: now };
       nextEquipos.unshift(created);
-      existingByCode.set(key, created);
+      existingByIdentity.set(key, created);
       result.created += 1;
     });
 
@@ -1105,11 +1115,21 @@ export async function importEquiposLaboratorio(
   const { data: existingRows, error } = await client.from('laboratory_equipment').select('*');
   if (error) throw error;
 
-  const existingByCode = new Map((existingRows ?? []).map((item) => [item.code.trim().toLowerCase(), item]));
+  const existingByIdentity = new Map(
+    (existingRows ?? []).map((item) => [
+      buildImportEquipoIdentityKey({
+        codigo: String(item.code ?? ''),
+        nombre: String(item.name ?? ''),
+        categoria: String(item.category ?? ''),
+        serie: String(item.serial_number ?? ''),
+      }),
+      item,
+    ]),
+  );
 
   for (const input of validInputs) {
-    const key = input.codigo.trim().toLowerCase();
-    const current = existingByCode.get(key);
+    const key = buildImportEquipoIdentityKey(input);
+    const current = existingByIdentity.get(key);
 
     if (current) {
       await updateEquipoLaboratorio(current.id, input);
@@ -1118,7 +1138,7 @@ export async function importEquiposLaboratorio(
     }
 
     const created = await createEquipoLaboratorio(input, context);
-    existingByCode.set(key, {
+    existingByIdentity.set(key, {
       id: created.id,
       organization_id: context.organizationId!,
       code: created.codigo,

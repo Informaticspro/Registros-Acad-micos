@@ -467,7 +467,6 @@ function findDuplicateEquipoIdentity(
   currentId?: string,
 ) {
   const checks: Array<{ campo: CampoUnicoEquipo; valor: string; etiqueta: string }> = [
-    { campo: 'codigo', valor: input.codigo, etiqueta: 'numero de inventario' },
     { campo: 'serie', valor: input.serie, etiqueta: 'numero de serie' },
   ];
 
@@ -494,34 +493,23 @@ function buildDuplicateEquipoMessage(duplicate: NonNullable<ReturnType<typeof fi
 }
 
 function filterUniqueEquipoInputsForImport(inputs: EquipoLaboratorioInput[], equipos: EquipoLaboratorio[]) {
-  const existingByCodigo = new Map(
-    equipos
-      .map((equipo) => [normalizeUniqueEquipoValue(equipo.codigo, 'codigo'), equipo] as const)
-      .filter(([key]) => Boolean(key)),
-  );
   const existingBySerie = new Map(
     equipos
       .map((equipo) => [normalizeUniqueEquipoValue(equipo.serie, 'serie'), equipo] as const)
       .filter(([key]) => Boolean(key)),
   );
-  const seenCodigo = new Set<string>();
   const seenSerie = new Set<string>();
   let ignoredDuplicates = 0;
 
   const uniqueInputs = inputs.filter((input) => {
-    const codigoKey = normalizeUniqueEquipoValue(input.codigo, 'codigo');
     const serieKey = normalizeUniqueEquipoValue(input.serie, 'serie');
-    const existingBySameCode = codigoKey ? existingByCodigo.get(codigoKey) : undefined;
     const existingBySameSerie = serieKey ? existingBySerie.get(serieKey) : undefined;
-    const serialBelongsToAnotherEquipo =
-      existingBySameSerie && (!existingBySameCode || existingBySameSerie.id !== existingBySameCode.id);
 
-    if ((codigoKey && seenCodigo.has(codigoKey)) || (serieKey && seenSerie.has(serieKey)) || serialBelongsToAnotherEquipo) {
+    if ((serieKey && seenSerie.has(serieKey)) || existingBySameSerie) {
       ignoredDuplicates += 1;
       return false;
     }
 
-    if (codigoKey) seenCodigo.add(codigoKey);
     if (serieKey) seenSerie.add(serieKey);
     return true;
   });
@@ -1210,20 +1198,13 @@ export function PaginaLaboratorio() {
       }
     }
 
-    const seenComponentCodigo = new Set<string>();
     const seenComponentSerie = new Set<string>();
     for (const componenteInicial of componentesIniciales) {
-      const codigoKey = normalizeUniqueEquipoValue(componenteInicial.equipo.codigo, 'codigo');
       const serieKey = normalizeUniqueEquipoValue(componenteInicial.equipo.serie, 'serie');
-      if (codigoKey && seenComponentCodigo.has(codigoKey)) {
-        setError(`Hay mas de un componente con el mismo numero de inventario: ${componenteInicial.equipo.codigo}.`);
-        return;
-      }
       if (serieKey && seenComponentSerie.has(serieKey)) {
         setError(`Hay mas de un componente con el mismo numero de serie: ${componenteInicial.equipo.serie}.`);
         return;
       }
-      if (codigoKey) seenComponentCodigo.add(codigoKey);
       if (serieKey) seenComponentSerie.add(serieKey);
     }
 
@@ -1709,7 +1690,7 @@ export function PaginaLaboratorio() {
       setMessage(
         `Inventario importado: ${result.created} equipos nuevos, ${result.updated} actualizados y ${
           result.ignored + ignoredDuplicates
-        } filas ignoradas. ${ignoredDuplicates ? `${ignoredDuplicates} fueron duplicadas por inventario o serie.` : ''}`,
+        } filas ignoradas. ${ignoredDuplicates ? `${ignoredDuplicates} fueron duplicadas por numero de serie.` : ''}`,
       );
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'No se pudo importar el inventario.');
