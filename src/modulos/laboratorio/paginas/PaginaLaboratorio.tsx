@@ -1224,40 +1224,51 @@ export function PaginaLaboratorio() {
       } else {
         const createdEquipo = await createEquipoLaboratorio(input, saveContext);
         if (componenteInicial) {
-          const createdComponente = await createEquipoLaboratorio(componenteInicial.equipo, saveContext);
-          await createAsignacionComponenteLaboratorio(
-            {
-              equipoPadreId: createdEquipo.id,
-              componenteId: createdComponente.id,
-              tipo: componenteInicial.asignacionTipo,
-              fechaAsignacion: new Date().toISOString(),
-              fechaRetiro: null,
-              detalle: componenteInicial.detalle,
-              responsable: responsableSesion,
-            },
-            saveContext,
-          );
-          await createBitacoraLaboratorio(
-            {
-              fecha: new Date().toISOString(),
-              tipoTrabajo: 'Registro de equipo con componente',
-              titulo: `PC registrada: ${createdEquipo.nombre}`,
-              descripcion: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre} fue registrada como PC/CPU. ${
-                createdComponente.codigo || 'S/N'
-              } - ${createdComponente.nombre} quedo enlazado como componente inicial.`,
-              responsable: responsableSesion,
-              prioridad: 'media',
-              estado: 'cerrado',
-              clase: 'mantenimiento',
-              equipoId: createdEquipo.id,
-              equipoOrigen: 'Registro inicial',
-              equipoDestino: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre}`,
-              ubicacion: createdEquipo.ubicacion,
-              evidenciaTitulo: '',
-              evidenciaUrl: '',
-            },
-            saveContext,
-          );
+          try {
+            const createdComponente = await createEquipoLaboratorio(componenteInicial.equipo, saveContext);
+            await createAsignacionComponenteLaboratorio(
+              {
+                equipoPadreId: createdEquipo.id,
+                componenteId: createdComponente.id,
+                tipo: componenteInicial.asignacionTipo,
+                fechaAsignacion: new Date().toISOString(),
+                fechaRetiro: null,
+                detalle: componenteInicial.detalle,
+                responsable: responsableSesion,
+              },
+              saveContext,
+            );
+            await createBitacoraLaboratorio(
+              {
+                fecha: new Date().toISOString(),
+                tipoTrabajo: 'Registro de equipo con componente',
+                titulo: `PC registrada: ${createdEquipo.nombre}`,
+                descripcion: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre} fue registrada como PC/CPU. ${
+                  createdComponente.codigo || 'S/N'
+                } - ${createdComponente.nombre} quedo enlazado como componente inicial.`,
+                responsable: responsableSesion,
+                prioridad: 'media',
+                estado: 'cerrado',
+                clase: 'mantenimiento',
+                equipoId: createdEquipo.id,
+                equipoOrigen: 'Registro inicial',
+                equipoDestino: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre}`,
+                ubicacion: createdEquipo.ubicacion,
+                evidenciaTitulo: '',
+                evidenciaUrl: '',
+              },
+              saveContext,
+            );
+          } catch (componentSaveError) {
+            const detail = componentSaveError instanceof Error ? componentSaveError.message : 'Error desconocido.';
+            setError(
+              `La PC se guardo, pero el componente inicial no se pudo registrar o enlazar. Detalle: ${detail}`,
+            );
+            setShowEquipoFormModal(false);
+            form.reset();
+            await refresh();
+            return;
+          }
         }
         setMessage(componenteInicial ? 'PC/CPU y componente inicial registrados.' : 'Equipo agregado al inventario.');
         form.reset();
@@ -3236,6 +3247,12 @@ export function PaginaLaboratorio() {
                       Cerrar
                     </button>
                   </header>
+                  {message || error ? (
+                    <div className={`lab-modal-feedback ${error ? 'error' : 'success'}`} role="status" aria-live="polite">
+                      {error ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
+                      <span>{error ?? message}</span>
+                    </div>
+                  ) : null}
                   <form className="stack-form lab-form lab-modal-form" onSubmit={handleEquipoSubmit}>
                     <div className="form-grid compact-form-grid">
                       <label>

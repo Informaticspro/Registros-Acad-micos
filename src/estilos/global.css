@@ -1874,6 +1874,43 @@ textarea {
   color: #ef4444;
 }
 
+.lab-modal-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.lab-modal-feedback svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.lab-modal-feedback.success {
+  border-color: rgba(121, 183, 53, 0.52);
+  background: rgba(121, 183, 53, 0.1);
+}
+
+.lab-modal-feedback.success svg {
+  color: var(--green);
+}
+
+.lab-modal-feedback.error {
+  border-color: rgba(239, 68, 68, 0.52);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.lab-modal-feedback.error svg {
+  color: #ef4444;
+}
+
 .lab-home {
   display: grid;
   gap: 14px;
