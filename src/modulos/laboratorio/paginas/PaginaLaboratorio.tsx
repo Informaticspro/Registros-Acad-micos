@@ -668,6 +668,51 @@ function buildEquipoInput(form: HTMLFormElement): EquipoLaboratorioInput {
   };
 }
 
+function getCategoriaComponenteDesdeTipo(tipo: AsignacionComponenteLaboratorio['tipo']) {
+  const labels: Record<AsignacionComponenteLaboratorio['tipo'], string> = {
+    cpu: 'Computadora',
+    monitor: 'Monitor',
+    teclado: 'Teclado',
+    mouse: 'Mouse',
+    proyector: 'Proyector',
+    otro: 'Accesorio',
+  };
+  return labels[tipo] ?? 'Accesorio';
+}
+
+function buildComponenteInicialInput(form: HTMLFormElement, equipoPadre: EquipoLaboratorioInput) {
+  const data = new FormData(form);
+  const enabled = data.get('component-enabled') === 'on';
+  const tipo = (readString(data, 'component-tipo') || 'monitor') as AsignacionComponenteLaboratorio['tipo'];
+  const codigo = readString(data, 'component-codigo');
+  const nombre = readString(data, 'component-nombre') || `${getCategoriaComponenteDesdeTipo(tipo)} de ${equipoPadre.nombre}`;
+  const marca = readString(data, 'component-marca');
+  const modelo = readString(data, 'component-modelo');
+  const serie = readString(data, 'component-serie');
+  const detalle = readString(data, 'component-detalle');
+  const hasData = Boolean(codigo || marca || modelo || serie || detalle || readString(data, 'component-nombre'));
+
+  if (!enabled && !hasData) return null;
+  if (!codigo && !serie) {
+    throw new Error('Para agregar el componente inicial indique numero de inventario o serie.');
+  }
+
+  return {
+    asignacionTipo: tipo,
+    detalle: detalle || `${getCategoriaComponenteDesdeTipo(tipo)} registrado junto con ${equipoPadre.nombre}.`,
+    equipo: {
+      codigo,
+      nombre,
+      categoria: getCategoriaComponenteDesdeTipo(tipo),
+      marcaModelo: [marca, modelo].filter(Boolean).join(' '),
+      serie,
+      ubicacion: equipoPadre.ubicacion,
+      estado: equipoPadre.estado || 'operativo',
+      observaciones: `Componente registrado inicialmente para ${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}.`,
+    } satisfies EquipoLaboratorioInput,
+  };
+}
+
 function buildDescarteInput(form: HTMLFormElement, responsableSesion: string) {
   const data = new FormData(form);
   const fecha = readString(data, 'fecha');
@@ -1084,11 +1129,28 @@ export function PaginaLaboratorio() {
     event.preventDefault();
     const form = event.currentTarget;
     const input = buildEquipoInput(form);
+    let componenteInicial: ReturnType<typeof buildComponenteInicialInput> = null;
+    if (!editingEquipo) {
+      try {
+        componenteInicial = buildComponenteInicialInput(form, input);
+      } catch (componentError) {
+        setError(componentError instanceof Error ? componentError.message : 'Revise los datos del componente inicial.');
+        return;
+      }
+    }
     const duplicate = findDuplicateEquipoIdentity(input, state.equipos, editingEquipo?.id);
 
     if (duplicate) {
       setError(buildDuplicateEquipoMessage(duplicate));
       return;
+    }
+
+    if (componenteInicial) {
+      const duplicateComponent = findDuplicateEquipoIdentity(componenteInicial.equipo, state.equipos);
+      if (duplicateComponent) {
+        setError(buildDuplicateEquipoMessage(duplicateComponent));
+        return;
+      }
     }
 
     const hasEstadoChange = Boolean(editingEquipo && editingEquipo.estado !== input.estado);
@@ -1160,8 +1222,44 @@ export function PaginaLaboratorio() {
         setEditingEquipo(null);
         setMessage(hasEstadoChange ? 'Equipo actualizado y bitacora automatica registrada.' : 'Equipo actualizado correctamente.');
       } else {
-        await createEquipoLaboratorio(input, saveContext);
-        setMessage('Equipo agregado al inventario.');
+        const createdEquipo = await createEquipoLaboratorio(input, saveContext);
+        if (componenteInicial) {
+          const createdComponente = await createEquipoLaboratorio(componenteInicial.equipo, saveContext);
+          await createAsignacionComponenteLaboratorio(
+            {
+              equipoPadreId: createdEquipo.id,
+              componenteId: createdComponente.id,
+              tipo: componenteInicial.asignacionTipo,
+              fechaAsignacion: new Date().toISOString(),
+              fechaRetiro: null,
+              detalle: componenteInicial.detalle,
+              responsable: responsableSesion,
+            },
+            saveContext,
+          );
+          await createBitacoraLaboratorio(
+            {
+              fecha: new Date().toISOString(),
+              tipoTrabajo: 'Registro de equipo con componente',
+              titulo: `Equipo principal registrado: ${createdEquipo.nombre}`,
+              descripcion: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre} fue registrado como equipo principal. ${
+                createdComponente.codigo || 'S/N'
+              } - ${createdComponente.nombre} quedo enlazado como componente inicial.`,
+              responsable: responsableSesion,
+              prioridad: 'media',
+              estado: 'cerrado',
+              clase: 'mantenimiento',
+              equipoId: createdEquipo.id,
+              equipoOrigen: 'Registro inicial',
+              equipoDestino: `${createdEquipo.codigo || 'S/N'} - ${createdEquipo.nombre}`,
+              ubicacion: createdEquipo.ubicacion,
+              evidenciaTitulo: '',
+              evidenciaUrl: '',
+            },
+            saveContext,
+          );
+        }
+        setMessage(componenteInicial ? 'Equipo principal y componente inicial registrados.' : 'Equipo agregado al inventario.');
         form.reset();
       }
 
@@ -1672,6 +1770,10 @@ export function PaginaLaboratorio() {
 
   function getAsignacionesActivasEquipo(equipo: EquipoLaboratorio) {
     return state.asignacionesComponentes.filter((item) => item.equipoPadreId === equipo.id && !item.fechaRetiro);
+  }
+
+  function getAsignacionActivaComoComponente(equipo: EquipoLaboratorio) {
+    return state.asignacionesComponentes.find((item) => item.componenteId === equipo.id && !item.fechaRetiro) ?? null;
   }
 
   function getEquipoById(id: string) {
@@ -2716,6 +2818,10 @@ export function PaginaLaboratorio() {
                     ) : null}
                     {equiposInventarioFiltrados.map((item, index) => {
                       const inventarioCalculado = getInventarioCalculadoEquipo(item);
+                      const asignacionComoComponente = getAsignacionActivaComoComponente(item);
+                      const equipoPadreComponente = asignacionComoComponente
+                        ? getEquipoById(asignacionComoComponente.equipoPadreId)
+                        : null;
                       const componentSummary = inventarioCalculado.componentes
                         .map(
                           ({ asignacion, componente }) =>
@@ -2742,10 +2848,17 @@ export function PaginaLaboratorio() {
                           <span className="inventory-cell-fila">{index + 1}</span>
                           <strong className="inventory-cell-equipo" title={componentSummary || undefined}>
                             <b>{item.nombre || item.categoria}</b>
+                            {asignacionComoComponente ? (
+                              <small className="inventory-role-badge component">
+                                Componente de {equipoPadreComponente?.nombre ?? 'equipo'}
+                              </small>
+                            ) : (
+                              <small className="inventory-role-badge principal">Equipo principal</small>
+                            )}
                             {inventarioCalculado.componentes.length > 0 ? (
-                              <small>
+                              <small className="inventory-role-badge linked">
                                 {inventarioCalculado.componentes.length}{' '}
-                                {inventarioCalculado.componentes.length === 1 ? 'componente' : 'componentes'}
+                                {inventarioCalculado.componentes.length === 1 ? 'componente enlazado' : 'componentes enlazados'}
                               </small>
                             ) : null}
                             {inventarioCalculado.componentes.length > 0 ? (
@@ -3230,6 +3343,62 @@ export function PaginaLaboratorio() {
                       Observaciones
                       <textarea name="observaciones" rows={4} defaultValue={editingEquipo?.observaciones} />
                     </label>
+                    {!editingEquipo ? (
+                      <section className="lab-inline-component-panel">
+                        <div>
+                          <span className="eyebrow">Componente inicial opcional</span>
+                          <h3>Registrar monitor junto con la PC</h3>
+                          <p>
+                            Use esto cuando el monitor tiene inventario o serie propia. La PC queda como equipo principal y
+                            el monitor queda enlazado sin alterar el conteo de computadoras.
+                          </p>
+                        </div>
+                        <label className="inline-check">
+                          <input name="component-enabled" type="checkbox" />
+                          Agregar componente al guardar esta PC
+                        </label>
+                        <div className="form-grid compact-form-grid">
+                          <label>
+                            Tipo de componente
+                            <select name="component-tipo" defaultValue="monitor">
+                              <option value="monitor">Monitor</option>
+                              <option value="teclado">Teclado</option>
+                              <option value="mouse">Mouse</option>
+                              <option value="proyector">Proyector</option>
+                              <option value="otro">Otro</option>
+                            </select>
+                          </label>
+                          <label>
+                            Nombre
+                            <input name="component-nombre" placeholder="Ej. Monitor de PC 1" />
+                          </label>
+                        </div>
+                        <div className="form-grid compact-form-grid">
+                          <label>
+                            Numero de inventario
+                            <input name="component-codigo" placeholder="Ej. 51250" />
+                          </label>
+                          <label>
+                            Serie
+                            <input name="component-serie" placeholder="Ej. 3CQ329097K" />
+                          </label>
+                        </div>
+                        <div className="form-grid compact-form-grid">
+                          <label>
+                            Marca
+                            <input name="component-marca" placeholder="Ej. HP" />
+                          </label>
+                          <label>
+                            Modelo
+                            <input name="component-modelo" placeholder="Ej. P204v Monitor" />
+                          </label>
+                        </div>
+                        <label>
+                          Detalle del enlace
+                          <input name="component-detalle" placeholder="Ej. Monitor asignado desde registro inicial del laboratorio" />
+                        </label>
+                      </section>
+                    ) : null}
                     <div className="page-actions">
                       <button className="primary-button" type="submit" disabled={isSaving}>
                         <Save size={18} />

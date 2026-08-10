@@ -2377,6 +2377,46 @@ textarea {
   background: transparent;
 }
 
+.lab-inline-component-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(243, 189, 34, 0.34);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(243, 189, 34, 0.08), rgba(14, 165, 233, 0.05));
+}
+
+.lab-inline-component-panel h3,
+.lab-inline-component-panel p {
+  margin: 0;
+}
+
+.lab-inline-component-panel h3 {
+  font-size: 1.05rem;
+}
+
+.lab-inline-component-panel p {
+  color: var(--muted);
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-deep);
+  color: var(--text);
+  font-weight: 900;
+}
+
+.inline-check input {
+  width: 18px;
+  height: 18px;
+}
+
 .lab-section-manager {
   display: grid;
   gap: 12px;
@@ -2784,6 +2824,24 @@ textarea {
   font-weight: 900;
   line-height: 1.2;
   text-transform: uppercase;
+}
+
+.inventory-role-badge.principal {
+  border-color: rgba(14, 165, 233, 0.42);
+  background: rgba(14, 165, 233, 0.12);
+  color: #7dd3fc;
+}
+
+.inventory-role-badge.component {
+  border-color: rgba(243, 189, 34, 0.48);
+  background: rgba(243, 189, 34, 0.14);
+  color: var(--accent-yellow);
+}
+
+.inventory-role-badge.linked {
+  border-color: rgba(121, 183, 53, 0.45);
+  background: rgba(121, 183, 53, 0.12);
+  color: var(--accent);
 }
 
 .inventory-component-list {
