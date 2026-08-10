@@ -2472,6 +2472,18 @@ textarea {
   gap: 12px;
 }
 
+.lab-inline-component-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.lab-inline-component-actions .secondary-button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
 .lab-inline-component-panel h3,
 .lab-inline-component-panel p {
   margin: 0;

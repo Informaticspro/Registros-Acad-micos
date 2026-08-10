@@ -700,7 +700,11 @@ function buildComponenteInput(
   const detalle = readString(data, `${prefix}-detalle`);
   const hasData = Boolean(codigo || marca || modelo || serie || detalle || readString(data, `${prefix}-nombre`));
 
-  if (!hasData) return null;
+  if (!hasData) {
+    throw new Error(
+      `El componente ${getCategoriaComponenteDesdeTipo(tipo).toLowerCase()} esta agregado pero no tiene datos. Complete inventario/serie o quite esa tarjeta.`,
+    );
+  }
   if (!codigo && !serie) {
     throw new Error(`Para agregar ${getCategoriaComponenteDesdeTipo(tipo).toLowerCase()} indique numero de inventario o serie.`);
   }
@@ -838,7 +842,7 @@ export function PaginaLaboratorio() {
 
   function openNuevoEquipoModal() {
     setEditingEquipo(null);
-    setComponentesNuevoEquipo([createComponenteNuevoDraft('monitor')]);
+    setComponentesNuevoEquipo([]);
     setShowEquipoFormModal(true);
   }
 
@@ -1009,7 +1013,7 @@ export function PaginaLaboratorio() {
     const timeout = window.setTimeout(() => {
       setMessage(null);
       setError(null);
-    }, 4500);
+    }, error ? 12000 : 6500);
 
     return () => window.clearTimeout(timeout);
   }, [message, error]);
@@ -3571,9 +3575,20 @@ export function PaginaLaboratorio() {
                               enlazado a esta PC al guardar.
                             </p>
                           </div>
-                          <button className="secondary-button" type="button" onClick={() => addComponenteNuevo('monitor')}>
-                            + Agregar componente
-                          </button>
+                          <div className="lab-inline-component-actions">
+                            <button className="secondary-button" type="button" onClick={() => addComponenteNuevo('monitor')}>
+                              + Monitor
+                            </button>
+                            <button className="secondary-button" type="button" onClick={() => addComponenteNuevo('teclado')}>
+                              + Teclado
+                            </button>
+                            <button className="secondary-button" type="button" onClick={() => addComponenteNuevo('mouse')}>
+                              + Mouse
+                            </button>
+                            <button className="secondary-button" type="button" onClick={() => addComponenteNuevo('otro')}>
+                              + Otro
+                            </button>
+                          </div>
                         </div>
                         {componentesNuevoEquipo.length === 0 ? (
                           <p className="form-hint">No hay componentes agregados. Use el boton + si esta PC tiene accesorios registrados.</p>
