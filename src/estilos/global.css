@@ -2403,6 +2403,48 @@ textarea {
   font-weight: 800;
 }
 
+.lab-component-create-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(243, 189, 34, 0.36);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(243, 189, 34, 0.08), rgba(121, 183, 53, 0.06));
+}
+
+.lab-component-create-heading {
+  display: grid;
+  gap: 2px;
+}
+
+.lab-component-create-heading strong {
+  color: var(--text);
+  font-size: 1.02rem;
+}
+
+.lab-component-create-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.lab-component-create-form input,
+.lab-component-create-form select {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-deep);
+  color: var(--text);
+  padding: 0 10px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.lab-component-create-form .primary-button {
+  width: fit-content;
+}
+
 .danger-soft-button {
   border-color: rgba(239, 68, 68, 0.45);
   color: #fca5a5;

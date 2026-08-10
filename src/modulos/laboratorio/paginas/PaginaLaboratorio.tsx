@@ -1996,6 +1996,87 @@ export function PaginaLaboratorio() {
     }
   }
 
+  async function handleCrearYAsignarComponente(event: FormEvent<HTMLFormElement>, equipoPadre: EquipoLaboratorio) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const tipo = (readString(data, 'nuevoComponenteTipo') || 'monitor') as AsignacionComponenteLaboratorio['tipo'];
+    const codigo = readString(data, 'nuevoComponenteCodigo');
+    const nombre = readString(data, 'nuevoComponenteNombre') || `${getCategoriaComponenteDesdeTipo(tipo)} de ${equipoPadre.nombre}`;
+    const marca = readString(data, 'nuevoComponenteMarca');
+    const modelo = readString(data, 'nuevoComponenteModelo');
+    const serie = readString(data, 'nuevoComponenteSerie');
+    const detalle = readString(data, 'nuevoComponenteDetalle');
+    const input: EquipoLaboratorioInput = {
+      codigo,
+      nombre,
+      categoria: getCategoriaComponenteDesdeTipo(tipo),
+      marcaModelo: [marca, modelo].filter(Boolean).join(' '),
+      serie,
+      ubicacion: equipoPadre.ubicacion,
+      estado: equipoPadre.estado || 'operativo',
+      observaciones: `Componente creado y asignado desde el expediente de ${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}.`,
+    };
+
+    if (!codigo && !serie) {
+      setError('Para crear el componente indique numero de inventario o serie.');
+      return;
+    }
+
+    const duplicate = findDuplicateEquipoIdentity(input, state.equipos);
+    if (duplicate) {
+      setError(buildDuplicateEquipoMessage(duplicate));
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const createdComponente = await createEquipoLaboratorio(input, saveContext);
+      await createAsignacionComponenteLaboratorio(
+        {
+          equipoPadreId: equipoPadre.id,
+          componenteId: createdComponente.id,
+          tipo,
+          fechaAsignacion: new Date().toISOString(),
+          fechaRetiro: null,
+          detalle,
+          responsable: responsableSesion,
+        },
+        saveContext,
+      );
+      await createBitacoraLaboratorio(
+        {
+          fecha: new Date().toISOString(),
+          tipoTrabajo: 'Registro y asignacion de componente',
+          titulo: `Componente nuevo asignado a ${equipoPadre.nombre}`,
+          descripcion: `${createdComponente.codigo || 'S/N'} - ${createdComponente.nombre} fue creado y asignado a ${
+            equipoPadre.codigo || 'S/N'
+          } - ${equipoPadre.nombre}. ${detalle || 'Sin detalle adicional.'}`,
+          responsable: responsableSesion,
+          prioridad: 'media',
+          estado: 'cerrado',
+          clase: 'mantenimiento',
+          equipoId: equipoPadre.id,
+          equipoOrigen: 'Registro desde expediente',
+          equipoDestino: `${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}`,
+          ubicacion: equipoPadre.ubicacion,
+          evidenciaTitulo: '',
+          evidenciaUrl: '',
+        },
+        saveContext,
+      );
+      form.reset();
+      await refresh();
+      setMessage('Componente creado, asignado y registrado en el historial.');
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'No se pudo crear y asignar el componente.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function handleRetirarComponente(asignacion: AsignacionComponenteLaboratorio, equipoPadre: EquipoLaboratorio) {
     const componente = getEquipoById(asignacion.componenteId);
     if (!componente) {
@@ -3223,6 +3304,59 @@ export function PaginaLaboratorio() {
                             <button className="secondary-button" type="submit" disabled={isSaving || componentesDisponibles.length === 0}>
                               <PackageCheck size={16} />
                               Asignar componente
+                            </button>
+                          </form>
+                          <form
+                            className="lab-component-create-form"
+                            onSubmit={(event) => void handleCrearYAsignarComponente(event, selectedEquipoDetalle)}
+                          >
+                            <div className="lab-component-create-heading">
+                              <span className="eyebrow">Nuevo componente</span>
+                              <strong>Crear y asignar aqui mismo</strong>
+                            </div>
+                            <div className="form-grid compact-form-grid">
+                              <label>
+                                Tipo
+                                <select name="nuevoComponenteTipo" required defaultValue="monitor">
+                                  <option value="monitor">Monitor</option>
+                                  <option value="teclado">Teclado</option>
+                                  <option value="mouse">Mouse</option>
+                                  <option value="proyector">Proyector</option>
+                                  <option value="otro">Otro</option>
+                                </select>
+                              </label>
+                              <label>
+                                Nombre
+                                <input name="nuevoComponenteNombre" placeholder={`Ej. Monitor de ${selectedEquipoDetalle.nombre}`} />
+                              </label>
+                            </div>
+                            <div className="form-grid compact-form-grid">
+                              <label>
+                                Numero de inventario
+                                <input name="nuevoComponenteCodigo" placeholder="Ej. 51250" />
+                              </label>
+                              <label>
+                                Serie
+                                <input name="nuevoComponenteSerie" placeholder="Ej. 3CQ329097K" />
+                              </label>
+                            </div>
+                            <div className="form-grid compact-form-grid">
+                              <label>
+                                Marca
+                                <input name="nuevoComponenteMarca" placeholder="Ej. HP, Dell, Logitech" />
+                              </label>
+                              <label>
+                                Modelo
+                                <input name="nuevoComponenteModelo" placeholder="Ej. P204v, K120, M90" />
+                              </label>
+                            </div>
+                            <label>
+                              Detalle
+                              <input name="nuevoComponenteDetalle" placeholder="Ej. Registrado y asignado durante inventario del laboratorio" />
+                            </label>
+                            <button className="primary-button" type="submit" disabled={isSaving}>
+                              <PackageCheck size={16} />
+                              Crear y asignar componente
                             </button>
                           </form>
                         </section>
