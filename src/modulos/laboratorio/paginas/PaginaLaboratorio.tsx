@@ -2903,7 +2903,23 @@ export function PaginaLaboratorio() {
                               const destinos = getEquiposDestinoComponente(selectedEquipoDetalle, asignacion.componenteId);
                               const selectedTarget = componentMoveTargets[asignacion.id] ?? '';
                               return (
-                                <article key={asignacion.id}>
+                                <article
+                                  className={componente ? 'lab-component-card clickable' : 'lab-component-card'}
+                                  key={asignacion.id}
+                                  role={componente ? 'button' : undefined}
+                                  tabIndex={componente ? 0 : undefined}
+                                  title={componente ? 'Abrir expediente del componente' : undefined}
+                                  onClick={() => {
+                                    if (componente) setSelectedEquipoDetalle(componente);
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (!componente) return;
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault();
+                                      setSelectedEquipoDetalle(componente);
+                                    }
+                                  }}
+                                >
                                   <div>
                                     <strong>
                                       {asignacion.tipo.toUpperCase()} | {componente?.nombre ?? 'Componente no encontrado'}
@@ -2915,10 +2931,31 @@ export function PaginaLaboratorio() {
                                   </div>
                                   <span className="status-pill">Activo</span>
                                   <p>{asignacion.detalle || `Asignado el ${formatDateTime(asignacion.fechaAsignacion)}.`}</p>
+                                  {componente ? (
+                                    <div className="lab-component-shortcuts" onClick={(event) => event.stopPropagation()}>
+                                      <button
+                                        className="secondary-button"
+                                        type="button"
+                                        onClick={() => setSelectedEquipoDetalle(componente)}
+                                      >
+                                        <Eye size={16} />
+                                        Ver componente
+                                      </button>
+                                      <button
+                                        className="secondary-button"
+                                        type="button"
+                                        onClick={() => openFichaForEquipo(componente)}
+                                      >
+                                        <ClipboardList size={16} />
+                                        Ficha tecnica
+                                      </button>
+                                    </div>
+                                  ) : null}
                                   <div className="lab-component-actions">
                                     <select
                                       value={selectedTarget}
                                       disabled={isSaving || destinos.length === 0}
+                                      onClick={(event) => event.stopPropagation()}
                                       onChange={(event) =>
                                         setComponentMoveTargets((current) => ({
                                           ...current,
@@ -2937,7 +2974,10 @@ export function PaginaLaboratorio() {
                                       className="secondary-button"
                                       type="button"
                                       disabled={isSaving || !selectedTarget}
-                                      onClick={() => void handleMoverComponente(asignacion, selectedEquipoDetalle, selectedTarget)}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void handleMoverComponente(asignacion, selectedEquipoDetalle, selectedTarget);
+                                      }}
                                     >
                                       Mover
                                     </button>
@@ -2945,7 +2985,10 @@ export function PaginaLaboratorio() {
                                       className="secondary-button danger-soft-button"
                                       type="button"
                                       disabled={isSaving}
-                                      onClick={() => void handleRetirarComponente(asignacion, selectedEquipoDetalle)}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void handleRetirarComponente(asignacion, selectedEquipoDetalle);
+                                      }}
                                     >
                                       Retirar
                                     </button>

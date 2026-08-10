@@ -2294,6 +2294,32 @@ textarea {
   color: var(--muted);
 }
 
+.lab-component-card.clickable {
+  cursor: pointer;
+}
+
+.lab-component-card.clickable:hover {
+  border-color: rgba(132, 204, 22, 0.42);
+  background: color-mix(in srgb, var(--surface-deep) 82%, rgba(132, 204, 22, 0.14));
+}
+
+.lab-component-card.clickable:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 2px;
+}
+
+.lab-component-shortcuts {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lab-component-shortcuts .secondary-button {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
 .lab-component-form {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 150px minmax(220px, 1fr) auto;
@@ -4803,6 +4829,11 @@ textarea {
   }
 
   .lab-component-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-component-shortcuts {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
