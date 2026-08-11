@@ -782,6 +782,7 @@ export function PaginaLaboratorio() {
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [selectedEquipoDetalle, setSelectedEquipoDetalle] = useState<EquipoLaboratorio | null>(null);
+  const [equipoDetalleHistory, setEquipoDetalleHistory] = useState<EquipoLaboratorio[]>([]);
   const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
@@ -1012,7 +1013,7 @@ export function PaginaLaboratorio() {
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
       setSelectedFicha(null);
-      setSelectedEquipoDetalle(null);
+      closeEquipoDetalle();
       closeEquipoFormModal();
       setConfirmacionOperativo(null);
       closeCatalogManager();
@@ -1913,8 +1914,29 @@ export function PaginaLaboratorio() {
     return fechas.sort((first, second) => second.localeCompare(first))[0] ?? null;
   }
 
-  function openFichaForEquipo(equipo: EquipoLaboratorio) {
+  function openEquipoDetalle(equipo: EquipoLaboratorio, keepCurrentInHistory = false) {
+    if (keepCurrentInHistory && selectedEquipoDetalle) {
+      setEquipoDetalleHistory((current) => [...current, selectedEquipoDetalle]);
+    } else {
+      setEquipoDetalleHistory([]);
+    }
+    setSelectedEquipoDetalle(equipo);
+  }
+
+  function closeEquipoDetalle() {
     setSelectedEquipoDetalle(null);
+    setEquipoDetalleHistory([]);
+  }
+
+  function backEquipoDetalle() {
+    const previous = equipoDetalleHistory[equipoDetalleHistory.length - 1];
+    if (!previous) return;
+    setSelectedEquipoDetalle(previous);
+    setEquipoDetalleHistory((current) => current.slice(0, -1));
+  }
+
+  function openFichaForEquipo(equipo: EquipoLaboratorio) {
+    closeEquipoDetalle();
     setEditingFicha(null);
     setSelectedEquipoFichaId(equipo.id);
     setActiveTab('fichas');
@@ -2989,11 +3011,11 @@ export function PaginaLaboratorio() {
                           role="button"
                           tabIndex={0}
                           title="Abrir expediente tecnico del equipo"
-                          onClick={() => setSelectedEquipoDetalle(item)}
+                          onClick={() => openEquipoDetalle(item)}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter' || event.key === ' ') {
                               event.preventDefault();
-                              setSelectedEquipoDetalle(item);
+                              openEquipoDetalle(item);
                             }
                           }}
                         >
@@ -3049,7 +3071,7 @@ export function PaginaLaboratorio() {
                               title="Ver expediente tecnico"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setSelectedEquipoDetalle(item);
+                                openEquipoDetalle(item);
                               }}
                             >
                               <ClipboardList size={16} />
@@ -3075,7 +3097,7 @@ export function PaginaLaboratorio() {
             </section>
 
             {selectedEquipoDetalle ? (
-              <div className="modal-backdrop" role="presentation" onClick={() => setSelectedEquipoDetalle(null)}>
+              <div className="modal-backdrop" role="presentation" onClick={closeEquipoDetalle}>
                 <article
                   className="modal-panel lab-equipment-modal lab-equipment-detail-modal"
                   role="dialog"
@@ -3101,7 +3123,7 @@ export function PaginaLaboratorio() {
                               {estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado)}
                             </p>
                           </div>
-                          <button className="icon-button" type="button" aria-label="Cerrar detalle" onClick={() => setSelectedEquipoDetalle(null)}>
+                          <button className="icon-button" type="button" aria-label="Cerrar detalle" onClick={closeEquipoDetalle}>
                             <XCircle size={18} />
                           </button>
                         </div>
@@ -3114,6 +3136,12 @@ export function PaginaLaboratorio() {
                         ) : null}
 
                         <div className="lab-equipment-detail-actions">
+                          {equipoDetalleHistory.length > 0 ? (
+                            <button className="secondary-button" type="button" onClick={backEquipoDetalle}>
+                              <ArrowLeft size={18} />
+                              Volver al equipo anterior
+                            </button>
+                          ) : null}
                           <button
                             className="secondary-button"
                             type="button"
@@ -3177,13 +3205,13 @@ export function PaginaLaboratorio() {
                                   tabIndex={componente ? 0 : undefined}
                                   title={componente ? 'Abrir expediente del componente' : undefined}
                                   onClick={() => {
-                                    if (componente) setSelectedEquipoDetalle(componente);
+                                    if (componente) openEquipoDetalle(componente, true);
                                   }}
                                   onKeyDown={(event) => {
                                     if (!componente) return;
                                     if (event.key === 'Enter' || event.key === ' ') {
                                       event.preventDefault();
-                                      setSelectedEquipoDetalle(componente);
+                                      openEquipoDetalle(componente, true);
                                     }
                                   }}
                                 >
@@ -3205,7 +3233,7 @@ export function PaginaLaboratorio() {
                                       <button
                                         className="secondary-button"
                                         type="button"
-                                        onClick={() => setSelectedEquipoDetalle(componente)}
+                                        onClick={() => openEquipoDetalle(componente, true)}
                                       >
                                         <Eye size={16} />
                                         Ver componente
@@ -3369,7 +3397,7 @@ export function PaginaLaboratorio() {
                                 key={ficha.id}
                                 type="button"
                                 onClick={() => {
-                                  setSelectedEquipoDetalle(null);
+                                  closeEquipoDetalle();
                                   setActiveTab('fichas');
                                   setSelectedFicha(ficha);
                                 }}
