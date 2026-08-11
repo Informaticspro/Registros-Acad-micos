@@ -3188,12 +3188,14 @@ export function PaginaLaboratorio() {
                                   }}
                                 >
                                   <div>
-                                    <strong>
-                                      {asignacion.tipo.toUpperCase()} | {componente?.nombre ?? 'Componente no encontrado'}
+                                    <strong className="lab-component-title">
+                                      <span>{asignacion.tipo.toUpperCase()}</span>
+                                      <b>{componente?.nombre ?? 'Componente no encontrado'}</b>
                                     </strong>
-                                    <span>
-                                      {componente?.codigo || 'S/N'} | {componente?.serie || 'S/N'} |{' '}
-                                      {componente?.ubicacion || selectedEquipoDetalle.ubicacion}
+                                    <span className="lab-component-meta">
+                                      <i>Inventario: {componente?.codigo || 'S/N'}</i>
+                                      <i>Serie: {componente?.serie || 'S/N'}</i>
+                                      <i>{componente?.ubicacion || selectedEquipoDetalle.ubicacion}</i>
                                     </span>
                                   </div>
                                   <span className="status-pill">Activo</span>
