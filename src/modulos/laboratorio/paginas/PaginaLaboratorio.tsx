@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -804,6 +804,7 @@ export function PaginaLaboratorio() {
   const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const inventoryWorkspaceRef = useRef<HTMLElement | null>(null);
 
   const saveContext = useMemo(
     () => ({
@@ -1935,6 +1936,13 @@ export function PaginaLaboratorio() {
     setEquipoDetalleHistory((current) => current.slice(0, -1));
   }
 
+  function handleInventoryLocationFilter(ubicacion: string) {
+    setSelectedInventoryLocation(ubicacion);
+    window.requestAnimationFrame(() => {
+      inventoryWorkspaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   function openFichaForEquipo(equipo: EquipoLaboratorio) {
     closeEquipoDetalle();
     setEditingFicha(null);
@@ -2919,7 +2927,7 @@ export function PaginaLaboratorio() {
               </div>
             </section>
 
-            <section className="lab-inventory-workspace">
+            <section className="lab-inventory-workspace" ref={inventoryWorkspaceRef}>
               <div className="lab-inventory-sheet-title">
                 <strong>Universidad Autonoma de Chiriqui</strong>
                 <span>Facultad de Economia</span>
@@ -2946,7 +2954,7 @@ export function PaginaLaboratorio() {
                     className={selectedInventoryLocation === ubicacion ? 'active' : ''}
                     key={ubicacion}
                     type="button"
-                    onClick={() => setSelectedInventoryLocation(ubicacion)}
+                    onClick={() => handleInventoryLocationFilter(ubicacion)}
                   >
                     {ubicacion}
                     {estadosAlertaPorUbicacion[ubicacion]?.length ? (

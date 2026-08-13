@@ -2206,6 +2206,10 @@ textarea {
   background: var(--surface-deep);
 }
 
+.lab-inventory-workspace {
+  scroll-margin-top: 86px;
+}
+
 .lab-inventory-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
