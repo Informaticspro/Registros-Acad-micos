@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -78,695 +78,65 @@ import {
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { supabase } from '@/infraestructura/supabase';
 import { formatDateTime } from '@/utilidades/formato';
-
-type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'descartes' | 'prestamos' | 'informes';
-type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
-type TemaVisual = 'dark' | 'light';
-type ConfirmacionOperativoPendiente = {
-  input: BitacoraLaboratorioInput;
-  equipoAtendido: EquipoLaboratorio;
-  nextEquipoEstado: EstadoEquipoLaboratorio;
-  form: HTMLFormElement;
-};
-
-const emptyState: LaboratorioState = {
-  fichas: [],
-  equipos: [],
-  secciones: [],
-  categoriasEquipo: [],
-  estadosEquipo: [],
-  bitacoras: [],
-  prestamos: [],
-  descartes: [],
-  asignacionesComponentes: [],
-};
-
-const tabLabels: Record<LabTab, string> = {
-  inicio: 'Inicio',
-  fichas: 'Ficha tecnica',
-  bitacoras: 'Mantenimientos e incidencias',
-  inventario: 'Inventario',
-  descartes: 'Descartes',
-  prestamos: 'Prestamos',
-  informes: 'Informes',
-};
-
-const labTabOrder: LabTab[] = ['inicio', 'inventario', 'fichas', 'bitacoras', 'descartes', 'prestamos', 'informes'];
-
-const aplicacionesBase = [
-  'Windows',
-  'Linux',
-  'Office',
-  'LibreOffice',
-  'Visual Basic',
-  'Navegador',
-  'Antivirus',
-  'WinRAR',
-  'Adobe Reader',
-  'SPSS',
-] as const;
-
-const caracteristicasBase = ['Tarjeta madre', 'Memoria', 'Procesador', 'Disco duro', 'Sistema operativo'] as const;
-
-const inventarioBase = ['Torre', 'Monitor', 'Teclado', 'Mouse', 'UPS', 'Impresora'] as const;
-const filtroComponentesAsignados = 'Componentes asignados';
-
-const estadoEquipoLabels: Record<string, string> = {
-  operativo: 'Operativo',
-  mantenimiento: 'Mantenimiento',
-  en_reparacion: 'En reparacion',
-  prestado: 'Prestado',
-  baja: 'Baja',
-  pendiente_revision: 'Pendiente de revision',
-};
-
-const estadoTrabajoLabels: Record<EstadoTrabajoLaboratorio, string> = {
-  pendiente: 'Pendiente',
-  en_proceso: 'En proceso',
-  resuelto: 'Resuelto',
-  cerrado: 'Cerrado',
-};
-
-const prioridadLabels: Record<PrioridadLaboratorio, string> = {
-  baja: 'Baja',
-  media: 'Media',
-  alta: 'Alta',
-  critica: 'Critica',
-};
-
-function localDateTimeValue(value = new Date()) {
-  const offset = value.getTimezoneOffset();
-  return new Date(value.getTime() - offset * 60_000).toISOString().slice(0, 16);
-}
-
-function getInitialTheme(): TemaVisual {
-  try {
-    return localStorage.getItem('acad-theme') === 'light' ? 'light' : 'dark';
-  } catch {
-    return 'dark';
-  }
-}
-
-function readString(data: FormData, key: string) {
-  return String(data.get(key) ?? '').trim();
-}
-
-function normalizeExcelKey(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-}
-
-function normalizeLooseText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ');
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function containsExactLooseText(source: string, term: string) {
-  const normalizedSource = normalizeLooseText(source);
-  const normalizedTerm = normalizeLooseText(term);
-  if (!normalizedSource || !normalizedTerm) return false;
-  if (normalizedSource === normalizedTerm) return true;
-  return new RegExp(`(^|\\s)${escapeRegExp(normalizedTerm)}(\\s|$)`).test(normalizedSource);
-}
-
-function getTechnicalIdentifiers(value: string) {
-  return Array.from(value.toLowerCase().matchAll(/[a-z0-9]+/g), (match) => match[0]).filter(
-    (item) => item.length >= 3 && !['sin', 'sna', 'nan'].includes(item),
-  );
-}
-
-function getEstadoEquipoLabel(value: string) {
-  return estadoEquipoLabels[value] ?? value;
-}
-
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
-}
-
-function getEstadoEquipoClass(value: string) {
-  const normalized = value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_|_$/g, '');
-  return normalized || 'personalizado';
-}
-
-function shouldRequestIssueDetailForEstado(estado: string) {
-  if (estado === 'operativo' || estado === 'baja' || estado === 'prestado') return false;
-  const normalized = normalizeExcelKey(estado);
-  return (
-    normalized.includes('pend') ||
-    normalized.includes('revision') ||
-    normalized.includes('repar') ||
-    normalized.includes('manten') ||
-    normalized.includes('incid')
-  );
-}
-
-function getEstadoChangeWorkType(estado: string) {
-  if (estado === 'operativo') return 'Cierre de mantenimiento';
-  if (shouldRequestIssueDetailForEstado(estado)) return 'Incidencia';
-  return 'Cambio de estado';
-}
-
-function getEstadoChangeWorkStatus(estado: string): EstadoTrabajoLaboratorio {
-  if (estado === 'operativo' || estado === 'baja') return 'cerrado';
-  if (estado === 'pendiente_revision') return 'pendiente';
-  return 'en_proceso';
-}
-
-function readExcelCell(row: Record<string, unknown>, aliases: string[]) {
-  const normalizedAliases = aliases.map(normalizeExcelKey);
-  const entry = Object.entries(row).find(([key]) => normalizedAliases.includes(normalizeExcelKey(key)));
-  return String(entry?.[1] ?? '').trim();
-}
-
-function normalizeEstadoEquipo(value: string): EstadoEquipoLaboratorio {
-  const normalized = normalizeExcelKey(value);
-
-  if (normalized.includes('repar')) return 'en_reparacion';
-  if (normalized.includes('prest')) return 'prestado';
-  if (normalized.includes('baja') || normalized.includes('descart')) return 'baja';
-  if (normalized.includes('pend') || normalized.includes('revision')) return 'pendiente_revision';
-  return 'operativo';
-}
-
-function splitMarcaModelo(value: string) {
-  const normalized = value.trim();
-  if (!normalized) return { marca: 'S/N', modelo: 'S/N' };
-
-  const separatorMatch = normalized.match(/^(.+?)(?:\s+[-/|]\s+|\s{2,})(.+)$/);
-  if (separatorMatch) {
-    return { marca: separatorMatch[1].trim() || 'S/N', modelo: separatorMatch[2].trim() || 'S/N' };
-  }
-
-  const parts = normalized.split(/\s+/);
-  if (parts.length === 1) return { marca: parts[0], modelo: 'S/N' };
-
-  return { marca: parts[0], modelo: parts.slice(1).join(' ') };
-}
-
-function getNaturalInventorySortKey(item: EquipoLaboratorio) {
-  const source = [item.nombre, item.codigo, item.serie].filter(Boolean).join(' ');
-  const normalized = source
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-  const numberMatch = normalized.match(/\b(?:pc|est|estacion|equipo|lab)\s*[-#:]?\s*(\d+)\b/) ?? normalized.match(/\b(\d+)\b/);
-  const number = numberMatch ? Number(numberMatch[1]) : Number.MAX_SAFE_INTEGER;
-  const prefix = normalized.match(/[a-z]+/)?.[0] ?? 'zz';
-
-  return { prefix, number, label: normalized };
-}
-
-function getInventoryStatusPriorityValue(estado: string) {
-  const priority: Record<string, number> = {
-    en_reparacion: 0,
-    pendiente_revision: 1,
-    mantenimiento: 2,
-    prestado: 3,
-    operativo: 5,
-    baja: 6,
-  };
-
-  return priority[estado] ?? 4;
-}
-
-function getInventoryStatusPriority(item: EquipoLaboratorio) {
-  return getInventoryStatusPriorityValue(item.estado);
-}
-
-function isRepairInventoryFilter(value: string) {
-  return normalizeExcelKey(value).includes('repar');
-}
-
-function isAssignedComponentsInventoryFilter(value: string) {
-  return value === filtroComponentesAsignados;
-}
-
-function matchesInventoryLocationFilter(item: EquipoLaboratorio, ubicacion: string) {
-  if (ubicacion === 'Todas') return true;
-  if (isAssignedComponentsInventoryFilter(ubicacion)) return true;
-  if (isRepairInventoryFilter(ubicacion)) {
-    return item.ubicacion === ubicacion || normalizeExcelKey(item.estado).includes('repar');
-  }
-  return item.ubicacion === ubicacion;
-}
-
-function matchesInventorySearch(item: EquipoLaboratorio, search: string) {
-  const query = normalizeExcelKey(search);
-  if (!query) return true;
-
-  const haystack = normalizeExcelKey(
-    [
-      item.codigo,
-      item.nombre,
-      item.categoria,
-      item.marcaModelo,
-      item.serie,
-      item.ubicacion,
-      item.estado,
-      item.observaciones,
-    ].join(' '),
-  );
-
-  return haystack.includes(query);
-}
-
-function appendUniqueInventoryValue(baseValue: string, componentValues: string[]) {
-  const values = [baseValue || 'S/N'];
-  const seen = new Set(values.map(normalizeExcelKey).filter(Boolean));
-
-  componentValues.forEach((value) => {
-    const cleanValue = value.trim();
-    const normalized = normalizeExcelKey(cleanValue);
-    if (!cleanValue || !normalized || normalized === 'sn') return;
-    const alreadyInsideBase = values.some((current) => normalizeExcelKey(current).includes(normalized));
-    if (seen.has(normalized) || alreadyInsideBase) return;
-    values.push(cleanValue);
-    seen.add(normalized);
-  });
-
-  return values.join(' / ');
-}
-
-function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
-  const tipo = input.tipoTrabajo
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-
-  if (input.estado === 'resuelto' || input.estado === 'cerrado') return 'operativo';
-  if (tipo.includes('preventivo')) return 'mantenimiento';
-  if (
-    tipo.includes('incidencia') ||
-    tipo.includes('reparacion') ||
-    tipo.includes('correctivo') ||
-    tipo.includes('cambio de pieza') ||
-    tipo.includes('diagnostico')
-  ) {
-    return 'en_reparacion';
-  }
-  if (tipo.includes('instalacion') || tipo.includes('soporte')) return 'mantenimiento';
-
-  return null;
-}
-
-function sortEquiposInventario(items: EquipoLaboratorio[], prioritizeStatus = false) {
-  return [...items].sort((first, second) => {
-    if (prioritizeStatus) {
-      const byStatus = getInventoryStatusPriority(first) - getInventoryStatusPriority(second);
-      if (byStatus !== 0) return byStatus;
-    }
-
-    const firstKey = getNaturalInventorySortKey(first);
-    const secondKey = getNaturalInventorySortKey(second);
-    const byPrefix = firstKey.prefix.localeCompare(secondKey.prefix, 'es', { numeric: true });
-    if (byPrefix !== 0) return byPrefix;
-    if (firstKey.number !== secondKey.number) return firstKey.number - secondKey.number;
-    return firstKey.label.localeCompare(secondKey.label, 'es', { numeric: true });
-  });
-}
-
-function parseEquipoExcelRow(row: Record<string, unknown>, index: number): EquipoLaboratorioInput {
-  const codigo =
-    readExcelCell(row, ['codigo', 'codigo interno', 'inventario', 'n inventario', 'numero inventario', 'placa', 'asset', 'id']) ||
-    `IMPORT-${index + 1}`;
-  const nombre =
-    readExcelCell(row, ['nombre', 'equipo', 'dispositivo', 'descripcion', 'pc', 'computadora']) || `Equipo ${codigo}`;
-  const marca = readExcelCell(row, ['marca modelo', 'marca/modelo', 'marca', 'brand model']);
-  const modelo = readExcelCell(row, ['modelo']);
-  const marcaModelo = marca && modelo && !marca.toLowerCase().includes(modelo.toLowerCase()) ? `${marca} ${modelo}` : marca;
-
-  return {
-    codigo,
-    nombre,
-    categoria: readExcelCell(row, ['categoria', 'tipo', 'clase']) || 'Computadora',
-    marcaModelo,
-    serie: readExcelCell(row, ['serie', 'serial', 'numero serie', 's/n', 'sn']),
-    ubicacion: readExcelCell(row, ['ubicacion', 'lugar', 'area', 'laboratorio', 'salon']) || 'Sin ubicacion',
-    estado: normalizeEstadoEquipo(readExcelCell(row, ['estado', 'status', 'condicion'])),
-    observaciones: readExcelCell(row, ['observaciones', 'observacion', 'notas', 'nota', 'detalle']),
-  };
-}
-
-function shouldImportEquipoRow(input: EquipoLaboratorioInput) {
-  const normalizedName = normalizeExcelKey(input.nombre);
-  const normalizedText = normalizeExcelKey(
-    [input.codigo, input.nombre, input.marcaModelo, input.observaciones].join(' '),
-  );
-  const isNoteRow =
-    normalizedName.startsWith('nota') ||
-    normalizedText.includes('debidalaincorporaciondenuevosequipos') ||
-    normalizedText.includes('manteneruncontroladecuado');
-  const hasLongNoteAsModel = input.marcaModelo.length > 70;
-  const looksLikeNote =
-    normalizedText.includes('nota') &&
-    (normalizedText.includes('ajustesrealizados') ||
-      normalizedText.includes('ordenfisico') ||
-      normalizedText.includes('numeracionsecuencial'));
-  const isGenericEquipmentName = normalizedName === 'computadora' || normalizedName.startsWith('equipo');
-
-  return Boolean(input.codigo && input.nombre) && !isNoteRow && !looksLikeNote && !(isGenericEquipmentName && hasLongNoteAsModel);
-}
-
-type CampoUnicoEquipo = 'codigo' | 'serie';
-type ComponenteNuevoDraft = {
-  id: string;
-  tipo: AsignacionComponenteLaboratorio['tipo'];
-};
-
-function normalizeUniqueEquipoValue(value: string, campo: CampoUnicoEquipo) {
-  const normalized = normalizeExcelKey(value);
-  const genericInventoryValues = new Set(['sn', 'na', 'noaplica', 'sininventario', 'sincodigo']);
-  const genericSerialValues = new Set(['sn', 'na', 'noaplica', 'sinserie', 'sinserial', 'sindato', 'sininformacion']);
-
-  if (!normalized) return '';
-  if (campo === 'codigo' && genericInventoryValues.has(normalized)) return '';
-  if (campo === 'serie' && genericSerialValues.has(normalized)) return '';
-  return normalized;
-}
-
-function findDuplicateEquipoIdentity(
-  input: EquipoLaboratorioInput,
-  equipos: EquipoLaboratorio[],
-  currentId?: string,
-) {
-  const checks: Array<{ campo: CampoUnicoEquipo; valor: string; etiqueta: string }> = [
-    { campo: 'serie', valor: input.serie, etiqueta: 'numero de serie' },
-  ];
-
-  for (const check of checks) {
-    const key = normalizeUniqueEquipoValue(check.valor, check.campo);
-    if (!key) continue;
-
-    const duplicate = equipos.find((equipo) => {
-      if (equipo.id === currentId) return false;
-      const value = check.campo === 'codigo' ? equipo.codigo : equipo.serie;
-      return normalizeUniqueEquipoValue(value, check.campo) === key;
-    });
-
-    if (duplicate) {
-      return { ...check, duplicate };
-    }
-  }
-
-  return null;
-}
-
-function buildDuplicateEquipoMessage(duplicate: NonNullable<ReturnType<typeof findDuplicateEquipoIdentity>>) {
-  return `Ya existe un equipo con ese ${duplicate.etiqueta}: ${duplicate.duplicate.codigo} - ${duplicate.duplicate.nombre}.`;
-}
-
-function filterUniqueEquipoInputsForImport(inputs: EquipoLaboratorioInput[], equipos: EquipoLaboratorio[]) {
-  const existingBySerie = new Map(
-    equipos
-      .map((equipo) => [normalizeUniqueEquipoValue(equipo.serie, 'serie'), equipo] as const)
-      .filter(([key]) => Boolean(key)),
-  );
-  const seenSerie = new Set<string>();
-  let ignoredDuplicates = 0;
-
-  const uniqueInputs = inputs.filter((input) => {
-    const serieKey = normalizeUniqueEquipoValue(input.serie, 'serie');
-    const existingBySameSerie = serieKey ? existingBySerie.get(serieKey) : undefined;
-
-    if ((serieKey && seenSerie.has(serieKey)) || existingBySameSerie) {
-      ignoredDuplicates += 1;
-      return false;
-    }
-
-    if (serieKey) seenSerie.add(serieKey);
-    return true;
-  });
-
-  return { uniqueInputs, ignoredDuplicates };
-}
-
-function stringifyExcelValue(value: unknown) {
-  if (value instanceof Date) return value.toISOString();
-  return String(value ?? '').trim();
-}
-
-function formatImportedExcelDate(value: unknown) {
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === 'number') {
-    const epoch = Date.UTC(1899, 11, 30);
-    return new Date(epoch + value * 24 * 60 * 60 * 1000).toISOString();
-  }
-
-  const raw = stringifyExcelValue(value);
-  if (!raw) return new Date().toISOString();
-  const parsed = new Date(raw);
-  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
-}
-
-function parseDescartesExcelRows(rows: unknown[][], fileName: string, responsable: string) {
-  const headerIndex = rows.findIndex((row) => {
-    const keys = row.map((cell) => normalizeExcelKey(stringifyExcelValue(cell)));
-    return keys.includes('inventario') && keys.includes('equipo') && keys.includes('serie');
-  });
-
-  if (headerIndex < 0) {
-    throw new Error('No se encontro la fila de encabezados del descarte. Debe incluir Inventario, Equipo y Serie.');
-  }
-
-  const header = rows[headerIndex].map((cell) => normalizeExcelKey(stringifyExcelValue(cell)));
-  const columnIndex = (aliases: string[]) => header.findIndex((key) => aliases.map(normalizeExcelKey).includes(key));
-  const readColumn = (row: unknown[], aliases: string[]) => {
-    const index = columnIndex(aliases);
-    return index >= 0 ? stringifyExcelValue(row[index]) : '';
-  };
-  const sheetDate = rows
-    .slice(0, headerIndex)
-    .flat()
-    .find((cell) => cell instanceof Date || typeof cell === 'number' || /\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(stringifyExcelValue(cell)));
-  const fecha = formatImportedExcelDate(sheetDate);
-
-  return rows
-    .slice(headerIndex + 1)
-    .map((row) => ({
-      fecha,
-      equipoId: '',
-      inventario: readColumn(row, ['inventario', 'numero inventario', 'n inventario']),
-      equipo: readColumn(row, ['equipo', 'dispositivo', 'tipo']),
-      marca: readColumn(row, ['marca']),
-      modelo: readColumn(row, ['modelo']),
-      serie: readColumn(row, ['serie', 'serial']),
-      detalle: readColumn(row, ['detalle', 'observacion', 'observaciones']) || `Importado desde ${fileName}`,
-      ubicacion: readColumn(row, ['ubicacion', 'ubicación', 'lugar']) || 'Deposito',
-      responsable,
-      evidenciaTitulo: `Excel importado: ${fileName}`,
-      evidenciaUrl: '',
-    }))
-    .filter((item) => item.inventario || item.equipo || item.serie || item.detalle);
-}
-
-function downloadTextFile(content: string, fileName: string, type = 'text/plain;charset=utf-8') {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function buildBitacoraInput(form: HTMLFormElement): BitacoraLaboratorioInput {
-  const data = new FormData(form);
-  const equipoId = readString(data, 'equipoId');
-  const equipoLabel = readString(data, 'equipoLabel');
-  const tipoTrabajo = readString(data, 'tipoTrabajo');
-  const clase = tipoTrabajo === 'Incidencia' ? 'incidencia' : 'mantenimiento';
-  return {
-    fecha: new Date(readString(data, 'fecha')).toISOString(),
-    tipoTrabajo,
-    titulo: readString(data, 'titulo'),
-    descripcion: readString(data, 'descripcion'),
-    responsable: readString(data, 'responsable'),
-    prioridad: readString(data, 'prioridad') as PrioridadLaboratorio,
-    estado: readString(data, 'estado') as EstadoTrabajoLaboratorio,
-    clase,
-    equipoId,
-    equipoOrigen: readString(data, 'equipoOrigenInventario') || readString(data, 'equipoOrigen'),
-    equipoDestino: equipoLabel || readString(data, 'equipoDestino'),
-    ubicacion: readString(data, 'ubicacion'),
-    evidenciaTitulo: readString(data, 'evidenciaTitulo'),
-    evidenciaUrl: readString(data, 'evidenciaUrl'),
-  };
-}
-
-function buildFichaTecnicaInput(form: HTMLFormElement): FichaTecnicaLaboratorioInput {
-  const data = new FormData(form);
-
-  return {
-    fecha: new Date(readString(data, 'fecha')).toISOString(),
-    pc: readString(data, 'pc'),
-    direccionIp: readString(data, 'direccionIp'),
-    ubicacion: readString(data, 'ubicacion'),
-    responsable: readString(data, 'responsable'),
-    usuarioAsignado: readString(data, 'usuarioAsignado'),
-    referenciaAcceso: readString(data, 'referenciaAcceso'),
-    aplicaciones: aplicacionesBase.map((nombre) => ({
-      nombre,
-      instalada: data.get(`app-${nombre}`) === 'on',
-      observacion: readString(data, `appObs-${nombre}`),
-    })),
-    caracteristicas: caracteristicasBase.map((nombre) => ({
-      nombre,
-      valor: readString(data, `caracteristica-${nombre}`),
-    })),
-    inventario: inventarioBase.map((equipo) => ({
-      equipo,
-      numero: readString(data, `inventario-${equipo}`),
-    })),
-    acciones: Array.from({ length: 6 }, (_, index) => ({
-      fecha: readString(data, `accionFecha-${index}`),
-      accion: readString(data, `accion-${index}`),
-      observacion: readString(data, `accionObs-${index}`),
-      responsable: readString(data, `accionResponsable-${index}`),
-    })).filter((accion) => accion.fecha || accion.accion || accion.observacion || accion.responsable),
-    observacionGeneral: readString(data, 'observacionGeneral'),
-  };
-}
-
-function buildEquipoInput(form: HTMLFormElement): EquipoLaboratorioInput {
-  const data = new FormData(form);
-  const marca = readString(data, 'marca');
-  const modelo = readString(data, 'modelo');
-  return {
-    codigo: readString(data, 'codigo'),
-    nombre: readString(data, 'nombre'),
-    categoria: readString(data, 'categoria'),
-    marcaModelo: [marca, modelo].filter(Boolean).join(' '),
-    serie: readString(data, 'serie'),
-    ubicacion: readString(data, 'ubicacion'),
-    estado: readString(data, 'estado') as EstadoEquipoLaboratorio,
-    observaciones: readString(data, 'observaciones'),
-  };
-}
-
-function getCategoriaComponenteDesdeTipo(tipo: AsignacionComponenteLaboratorio['tipo']) {
-  const labels: Record<AsignacionComponenteLaboratorio['tipo'], string> = {
-    cpu: 'Computadora',
-    monitor: 'Monitor',
-    teclado: 'Teclado',
-    mouse: 'Mouse',
-    proyector: 'Proyector',
-    otro: 'Accesorio',
-  };
-  return labels[tipo] ?? 'Accesorio';
-}
-
-function buildComponenteInput(
-  data: FormData,
-  equipoPadre: EquipoLaboratorioInput,
-  id: string,
-  tipoFallback: AsignacionComponenteLaboratorio['tipo'],
-) {
-  const prefix = `component-${id}`;
-  const tipo = (readString(data, `${prefix}-tipo`) || tipoFallback || 'monitor') as AsignacionComponenteLaboratorio['tipo'];
-  const codigo = readString(data, `${prefix}-codigo`);
-  const nombre = readString(data, `${prefix}-nombre`) || `${getCategoriaComponenteDesdeTipo(tipo)} de ${equipoPadre.nombre}`;
-  const marca = readString(data, `${prefix}-marca`);
-  const modelo = readString(data, `${prefix}-modelo`);
-  const serie = readString(data, `${prefix}-serie`);
-  const detalle = readString(data, `${prefix}-detalle`);
-  const hasData = Boolean(codigo || marca || modelo || serie || detalle || readString(data, `${prefix}-nombre`));
-
-  if (!hasData) {
-    throw new Error(
-      `El componente ${getCategoriaComponenteDesdeTipo(tipo).toLowerCase()} esta agregado pero no tiene datos. Complete inventario/serie o quite esa tarjeta.`,
-    );
-  }
-  if (!codigo && !serie) {
-    throw new Error(`Para agregar ${getCategoriaComponenteDesdeTipo(tipo).toLowerCase()} indique numero de inventario o serie.`);
-  }
-
-  return {
-    asignacionTipo: tipo,
-    detalle: detalle || `${getCategoriaComponenteDesdeTipo(tipo)} registrado junto con ${equipoPadre.nombre}.`,
-    equipo: {
-      codigo,
-      nombre,
-      categoria: getCategoriaComponenteDesdeTipo(tipo),
-      marcaModelo: [marca, modelo].filter(Boolean).join(' '),
-      serie,
-      ubicacion: equipoPadre.ubicacion,
-      estado: equipoPadre.estado || 'operativo',
-      observaciones: `Componente registrado inicialmente para ${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}.`,
-    } satisfies EquipoLaboratorioInput,
-  };
-}
-
-function buildComponentesInicialesInput(
-  form: HTMLFormElement,
-  equipoPadre: EquipoLaboratorioInput,
-  drafts: ComponenteNuevoDraft[],
-) {
-  const data = new FormData(form);
-  return drafts
-    .map((draft) => buildComponenteInput(data, equipoPadre, draft.id, draft.tipo))
-    .filter((item): item is NonNullable<ReturnType<typeof buildComponenteInput>> => Boolean(item));
-}
-
-function buildDescarteInput(form: HTMLFormElement, responsableSesion: string) {
-  const data = new FormData(form);
-  const fecha = readString(data, 'fecha');
-  return {
-    fecha: fecha ? new Date(`${fecha}T12:00:00`).toISOString() : new Date().toISOString(),
-    equipoId: readString(data, 'equipoId'),
-    inventario: readString(data, 'inventario'),
-    equipo: readString(data, 'equipo'),
-    marca: readString(data, 'marca'),
-    modelo: readString(data, 'modelo'),
-    serie: readString(data, 'serie'),
-    detalle: readString(data, 'detalle'),
-    ubicacion: readString(data, 'ubicacion'),
-    responsable: readString(data, 'responsable') || responsableSesion,
-    evidenciaTitulo: readString(data, 'evidenciaTitulo'),
-    evidenciaUrl: readString(data, 'evidenciaUrl'),
-  };
-}
-
-function buildSeccionInput(form: HTMLFormElement) {
-  const data = new FormData(form);
-  return {
-    nombre: readString(data, 'nombre'),
-    descripcion: readString(data, 'descripcion'),
-  };
-}
-
-function buildPrestamoInput(form: HTMLFormElement): PrestamoLaboratorioInput {
-  const data = new FormData(form);
-  const fechaDevolucion = readString(data, 'fechaDevolucion');
-
-  return {
-    equipo: readString(data, 'equipo'),
-    entregadoA: readString(data, 'entregadoA'),
-    tipoBeneficiario: readString(data, 'tipoBeneficiario') as PrestamoLaboratorioInput['tipoBeneficiario'],
-    documento: readString(data, 'documento'),
-    responsableEntrega: readString(data, 'responsableEntrega'),
-    fechaPrestamo: new Date(readString(data, 'fechaPrestamo')).toISOString(),
-    fechaDevolucion: fechaDevolucion ? new Date(fechaDevolucion).toISOString() : null,
-    estado: readString(data, 'estado') as PrestamoLaboratorioInput['estado'],
-    observaciones: readString(data, 'observaciones'),
-  };
-}
+import {
+  aplicacionesBase,
+  caracteristicasBase,
+  emptyState,
+  estadoEquipoLabels,
+  estadoTrabajoLabels,
+  filtroComponentesAsignados,
+  inventarioBase,
+  labTabOrder,
+  prioridadLabels,
+  tabLabels,
+} from '@/modulos/laboratorio/constantes/laboratorio.constantes';
+import {
+  appendUniqueInventoryValue,
+  buildBitacoraInput,
+  buildComponentesInicialesInput,
+  buildDescarteInput,
+  buildDuplicateEquipoMessage,
+  buildEquipoInput,
+  buildFichaTecnicaInput,
+  buildPrestamoInput,
+  buildSeccionInput,
+  containsExactLooseText,
+  downloadTextFile,
+  filterUniqueEquipoInputsForImport,
+  findDuplicateEquipoIdentity,
+  getCategoriaComponenteDesdeTipo,
+  getEstadoChangeWorkStatus,
+  getEstadoChangeWorkType,
+  getEstadoEquipoClass,
+  getEstadoEquipoLabel,
+  getInitialTheme,
+  getInventoryStatusPriorityValue,
+  getTechnicalIdentifiers,
+  isAssignedComponentsInventoryFilter,
+  isRepairInventoryFilter,
+  isUuid,
+  localDateTimeValue,
+  matchesInventoryLocationFilter,
+  matchesInventorySearch,
+  normalizeExcelKey,
+  normalizeLooseText,
+  normalizeUniqueEquipoValue,
+  parseDescartesExcelRows,
+  parseEquipoExcelRow,
+  readString,
+  resolveInventoryStatusFromBitacora,
+  shouldImportEquipoRow,
+  shouldRequestIssueDetailForEstado,
+  sortEquiposInventario,
+  splitMarcaModelo,
+  type ComponenteNuevoDraft,
+} from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
+import {
+  type CatalogManagerType,
+  type ConfirmacionOperativoPendiente,
+  type LabTab,
+  type TemaVisual,
+} from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
 
 export function PaginaLaboratorio() {
   const navigate = useNavigate();
@@ -2727,7 +2097,7 @@ export function PaginaLaboratorio() {
                   <select name="tipoTrabajo" defaultValue={editingBitacora?.tipoTrabajo ?? 'Reparacion'} required>
                     <option value="Mantenimiento preventivo">Mantenimiento preventivo</option>
                     <option value="Mantenimiento correctivo">Mantenimiento correctivo</option>
-                    <option value="Incidencia">Daño o incidencia</option>
+                    <option value="Incidencia">DaÃ±o o incidencia</option>
                     <option>Reparacion</option>
                     <option>Cambio de pieza</option>
                     <option>Diagnostico</option>
@@ -2841,7 +2211,7 @@ export function PaginaLaboratorio() {
 
             <div className="lab-list">
               <h2>Mantenimientos registrados</h2>
-              {state.bitacoras.filter((item) => item.tipoTrabajo !== 'Incidencia').length === 0 ? <p className="form-hint">Todavía no hay mantenimientos registrados.</p> : null}
+              {state.bitacoras.filter((item) => item.tipoTrabajo !== 'Incidencia').length === 0 ? <p className="form-hint">TodavÃ­a no hay mantenimientos registrados.</p> : null}
               {state.bitacoras.filter((item) => item.tipoTrabajo !== 'Incidencia').map((item) => (
                 <article className="lab-record" key={item.id}>
                   <div className="lab-record-header">
@@ -2875,12 +2245,12 @@ export function PaginaLaboratorio() {
                   </dl>
                 </article>
               ))}
-              <h2>Daños e incidencias por equipo</h2>
+              <h2>DaÃ±os e incidencias por equipo</h2>
               {state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia').length === 0 ? <p className="form-hint">No hay incidencias registradas.</p> : null}
               {state.bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia').map((item) => (
                 <article className="lab-record" key={item.id}>
                   <div className="lab-record-header"><div><span className={`status-pill priority-${item.prioridad}`}>{estadoTrabajoLabels[item.estado]}</span><h3>{item.titulo}</h3><small>{formatDateTime(item.fecha)} | {item.equipoDestino || 'Equipo no indicado'}</small></div><div className="row-actions"><button className="icon-button" type="button" title="Editar" onClick={() => setEditingBitacora(item)}><Pencil size={16} /></button><button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => void handleDeleteBitacora(item)}><Trash2 size={16} /></button></div></div>
-                  <p>{item.descripcion}</p><small>Responsable: {item.responsable} · Estado: {estadoTrabajoLabels[item.estado]}</small>
+                  <p>{item.descripcion}</p><small>Responsable: {item.responsable} Â· Estado: {estadoTrabajoLabels[item.estado]}</small>
                 </article>
               ))}
             </div>
@@ -3046,7 +2416,7 @@ export function PaginaLaboratorio() {
                               <em className="inventory-component-list">
                                 {inventarioCalculado.componentes.map(({ asignacion, componente }) => (
                                   <i key={asignacion.id}>
-                                    {asignacion.tipo}: {componente.codigo || 'S/N'} · {componente.nombre}
+                                    {asignacion.tipo}: {componente.codigo || 'S/N'} Â· {componente.nombre}
                                   </i>
                                 ))}
                               </em>
@@ -3764,7 +3134,7 @@ export function PaginaLaboratorio() {
                     </div>
                     <label>
                       Detalle del descarte
-                      <textarea name="detalle" rows={4} required placeholder="Motivo, condicion del equipo, daño encontrado o referencia administrativa." />
+                      <textarea name="detalle" rows={4} required placeholder="Motivo, condicion del equipo, daÃ±o encontrado o referencia administrativa." />
                     </label>
                     <label>
                       Responsable
@@ -4338,3 +3708,4 @@ export function PaginaLaboratorio() {
     </div>
   );
 }
+
