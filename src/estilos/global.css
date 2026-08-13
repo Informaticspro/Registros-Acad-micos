@@ -2206,10 +2206,6 @@ textarea {
   background: var(--surface-deep);
 }
 
-.lab-inventory-workspace {
-  scroll-margin-top: 86px;
-}
-
 .lab-inventory-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2218,6 +2214,11 @@ textarea {
   background:
     linear-gradient(90deg, rgba(121, 183, 53, 0.12), transparent 62%),
     var(--surface-deep);
+}
+
+.lab-inventory-results-anchor {
+  height: 1px;
+  scroll-margin-top: 76px;
 }
 
 .lab-inventory-hero h2 {

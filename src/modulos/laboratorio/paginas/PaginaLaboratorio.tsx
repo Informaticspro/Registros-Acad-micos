@@ -804,7 +804,7 @@ export function PaginaLaboratorio() {
   const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const inventoryWorkspaceRef = useRef<HTMLElement | null>(null);
+  const inventoryResultsRef = useRef<HTMLDivElement | null>(null);
 
   const saveContext = useMemo(
     () => ({
@@ -1939,7 +1939,7 @@ export function PaginaLaboratorio() {
   function handleInventoryLocationFilter(ubicacion: string) {
     setSelectedInventoryLocation(ubicacion);
     window.requestAnimationFrame(() => {
-      inventoryWorkspaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      inventoryResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -2927,7 +2927,7 @@ export function PaginaLaboratorio() {
               </div>
             </section>
 
-            <section className="lab-inventory-workspace" ref={inventoryWorkspaceRef}>
+            <section className="lab-inventory-workspace">
               <div className="lab-inventory-sheet-title">
                 <strong>Universidad Autonoma de Chiriqui</strong>
                 <span>Facultad de Economia</span>
@@ -2948,6 +2948,7 @@ export function PaginaLaboratorio() {
                   </button>
                 ) : null}
               </div>
+              <div className="lab-inventory-results-anchor" ref={inventoryResultsRef} aria-hidden="true" />
               <div className="lab-inventory-filter" aria-label="Filtrar inventario por ubicacion">
                 {ubicacionesInventario.map((ubicacion) => (
                   <button
