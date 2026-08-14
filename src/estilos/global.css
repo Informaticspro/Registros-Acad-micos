@@ -2495,6 +2495,25 @@ textarea {
   width: fit-content;
 }
 
+.assign-component-button {
+  border-color: rgba(243, 189, 34, 0.75);
+  background: linear-gradient(135deg, #f8c21c, #f59e0b);
+  color: #07130d;
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.16);
+}
+
+.assign-component-button:hover:not(:disabled) {
+  border-color: rgba(255, 214, 76, 0.95);
+  background: linear-gradient(135deg, #ffd84d, #f8b51b);
+  color: #07130d;
+  transform: translateY(-1px);
+}
+
+.assign-component-button:disabled {
+  opacity: 0.62;
+  box-shadow: none;
+}
+
 .danger-soft-button {
   border-color: rgba(239, 68, 68, 0.45);
   color: #fca5a5;

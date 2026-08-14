@@ -2568,7 +2568,7 @@ export function PaginaLaboratorio() {
                               Detalle
                               <input name="detalle" placeholder="Ej. Monitor asignado por reemplazo de pantalla" />
                             </label>
-                            <button className="secondary-button" type="submit" disabled={isSaving || componentesDisponibles.length === 0}>
+                            <button className="secondary-button assign-component-button" type="submit" disabled={isSaving || componentesDisponibles.length === 0}>
                               <PackageCheck size={16} />
                               Asignar componente
                             </button>
