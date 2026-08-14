@@ -7,13 +7,11 @@ import {
   Eye,
   HardDrive,
   History,
-  Moon,
   PackageCheck,
   Pencil,
   Save,
   Search,
   Settings2,
-  Sun,
   Trash2,
   Upload,
   Wrench,
@@ -78,6 +76,8 @@ import {
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { supabase } from '@/infraestructura/supabase';
 import { formatDateTime } from '@/utilidades/formato';
+import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
+import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
 import {
   aplicacionesBase,
   caracteristicasBase,
@@ -86,9 +86,7 @@ import {
   estadoTrabajoLabels,
   filtroComponentesAsignados,
   inventarioBase,
-  labTabOrder,
   prioridadLabels,
-  tabLabels,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
   appendUniqueInventoryValue,
@@ -1579,72 +1577,15 @@ export function PaginaLaboratorio() {
 
   return (
     <div className="lab-workspace">
-      <header className="lab-workspace-header">
-        <button className="secondary-button" type="button" onClick={() => navigate('/dashboard')}>
-          <ArrowLeft size={18} />
-          Volver al sistema
-        </button>
-        <div className="lab-workspace-title">
-          <span className="eyebrow">Area exclusiva de soporte</span>
-          <h1>Mantenimiento tecnico</h1>
-          <p>Bitacoras, inventario, evidencias, prestamos e informes del laboratorio de informatica.</p>
-        </div>
-        <div className="lab-header-side">
-          <div className="lab-header-actions">
-            <button
-              className="icon-button theme-toggle"
-              type="button"
-              aria-label={isLightTheme ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
-              title={isLightTheme ? 'Tema oscuro' : 'Tema claro'}
-              onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
-            >
-              {isLightTheme ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
-            <div className="lab-workspace-badge">
-              <Wrench size={18} />
-              Modo tecnico
-            </div>
-          </div>
-          <div className="lab-quick-stats" aria-label="Resumen rapido de laboratorio">
-            <div>
-              <Wrench size={16} />
-              <span>Trabajos abiertos</span>
-              <strong>{indicadores.trabajosAbiertos}</strong>
-            </div>
-            <div>
-              <HardDrive size={16} />
-              <span>Equipos no operativos</span>
-              <strong>{indicadores.equiposPendientes}</strong>
-            </div>
-            <div>
-              <PackageCheck size={16} />
-              <span>Prestamos activos</span>
-              <strong>{indicadores.prestamosActivos}</strong>
-            </div>
-            <div>
-              <ClipboardList size={16} />
-              <span>Evidencias registradas</span>
-              <strong>{indicadores.evidencias}</strong>
-            </div>
-          </div>
-        </div>
-      </header>
+      <EncabezadoLaboratorio
+        indicadores={indicadores}
+        isLightTheme={isLightTheme}
+        onBack={() => navigate('/dashboard')}
+        onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+      />
 
       <section className="panel lab-shell">
-        <div className="lab-tabs" role="tablist" aria-label="Secciones de laboratorio">
-          {labTabOrder.map((tab) => (
-            <button
-              type="button"
-              className={`lab-tab-${tab}${activeTab === tab ? ' active' : ''}`}
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              title={tabLabels[tab]}
-            >
-              <span className="lab-tab-label-full">{tabLabels[tab]}</span>
-              <span className="lab-tab-label-short">{tab === 'bitacoras' ? 'Mant. e incid.' : tabLabels[tab]}</span>
-            </button>
-          ))}
-        </div>
+        <PestanasLaboratorio activeTab={activeTab} onChange={setActiveTab} />
 
         {message || error ? (
           <div className={`lab-toast ${error ? 'error' : 'success'}`} role="status" aria-live="polite">
