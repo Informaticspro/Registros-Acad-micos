@@ -77,7 +77,9 @@ import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion
 import { supabase } from '@/infraestructura/supabase';
 import { formatDateTime } from '@/utilidades/formato';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
+import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
+import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/PrestamosLaboratorio';
 import {
   aplicacionesBase,
   caracteristicasBase,
@@ -1596,92 +1598,15 @@ export function PaginaLaboratorio() {
         {isLoading ? <p className="form-hint">Cargando informacion del laboratorio...</p> : null}
 
         {activeTab === 'inicio' ? (
-          <div className="lab-home">
-            <section className="lab-home-panel lab-home-hero">
-              <div>
-                <span className="eyebrow">Inicio tecnico</span>
-                <h2>Centro de operaciones del laboratorio</h2>
-                <p>
-                  Revise el movimiento reciente y elija la tarea que desea realizar sin entrar directo a un formulario.
-                </p>
-              </div>
-              <div className="lab-home-actions">
-                <button className="primary-button" type="button" onClick={() => setActiveTab('bitacoras')}>
-                  <Wrench size={18} />
-                  Nueva bitacora
-                </button>
-                <button className="secondary-button" type="button" onClick={() => setActiveTab('fichas')}>
-                  <ClipboardList size={18} />
-                  Ficha tecnica
-                </button>
-                <button className="secondary-button" type="button" onClick={() => setActiveTab('inventario')}>
-                  <HardDrive size={18} />
-                  Inventario
-                </button>
-              </div>
-            </section>
-
-            <section className="lab-home-metrics">
-              <button className={indicadores.equiposMantenimiento > 0 ? 'attention' : ''} type="button" onClick={() => setActiveTab('inventario')}>
-                <span>En mantenimiento</span>
-                <strong>{indicadores.equiposMantenimiento}</strong>
-                <small>Equipos con atencion tecnica activa</small>
-              </button>
-              <button type="button" onClick={() => setActiveTab('bitacoras')}>
-                <span>Trabajos abiertos</span>
-                <strong>{indicadores.trabajosAbiertos}</strong>
-                <small>Bitacoras pendientes o en proceso</small>
-              </button>
-              <button type="button" onClick={() => setActiveTab('inventario')}>
-                <span>Equipos registrados</span>
-                <strong>{state.equipos.length}</strong>
-                <small>Inventario total del laboratorio</small>
-              </button>
-              <button type="button" onClick={() => setActiveTab('prestamos')}>
-                <span>Prestamos activos</span>
-                <strong>{indicadores.prestamosActivos}</strong>
-                <small>Dispositivos por devolver</small>
-              </button>
-              <button type="button" onClick={() => setActiveTab('descartes')}>
-                <span>Descartes registrados</span>
-                <strong>{indicadores.descartesRegistrados}</strong>
-                <small>Equipos retirados del inventario</small>
-              </button>
-              <button type="button" onClick={() => setActiveTab('fichas')}>
-                <span>Fichas tecnicas</span>
-                <strong>{state.fichas.length}</strong>
-                <small>Registros de mantenimiento</small>
-              </button>
-            </section>
-
-            <section className="lab-home-panel lab-recent-activity">
-              <div className="lab-home-section-header">
-                <div>
-                  <span className="eyebrow">Actividad reciente</span>
-                  <h2>Ultimas acciones registradas</h2>
-                </div>
-                <div className="lab-section-actions">
-                  <small>{showMoreActivity ? 'Ultimos 20 registros' : 'Maximo 8 registros'}</small>
-                  <button className="secondary-button compact-button" type="button" onClick={() => setShowMoreActivity((current) => !current)}>
-                    {showMoreActivity ? 'Ver menos' : 'Ver ultimos 20'}
-                  </button>
-                </div>
-              </div>
-              {actividadReciente.length === 0 ? (
-                <p className="form-hint">Todavia no hay acciones recientes registradas.</p>
-              ) : null}
-              <div className="lab-activity-list">
-                {actividadReciente.map((item) => (
-                  <button type="button" key={item.id} onClick={() => setActiveTab(item.tab)}>
-                    <span>{item.tipo}</span>
-                    <strong>{item.titulo}</strong>
-                    <small>{item.detalle}</small>
-                    <time>{formatDateTime(item.fecha)}</time>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
+          <InicioLaboratorio
+            actividadReciente={actividadReciente}
+            cantidadEquipos={state.equipos.length}
+            cantidadFichas={state.fichas.length}
+            indicadores={indicadores}
+            showMoreActivity={showMoreActivity}
+            onChangeTab={setActiveTab}
+            onToggleActivityLimit={() => setShowMoreActivity((current) => !current)}
+          />
         ) : null}
 
         {activeTab === 'fichas' ? (
@@ -3150,118 +3075,15 @@ export function PaginaLaboratorio() {
         ) : null}
 
         {activeTab === 'prestamos' ? (
-          <div className="lab-grid">
-            <form className="stack-form lab-form" onSubmit={handlePrestamoSubmit}>
-              <h2>{editingPrestamo ? 'Editar prestamo' : 'Registrar prestamo'}</h2>
-              <label>
-                Equipo o dispositivo
-                <input name="equipo" required defaultValue={editingPrestamo?.equipo} />
-              </label>
-              <div className="form-grid compact-form-grid">
-                <label>
-                  Entregado a
-                  <input name="entregadoA" required defaultValue={editingPrestamo?.entregadoA} />
-                </label>
-                <label>
-                  Tipo de persona
-                  <select name="tipoBeneficiario" defaultValue={editingPrestamo?.tipoBeneficiario ?? 'estudiante'} required>
-                    <option value="estudiante">Estudiante</option>
-                    <option value="docente">Docente</option>
-                    <option value="administrativo">Administrativo</option>
-                    <option value="externo">Externo</option>
-                  </select>
-                </label>
-              </div>
-              <div className="form-grid compact-form-grid">
-                <label>
-                  Cedula o identificacion
-                  <input name="documento" defaultValue={editingPrestamo?.documento} />
-                </label>
-                <label>
-                  Responsable que entrega
-                  <input name="responsableEntrega" required defaultValue={editingPrestamo?.responsableEntrega} />
-                </label>
-              </div>
-              <div className="form-grid compact-form-grid">
-                <label>
-                  Fecha de prestamo
-                  <input
-                    name="fechaPrestamo"
-                    type="datetime-local"
-                    required
-                    defaultValue={editingPrestamo ? localDateTimeValue(new Date(editingPrestamo.fechaPrestamo)) : localDateTimeValue()}
-                    key={`prestamo-${editingPrestamo?.id ?? 'new'}`}
-                  />
-                </label>
-                <label>
-                  Fecha de devolucion
-                  <input
-                    name="fechaDevolucion"
-                    type="datetime-local"
-                    defaultValue={editingPrestamo?.fechaDevolucion ? localDateTimeValue(new Date(editingPrestamo.fechaDevolucion)) : ''}
-                    key={`devolucion-${editingPrestamo?.id ?? 'new'}`}
-                  />
-                </label>
-              </div>
-              <label>
-                Estado
-                <select name="estado" defaultValue={editingPrestamo?.estado ?? 'activo'} required>
-                  <option value="activo">Activo</option>
-                  <option value="devuelto">Devuelto</option>
-                  <option value="vencido">Vencido</option>
-                </select>
-              </label>
-              <label>
-                Observaciones
-                <textarea name="observaciones" rows={4} defaultValue={editingPrestamo?.observaciones} />
-              </label>
-              <div className="page-actions">
-                <button className="primary-button" type="submit" disabled={isSaving}>
-                  <Save size={18} />
-                  {editingPrestamo ? 'Actualizar prestamo' : 'Guardar prestamo'}
-                </button>
-                {editingPrestamo ? (
-                  <button className="secondary-button" type="button" onClick={() => setEditingPrestamo(null)}>
-                    Cancelar
-                  </button>
-                ) : null}
-              </div>
-            </form>
-
-            <div className="lab-list">
-              <h2>Prestamos registrados</h2>
-              {state.prestamos.length === 0 ? <p className="form-hint">Todavia no hay prestamos registrados.</p> : null}
-              {state.prestamos.map((item) => (
-                <article className="lab-record compact" key={item.id}>
-                  <div className="lab-record-header">
-                    <div>
-                      <span className={`status-pill loan-${item.estado}`}>{item.estado}</span>
-                      <h3>{item.equipo}</h3>
-                      <small>{item.entregadoA} | {item.tipoBeneficiario}</small>
-                    </div>
-                    <div className="row-actions">
-                      <button className="icon-button" type="button" title="Editar" onClick={() => setEditingPrestamo(item)}>
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        className="icon-button danger-button"
-                        type="button"
-                        title="Eliminar"
-                        onClick={() => void handleDeletePrestamo(item)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <p>
-                    Prestado: {formatDateTime(item.fechaPrestamo)} | Devolucion:{' '}
-                    {item.fechaDevolucion ? formatDateTime(item.fechaDevolucion) : 'Pendiente'}
-                  </p>
-                  <small>{item.observaciones || 'Sin observaciones'}</small>
-                </article>
-              ))}
-            </div>
-          </div>
+          <PrestamosLaboratorio
+            prestamos={state.prestamos}
+            editingPrestamo={editingPrestamo}
+            isSaving={isSaving}
+            onSubmit={handlePrestamoSubmit}
+            onCancelEdit={() => setEditingPrestamo(null)}
+            onEdit={setEditingPrestamo}
+            onDelete={(item) => void handleDeletePrestamo(item)}
+          />
         ) : null}
 
         {activeTab === 'informes' ? (
