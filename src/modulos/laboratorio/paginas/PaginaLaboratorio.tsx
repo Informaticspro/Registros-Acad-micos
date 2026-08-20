@@ -12,19 +12,16 @@ import {
   createDescarteLaboratorio,
   createEquipoLaboratorio,
   createFichaTecnicaLaboratorio,
-  createPrestamoLaboratorio,
   deleteBitacoraLaboratorio,
   deleteDescarteLaboratorio,
   deleteEquipoLaboratorio,
   deleteFichaTecnicaLaboratorio,
-  deletePrestamoLaboratorio,
   importEquiposLaboratorio,
   listLaboratorioData,
   retirarAsignacionComponenteLaboratorio,
   updateBitacoraLaboratorio,
   updateEquipoLaboratorio,
   updateFichaTecnicaLaboratorio,
-  updatePrestamoLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import {
   AsignacionComponenteLaboratorio,
@@ -35,7 +32,6 @@ import {
   EstadoTrabajoLaboratorio,
   ClaseRegistroLaboratorio,
   FichaTecnicaLaboratorio,
-  PrestamoLaboratorio,
   PrioridadLaboratorio,
 } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
@@ -56,6 +52,7 @@ import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaI
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
+import { usePrestamosLaboratorio } from '@/modulos/laboratorio/hooks/usePrestamosLaboratorio';
 import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesLaboratorio';
 import {
   emptyState,
@@ -69,7 +66,6 @@ import {
   buildDuplicateEquipoMessage,
   buildEquipoInput,
   buildFichaTecnicaInput,
-  buildPrestamoInput,
   filterUniqueEquipoInputsForImport,
   findDuplicateEquipoIdentity,
   getCategoriaComponenteDesdeTipo,
@@ -102,7 +98,6 @@ export function PaginaLaboratorio() {
   const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
   const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
-  const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
@@ -147,6 +142,14 @@ export function PaginaLaboratorio() {
     setEditingEstadoEquipo,
     setEditingSeccion,
   } = useCatalogosLaboratorio({
+    refresh,
+    saveContext,
+    setError,
+    setIsSaving,
+    setMessage,
+  });
+
+  const { editingPrestamo, handleDeletePrestamo, handlePrestamoSubmit, setEditingPrestamo } = usePrestamosLaboratorio({
     refresh,
     saveContext,
     setError,
@@ -849,33 +852,6 @@ export function PaginaLaboratorio() {
     }
   }
 
-  async function handlePrestamoSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const input = buildPrestamoInput(form);
-
-    setIsSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      if (editingPrestamo) {
-        await updatePrestamoLaboratorio(editingPrestamo.id, input);
-        setEditingPrestamo(null);
-        setMessage('Prestamo actualizado correctamente.');
-      } else {
-        await createPrestamoLaboratorio(input, saveContext);
-        setMessage('Prestamo registrado correctamente.');
-        form.reset();
-      }
-
-      await refresh();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el prestamo.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function handleDeleteBitacora(item: BitacoraLaboratorio) {
     if (!window.confirm(`Desea eliminar la bitacora "${item.titulo}"?`)) return;
     await deleteBitacoraLaboratorio(item.id);
@@ -892,12 +868,6 @@ export function PaginaLaboratorio() {
   async function handleDeleteEquipo(item: EquipoLaboratorio) {
     if (!window.confirm(`Desea eliminar el equipo "${item.nombre}"?`)) return;
     await deleteEquipoLaboratorio(item.id);
-    await refresh();
-  }
-
-  async function handleDeletePrestamo(item: PrestamoLaboratorio) {
-    if (!window.confirm(`Desea eliminar el prestamo de "${item.equipo}"?`)) return;
-    await deletePrestamoLaboratorio(item.id);
     await refresh();
   }
 
