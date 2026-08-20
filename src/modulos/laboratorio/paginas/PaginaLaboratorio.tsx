@@ -7,7 +7,6 @@ import {
   FichaTecnicaLaboratorioInput,
   LaboratorioState,
   PrestamoLaboratorioInput,
-  buildLaboratorioReport,
   createAsignacionComponenteLaboratorio,
   createBitacoraLaboratorio,
   createCatalogoLaboratorio,
@@ -23,14 +22,6 @@ import {
   deleteFichaTecnicaLaboratorio,
   deletePrestamoLaboratorio,
   deleteSeccionLaboratorio,
-  exportHistorialEquipoLaboratorioExcel,
-  exportDescartesLaboratorioExcel,
-  exportInformeMensualMantenimientoExcel,
-  exportInformeMantenimientoPorRangoExcel,
-  exportInformePendientesLaboratorioExcel,
-  exportInformeUbicacionLaboratorioExcel,
-  exportInventarioLaboratorioExcel,
-  exportLaboratorioCsv,
   importEquiposLaboratorio,
   listLaboratorioData,
   retirarAsignacionComponenteLaboratorio,
@@ -70,6 +61,7 @@ import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventa
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
+import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesLaboratorio';
 import {
   emptyState,
   estadoEquipoLabels,
@@ -84,7 +76,6 @@ import {
   buildFichaTecnicaInput,
   buildPrestamoInput,
   buildSeccionInput,
-  downloadTextFile,
   filterUniqueEquipoInputsForImport,
   findDuplicateEquipoIdentity,
   getCategoriaComponenteDesdeTipo,
@@ -192,6 +183,28 @@ export function PaginaLaboratorio() {
     setComponentMoveTargets,
     setInventorySearch,
   } = useInventarioLaboratorio(state);
+
+  const {
+    exportCsv,
+    exportDiscardsExcel,
+    exportEquipmentHistoryById,
+    exportEquipmentHistoryReport,
+    exportInventoryExcel,
+    exportLocationReport,
+    exportMonthlyReport,
+    exportPendingReport,
+    exportRangeMaintenanceReport,
+    exportReport,
+  } = useReportesLaboratorio({
+    reportEndDate,
+    reportStartDate,
+    selectedReportEquipoId,
+    selectedReportLocation,
+    selectedReportMonth,
+    setError,
+    setMessage,
+    state,
+  });
 
   function createComponenteNuevoDraft(tipo: AsignacionComponenteLaboratorio['tipo'] = 'monitor'): ComponenteNuevoDraft {
     return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tipo };
@@ -1050,74 +1063,6 @@ export function PaginaLaboratorio() {
     }
   }
 
-  function exportCsv() {
-    downloadTextFile(exportLaboratorioCsv(state), 'informe-laboratorio.csv', 'text/csv;charset=utf-8');
-  }
-
-  function exportReport() {
-    downloadTextFile(buildLaboratorioReport(state), 'informe-laboratorio.txt');
-  }
-
-  function exportInventoryExcel() {
-    if (state.equipos.length === 0) {
-      setError('No hay equipos registrados para generar el informe de inventario.');
-      return;
-    }
-    exportInventarioLaboratorioExcel(state);
-    setMessage('Informe de inventario descargado correctamente.');
-  }
-
-  function exportDiscardsExcel() {
-    if (state.descartes.length === 0) {
-      setError('No hay descartes registrados para generar el informe.');
-      return;
-    }
-    exportDescartesLaboratorioExcel(state);
-    setMessage('Informe de descartes descargado correctamente.');
-  }
-
-  function exportMonthlyReport() {
-    exportInformeMensualMantenimientoExcel(state, selectedReportMonth);
-    setMessage('Informe mensual de mantenimiento descargado correctamente.');
-  }
-
-  function exportDateRangeReport() {
-    if (!reportStartDate || !reportEndDate || reportStartDate > reportEndDate) {
-      setError('Seleccione un rango de fechas valido. La fecha inicial no puede ser posterior a la final.');
-      return;
-    }
-    exportInformeMantenimientoPorRangoExcel(state, reportStartDate, reportEndDate);
-    setMessage('Informe de mantenimiento por rango descargado correctamente.');
-  }
-
-  function exportRangeMaintenanceReport() {
-    if (reportStartDate && reportEndDate && reportStartDate > reportEndDate) {
-      setError('La fecha inicial no puede ser posterior a la fecha final.');
-      return;
-    }
-    exportInformeMantenimientoPorRangoExcel(state, reportStartDate, reportEndDate);
-    setMessage('Informe por rango descargado correctamente.');
-  }
-
-  function exportLocationReport() {
-    exportInformeUbicacionLaboratorioExcel(state, selectedReportLocation);
-    setMessage('Informe por ubicacion descargado correctamente.');
-  }
-
-  function exportPendingReport() {
-    exportInformePendientesLaboratorioExcel(state);
-    setMessage('Informe de pendientes descargado correctamente.');
-  }
-
-  function exportEquipmentHistoryReport() {
-    if (!selectedReportEquipoId) {
-      setError('Seleccione un equipo para generar su historial tecnico.');
-      return;
-    }
-    exportHistorialEquipoLaboratorioExcel(state, selectedReportEquipoId);
-    setMessage('Historial tecnico del equipo descargado correctamente.');
-  }
-
   function openFichaForEquipo(equipo: EquipoLaboratorio) {
     closeEquipoDetalle();
     setEditingFicha(null);
@@ -1500,10 +1445,7 @@ export function PaginaLaboratorio() {
                 message={message}
                 selectedEquipoDetalle={selectedEquipoDetalle}
                 setComponentMoveTargets={setComponentMoveTargets}
-                onDownloadHistorial={(equipo) => {
-                  exportHistorialEquipoLaboratorioExcel(state, equipo.id);
-                  setMessage("Historial tecnico del equipo descargado correctamente.");
-                }}
+                onDownloadHistorial={(equipo) => exportEquipmentHistoryById(equipo.id)}
                 onEditEquipo={openEditarEquipoModal}
                 onOpenEquipoDetalle={openEquipoDetalle}
                 onOpenFichaForEquipo={openFichaForEquipo}
