@@ -9,33 +9,26 @@ import {
   PrestamoLaboratorioInput,
   createAsignacionComponenteLaboratorio,
   createBitacoraLaboratorio,
-  createCatalogoLaboratorio,
   createDescarteLaboratorio,
   createEquipoLaboratorio,
   createFichaTecnicaLaboratorio,
   createPrestamoLaboratorio,
-  createSeccionLaboratorio,
   deleteBitacoraLaboratorio,
-  deleteCatalogoLaboratorio,
   deleteDescarteLaboratorio,
   deleteEquipoLaboratorio,
   deleteFichaTecnicaLaboratorio,
   deletePrestamoLaboratorio,
-  deleteSeccionLaboratorio,
   importEquiposLaboratorio,
   listLaboratorioData,
   retirarAsignacionComponenteLaboratorio,
   updateBitacoraLaboratorio,
-  updateCatalogoLaboratorio,
   updateEquipoLaboratorio,
   updateFichaTecnicaLaboratorio,
   updatePrestamoLaboratorio,
-  updateSeccionLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import {
   AsignacionComponenteLaboratorio,
   BitacoraLaboratorio,
-  CatalogoLaboratorio,
   DescarteLaboratorio,
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
@@ -44,7 +37,6 @@ import {
   FichaTecnicaLaboratorio,
   PrestamoLaboratorio,
   PrioridadLaboratorio,
-  SeccionLaboratorio,
 } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { supabase } from '@/infraestructura/supabase';
@@ -62,6 +54,7 @@ import { VistaInventario } from '@/modulos/laboratorio/componentes/inventario/Vi
 import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventario/ExpedienteEquipoModal';
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
+import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
 import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesLaboratorio';
 import {
@@ -77,7 +70,6 @@ import {
   buildEquipoInput,
   buildFichaTecnicaInput,
   buildPrestamoInput,
-  buildSeccionInput,
   filterUniqueEquipoInputsForImport,
   findDuplicateEquipoIdentity,
   getCategoriaComponenteDesdeTipo,
@@ -97,7 +89,6 @@ import {
   type ComponenteNuevoDraft,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 import {
-  type CatalogManagerType,
   type ConfirmacionOperativoPendiente,
   type LabTab,
   type TemaVisual,
@@ -111,13 +102,9 @@ export function PaginaLaboratorio() {
   const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
   const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
-  const [editingSeccion, setEditingSeccion] = useState<SeccionLaboratorio | null>(null);
-  const [editingCategoria, setEditingCategoria] = useState<CatalogoLaboratorio | null>(null);
-  const [editingEstadoEquipo, setEditingEstadoEquipo] = useState<CatalogoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
-  const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -144,6 +131,28 @@ export function PaginaLaboratorio() {
   );
   const responsableSesion = profile?.fullName || profile?.email || 'Soporte tecnico';
   const isLightTheme = theme === 'light';
+
+  const {
+    activeCatalogManager,
+    closeCatalogManager,
+    editingCategoria,
+    editingEstadoEquipo,
+    editingSeccion,
+    handleCatalogoSubmit,
+    handleDeleteCatalogo,
+    handleDeleteSeccion,
+    handleSeccionSubmit,
+    setActiveCatalogManager,
+    setEditingCategoria,
+    setEditingEstadoEquipo,
+    setEditingSeccion,
+  } = useCatalogosLaboratorio({
+    refresh,
+    saveContext,
+    setError,
+    setIsSaving,
+    setMessage,
+  });
 
   const selectedEquipoFicha = useMemo(
     () => state.equipos.find((item) => item.id === selectedEquipoFichaId) ?? null,
@@ -840,65 +849,6 @@ export function PaginaLaboratorio() {
     }
   }
 
-  async function handleSeccionSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const input = buildSeccionInput(form);
-
-    setIsSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      if (editingSeccion) {
-        await updateSeccionLaboratorio(editingSeccion.id, input);
-        setEditingSeccion(null);
-        setMessage('Seccion actualizada correctamente.');
-      } else {
-        await createSeccionLaboratorio(input, saveContext);
-        setMessage('Seccion agregada correctamente.');
-        form.reset();
-      }
-
-      await refresh();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la seccion.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleCatalogoSubmit(
-    event: FormEvent<HTMLFormElement>,
-    tipo: CatalogoLaboratorio['tipo'],
-    editingItem: CatalogoLaboratorio | null,
-  ) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const input = buildSeccionInput(form);
-
-    setIsSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      if (editingItem) {
-        await updateCatalogoLaboratorio(editingItem.id, tipo, input);
-        if (tipo === 'categoria_equipo') setEditingCategoria(null);
-        else setEditingEstadoEquipo(null);
-        setMessage(tipo === 'categoria_equipo' ? 'Categoria actualizada correctamente.' : 'Estado actualizado correctamente.');
-      } else {
-        await createCatalogoLaboratorio(tipo, input, saveContext);
-        setMessage(tipo === 'categoria_equipo' ? 'Categoria agregada correctamente.' : 'Estado agregado correctamente.');
-        form.reset();
-      }
-
-      await refresh();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la opcion.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function handlePrestamoSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -943,35 +893,6 @@ export function PaginaLaboratorio() {
     if (!window.confirm(`Desea eliminar el equipo "${item.nombre}"?`)) return;
     await deleteEquipoLaboratorio(item.id);
     await refresh();
-  }
-
-  async function handleDeleteSeccion(item: SeccionLaboratorio) {
-    if (!window.confirm(`Desea eliminar la seccion "${item.nombre}"?`)) return;
-    setError(null);
-    setMessage(null);
-    try {
-      await deleteSeccionLaboratorio(item.id);
-      if (editingSeccion?.id === item.id) setEditingSeccion(null);
-      setMessage('Seccion eliminada correctamente.');
-      await refresh();
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la seccion.');
-    }
-  }
-
-  async function handleDeleteCatalogo(item: CatalogoLaboratorio) {
-    if (!window.confirm(`Desea eliminar "${item.nombre}"?`)) return;
-    setError(null);
-    setMessage(null);
-    try {
-      await deleteCatalogoLaboratorio(item.id, item.tipo);
-      if (editingCategoria?.id === item.id) setEditingCategoria(null);
-      if (editingEstadoEquipo?.id === item.id) setEditingEstadoEquipo(null);
-      setMessage('Opcion eliminada correctamente.');
-      await refresh();
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la opcion.');
-    }
   }
 
   async function handleDeletePrestamo(item: PrestamoLaboratorio) {
@@ -1320,13 +1241,6 @@ export function PaginaLaboratorio() {
     } finally {
       setIsSaving(false);
     }
-  }
-
-  function closeCatalogManager() {
-    setActiveCatalogManager(null);
-    setEditingSeccion(null);
-    setEditingCategoria(null);
-    setEditingEstadoEquipo(null);
   }
 
   return (
