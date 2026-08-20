@@ -1,4 +1,4 @@
-﻿import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Pencil, Save, Settings2, Trash2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -69,14 +69,13 @@ import { VistaInventario } from '@/modulos/laboratorio/componentes/inventario/Vi
 import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventario/ExpedienteEquipoModal';
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
+import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
 import {
   emptyState,
   estadoEquipoLabels,
   estadoTrabajoLabels,
-  filtroComponentesAsignados,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
-  appendUniqueInventoryValue,
   buildBitacoraInput,
   buildComponentesInicialesInput,
   buildDescarteInput,
@@ -85,25 +84,16 @@ import {
   buildFichaTecnicaInput,
   buildPrestamoInput,
   buildSeccionInput,
-  containsExactLooseText,
   downloadTextFile,
   filterUniqueEquipoInputsForImport,
   findDuplicateEquipoIdentity,
   getCategoriaComponenteDesdeTipo,
   getEstadoChangeWorkStatus,
   getEstadoChangeWorkType,
-  getEstadoEquipoClass,
   getEstadoEquipoLabel,
   getInitialTheme,
-  getInventoryStatusPriorityValue,
-  getTechnicalIdentifiers,
-  isAssignedComponentsInventoryFilter,
-  isRepairInventoryFilter,
   isUuid,
-  matchesInventoryLocationFilter,
-  matchesInventorySearch,
   normalizeExcelKey,
-  normalizeLooseText,
   normalizeUniqueEquipoValue,
   parseDescartesExcelRows,
   parseEquipoExcelRow,
@@ -111,8 +101,6 @@ import {
   resolveInventoryStatusFromBitacora,
   shouldImportEquipoRow,
   shouldRequestIssueDetailForEstado,
-  sortEquiposInventario,
-  splitMarcaModelo,
   type ComponenteNuevoDraft,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 import {
@@ -135,20 +123,15 @@ export function PaginaLaboratorio() {
   const [editingEstadoEquipo, setEditingEstadoEquipo] = useState<CatalogoLaboratorio | null>(null);
   const [editingPrestamo, setEditingPrestamo] = useState<PrestamoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
-  const [selectedEquipoDetalle, setSelectedEquipoDetalle] = useState<EquipoLaboratorio | null>(null);
-  const [equipoDetalleHistory, setEquipoDetalleHistory] = useState<EquipoLaboratorio[]>([]);
   const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [activeCatalogManager, setActiveCatalogManager] = useState<CatalogManagerType | null>(null);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
-  const [selectedInventoryLocation, setSelectedInventoryLocation] = useState('Todas');
-  const [inventorySearch, setInventorySearch] = useState('');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedReportLocation, setSelectedReportLocation] = useState('Todas');
   const [selectedReportEquipoId, setSelectedReportEquipoId] = useState('');
-  const [componentMoveTargets, setComponentMoveTargets] = useState<Record<string, string>>({});
   const [componentesNuevoEquipo, setComponentesNuevoEquipo] = useState<ComponenteNuevoDraft[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +141,6 @@ export function PaginaLaboratorio() {
   const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const inventoryResultsRef = useRef<HTMLDivElement | null>(null);
 
   const saveContext = useMemo(
     () => ({
@@ -179,6 +161,37 @@ export function PaginaLaboratorio() {
     () => state.equipos.find((item) => item.id === selectedDescarteEquipoId) ?? null,
     [selectedDescarteEquipoId, state.equipos],
   );
+
+  const {
+    componentMoveTargets,
+    componentesAsignadosActivosIds,
+    equipoDetalleHistory,
+    equiposComponentesAsignados,
+    equiposInventarioFiltrados,
+    equiposInventarioPrincipales,
+    estadosAlertaPorUbicacion,
+    inventoryResultsRef,
+    inventorySearch,
+    selectedEquipoDetalle,
+    selectedInventoryLocation,
+    ubicacionesInventario,
+    backEquipoDetalle,
+    closeEquipoDetalle,
+    getAsignacionActivaComoComponente,
+    getAsignacionesActivasEquipo,
+    getBitacorasEquipo,
+    getComponentesDisponibles,
+    getEquipoById,
+    getEquiposDestinoComponente,
+    getFichasEquipo,
+    getInventoryFilterCount,
+    getInventarioCalculadoEquipo,
+    getUltimoMantenimientoEquipo,
+    handleInventoryLocationFilter,
+    openEquipoDetalle,
+    setComponentMoveTargets,
+    setInventorySearch,
+  } = useInventarioLaboratorio(state);
 
   function createComponenteNuevoDraft(tipo: AsignacionComponenteLaboratorio['tipo'] = 'monitor'): ComponenteNuevoDraft {
     return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tipo };
@@ -213,67 +226,6 @@ export function PaginaLaboratorio() {
   function updateComponenteNuevoTipo(id: string, tipo: AsignacionComponenteLaboratorio['tipo']) {
     setComponentesNuevoEquipo((current) => current.map((item) => (item.id === id ? { ...item, tipo } : item)));
   }
-
-  const componentesAsignadosActivosIds = useMemo(
-    () => new Set(state.asignacionesComponentes.filter((item) => !item.fechaRetiro).map((item) => item.componenteId)),
-    [state.asignacionesComponentes],
-  );
-
-  const equiposInventarioPrincipales = useMemo(
-    () => state.equipos.filter((item) => !componentesAsignadosActivosIds.has(item.id)),
-    [componentesAsignadosActivosIds, state.equipos],
-  );
-
-  const equiposComponentesAsignados = useMemo(
-    () => state.equipos.filter((item) => componentesAsignadosActivosIds.has(item.id)),
-    [componentesAsignadosActivosIds, state.equipos],
-  );
-
-  const equiposInventarioVisibles = equiposInventarioPrincipales;
-
-  const ubicacionesInventario = useMemo(() => {
-    const catalogLocations = state.secciones
-      .map((item) => item.nombre.trim())
-      .filter((value): value is string => Boolean(value));
-    const importedLocations = equiposInventarioPrincipales
-      .map((item) => item.ubicacion?.trim())
-      .filter((value): value is string => Boolean(value));
-    return ['Todas', ...Array.from(new Set([...catalogLocations, ...importedLocations])), filtroComponentesAsignados];
-  }, [equiposInventarioPrincipales, state.secciones]);
-
-  const estadosAlertaPorUbicacion = useMemo(() => {
-    return ubicacionesInventario.reduce<Record<string, string[]>>((acc, ubicacion) => {
-      const items =
-        ubicacion === 'Todas'
-          ? equiposInventarioPrincipales
-          : isAssignedComponentsInventoryFilter(ubicacion)
-            ? equiposComponentesAsignados
-            : equiposInventarioPrincipales.filter((equipo) => matchesInventoryLocationFilter(equipo, ubicacion));
-      const estados = Array.from(
-        new Set(items.map((equipo) => equipo.estado).filter((estado) => estado && estado !== 'operativo')),
-      ).sort((first, second) => getInventoryStatusPriorityValue(first) - getInventoryStatusPriorityValue(second));
-
-      acc[ubicacion] = estados;
-      return acc;
-    }, {});
-  }, [equiposComponentesAsignados, equiposInventarioPrincipales, ubicacionesInventario]);
-
-  const equiposInventarioFiltrados = useMemo(() => {
-    const filteredByLocation =
-      selectedInventoryLocation === 'Todas'
-        ? equiposInventarioPrincipales
-        : isAssignedComponentsInventoryFilter(selectedInventoryLocation)
-          ? equiposComponentesAsignados
-          : equiposInventarioPrincipales.filter((item) => matchesInventoryLocationFilter(item, selectedInventoryLocation));
-    const query = normalizeExcelKey(inventorySearch);
-    const filtered = filteredByLocation.filter((item) => {
-      if (matchesInventorySearch(item, inventorySearch)) return true;
-      if (!query) return true;
-      const calculado = getInventarioCalculadoEquipo(item);
-      return normalizeExcelKey([calculado.marca, calculado.modelo, calculado.codigo, calculado.serie].join(' ')).includes(query);
-    });
-    return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
-  }, [equiposComponentesAsignados, equiposInventarioPrincipales, inventorySearch, selectedInventoryLocation]);
 
   const categoriasEquipo = useMemo(() => {
     const catalogItems = state.categoriasEquipo
@@ -1166,137 +1118,6 @@ export function PaginaLaboratorio() {
     setMessage('Historial tecnico del equipo descargado correctamente.');
   }
 
-  function matchesEquipoPorIdentificador(equipo: EquipoLaboratorio, value: string) {
-    const equipoIdentifiers = getTechnicalIdentifiers(`${equipo.codigo} ${equipo.serie}`);
-    if (equipoIdentifiers.length === 0) return false;
-    const valueIdentifiers = new Set(getTechnicalIdentifiers(value));
-    return equipoIdentifiers.some((identifier) => valueIdentifiers.has(identifier));
-  }
-
-  function matchesEquipoPorNombre(equipo: EquipoLaboratorio, value: string) {
-    return containsExactLooseText(value, equipo.nombre);
-  }
-
-  function getFichasEquipo(equipo: EquipoLaboratorio) {
-    return state.fichas
-      .filter(
-        (item) =>
-          normalizeLooseText(item.pc) === normalizeLooseText(equipo.nombre) ||
-          matchesEquipoPorIdentificador(equipo, item.inventario.map((field) => field.numero).join(' ')),
-      )
-      .sort((first, second) => second.fecha.localeCompare(first.fecha));
-  }
-
-  function getBitacorasEquipo(equipo: EquipoLaboratorio) {
-    return state.bitacoras
-      .filter(
-        (item) =>
-          item.equipoId === equipo.id ||
-          matchesEquipoPorIdentificador(equipo, `${item.equipoOrigen} ${item.equipoDestino} ${item.titulo}`) ||
-          matchesEquipoPorNombre(equipo, `${item.equipoDestino} ${item.titulo}`),
-      )
-      .sort((first, second) => second.fecha.localeCompare(first.fecha));
-  }
-
-  function getAsignacionesActivasEquipo(equipo: EquipoLaboratorio) {
-    return state.asignacionesComponentes.filter((item) => item.equipoPadreId === equipo.id && !item.fechaRetiro);
-  }
-
-  function getAsignacionActivaComoComponente(equipo: EquipoLaboratorio) {
-    return state.asignacionesComponentes.find((item) => item.componenteId === equipo.id && !item.fechaRetiro) ?? null;
-  }
-
-  function getEquipoById(id: string) {
-    return state.equipos.find((item) => item.id === id) ?? null;
-  }
-
-  function getComponentesDisponibles(equipoPadre: EquipoLaboratorio) {
-    const assignedComponentIds = new Set(
-      state.asignacionesComponentes.filter((item) => !item.fechaRetiro).map((item) => item.componenteId),
-    );
-    return state.equipos
-      .filter((item) => item.id !== equipoPadre.id && !assignedComponentIds.has(item.id))
-      .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
-  }
-
-  function getEquiposDestinoComponente(equipoActual: EquipoLaboratorio, componenteId: string) {
-    return equiposInventarioVisibles
-      .filter((item) => item.id !== equipoActual.id && item.id !== componenteId)
-      .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es', { numeric: true }));
-  }
-
-  function getInventarioCalculadoEquipo(equipo: EquipoLaboratorio) {
-    const componentes = getAsignacionesActivasEquipo(equipo)
-      .map((asignacion) => {
-        const componente = getEquipoById(asignacion.componenteId);
-        return componente ? { asignacion, componente } : null;
-      })
-      .filter((item): item is { asignacion: AsignacionComponenteLaboratorio; componente: EquipoLaboratorio } =>
-        Boolean(item),
-      );
-    const componentesEquipo = componentes.map((item) => item.componente);
-    const baseMarcaModelo = splitMarcaModelo(equipo.marcaModelo);
-    const componentesMarcaModelo = componentesEquipo.map((item) => splitMarcaModelo(item.marcaModelo));
-
-    return {
-      componentes,
-      marca: appendUniqueInventoryValue(
-        baseMarcaModelo.marca,
-        componentesMarcaModelo.map((item) => item.marca),
-      ),
-      modelo: appendUniqueInventoryValue(
-        baseMarcaModelo.modelo,
-        componentesMarcaModelo.map((item) => item.modelo),
-      ),
-      codigo: appendUniqueInventoryValue(
-        equipo.codigo || 'S/N',
-        componentesEquipo.map((item) => item.codigo || 'S/N'),
-      ),
-      serie: appendUniqueInventoryValue(
-        equipo.serie || 'S/N',
-        componentesEquipo.map((item) => item.serie || 'S/N'),
-      ),
-    };
-  }
-
-  function getUltimoMantenimientoEquipo(fichas: FichaTecnicaLaboratorio[], bitacoras: BitacoraLaboratorio[]) {
-    const fechas = [
-      ...fichas.map((item) => item.fecha),
-      ...bitacoras
-        .filter((item) => item.clase === 'mantenimiento' || item.tipoTrabajo.toLowerCase().includes('mantenimiento'))
-        .map((item) => item.fecha),
-    ].filter(Boolean);
-    return fechas.sort((first, second) => second.localeCompare(first))[0] ?? null;
-  }
-
-  function openEquipoDetalle(equipo: EquipoLaboratorio, keepCurrentInHistory = false) {
-    if (keepCurrentInHistory && selectedEquipoDetalle) {
-      setEquipoDetalleHistory((current) => [...current, selectedEquipoDetalle]);
-    } else {
-      setEquipoDetalleHistory([]);
-    }
-    setSelectedEquipoDetalle(equipo);
-  }
-
-  function closeEquipoDetalle() {
-    setSelectedEquipoDetalle(null);
-    setEquipoDetalleHistory([]);
-  }
-
-  function backEquipoDetalle() {
-    const previous = equipoDetalleHistory[equipoDetalleHistory.length - 1];
-    if (!previous) return;
-    setSelectedEquipoDetalle(previous);
-    setEquipoDetalleHistory((current) => current.slice(0, -1));
-  }
-
-  function handleInventoryLocationFilter(ubicacion: string) {
-    setSelectedInventoryLocation(ubicacion);
-    window.requestAnimationFrame(() => {
-      inventoryResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }
-
   function openFichaForEquipo(equipo: EquipoLaboratorio) {
     closeEquipoDetalle();
     setEditingFicha(null);
@@ -1642,13 +1463,7 @@ export function PaginaLaboratorio() {
               totalPrincipales={equiposInventarioPrincipales.length}
               ubicacionesInventario={ubicacionesInventario}
               getEquipoById={getEquipoById}
-              getFilterCount={(ubicacion) =>
-                ubicacion === 'Todas'
-                  ? equiposInventarioPrincipales.length
-                  : isAssignedComponentsInventoryFilter(ubicacion)
-                    ? equiposComponentesAsignados.length
-                    : equiposInventarioPrincipales.filter((item) => matchesInventoryLocationFilter(item, ubicacion)).length
-              }
+              getFilterCount={getInventoryFilterCount}
               getInventarioCalculadoEquipo={getInventarioCalculadoEquipo}
               getAsignacionActivaComoComponente={getAsignacionActivaComoComponente}
               onDeleteEquipo={(item) => void handleDeleteEquipo(item)}
