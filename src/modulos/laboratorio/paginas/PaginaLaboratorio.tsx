@@ -1,5 +1,5 @@
 ﻿import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Pencil, Save, Settings2, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Settings2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   BitacoraLaboratorioInput,
@@ -53,6 +53,7 @@ import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/Encabez
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
 import { VistaBitacoras } from '@/modulos/laboratorio/componentes/bitacoras/VistaBitacoras';
+import { GestorCatalogosModal } from '@/modulos/laboratorio/componentes/catalogos/GestorCatalogosModal';
 import { VistaDescartes } from '@/modulos/laboratorio/componentes/descartes/VistaDescartes';
 import { VistaFichasTecnicas } from '@/modulos/laboratorio/componentes/fichas/VistaFichasTecnicas';
 import { FormularioEquipoModal } from '@/modulos/laboratorio/componentes/inventario/FormularioEquipoModal';
@@ -1586,213 +1587,22 @@ export function PaginaLaboratorio() {
               </div>
             ) : null}
 
-            {activeCatalogManager === 'categorias' ? (
-              <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>
-                <article
-                  className="modal-panel lab-catalog-modal"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="lab-category-title"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <header className="lab-catalog-modal-header">
-                    <div>
-                      <span className="eyebrow">Categorias</span>
-                      <h2 id="lab-category-title">{editingCategoria ? 'Editar categoria' : 'Agregar categoria'}</h2>
-                    </div>
-                    <button className="secondary-button" type="button" onClick={closeCatalogManager}>
-                      Cerrar
-                    </button>
-                  </header>
-                  <form
-                    className="stack-form"
-                    onSubmit={(event) => void handleCatalogoSubmit(event, 'categoria_equipo', editingCategoria)}
-                    key={editingCategoria?.id ?? 'new-category-modal'}
-                  >
-                    <div className="form-grid compact-form-grid">
-                      <label>
-                        Nombre
-                        <input name="nombre" required placeholder="Ej. Tablet" defaultValue={editingCategoria?.nombre} />
-                      </label>
-                      <label>
-                        Descripcion
-                        <input name="descripcion" placeholder="Opcional" defaultValue={editingCategoria?.descripcion} />
-                      </label>
-                    </div>
-                    <div className="page-actions">
-                      <button className="primary-button" type="submit" disabled={isSaving}>
-                        <Save size={18} />
-                        {editingCategoria ? 'Actualizar categoria' : 'Guardar categoria'}
-                      </button>
-                      {editingCategoria ? (
-                        <button className="secondary-button" type="button" onClick={() => setEditingCategoria(null)}>
-                          Cancelar
-                        </button>
-                      ) : null}
-                    </div>
-                  </form>
-                  <div className="lab-section-list">
-                    {state.categoriasEquipo.map((categoria) => (
-                      <article key={categoria.id}>
-                        <div>
-                          <strong>{categoria.nombre}</strong>
-                          {categoria.descripcion ? <small>{categoria.descripcion}</small> : null}
-                        </div>
-                        <span>{state.equipos.filter((equipo) => equipo.categoria === categoria.nombre).length}</span>
-                        <button className="icon-button" type="button" title="Editar categoria" onClick={() => setEditingCategoria(categoria)}>
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          className="icon-button danger-button"
-                          type="button"
-                          title="Eliminar categoria"
-                          onClick={() => void handleDeleteCatalogo(categoria)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </article>
-              </div>
-            ) : null}
-
-            {activeCatalogManager === 'estados' ? (
-              <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>
-                <article
-                  className="modal-panel lab-catalog-modal"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="lab-status-title"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <header className="lab-catalog-modal-header">
-                    <div>
-                      <span className="eyebrow">Estados</span>
-                      <h2 id="lab-status-title">{editingEstadoEquipo ? 'Editar estado' : 'Agregar estado'}</h2>
-                    </div>
-                    <button className="secondary-button" type="button" onClick={closeCatalogManager}>
-                      Cerrar
-                    </button>
-                  </header>
-                  <form
-                    className="stack-form"
-                    onSubmit={(event) => void handleCatalogoSubmit(event, 'estado_equipo', editingEstadoEquipo)}
-                    key={editingEstadoEquipo?.id ?? 'new-status-modal'}
-                  >
-                    <div className="form-grid compact-form-grid">
-                      <label>
-                        Valor interno
-                        <input name="nombre" required placeholder="Ej. mantenimiento_preventivo" defaultValue={editingEstadoEquipo?.nombre} />
-                      </label>
-                      <label>
-                        Nombre visible
-                        <input name="descripcion" placeholder="Ej. Mantenimiento preventivo" defaultValue={editingEstadoEquipo?.descripcion} />
-                      </label>
-                    </div>
-                    <div className="page-actions">
-                      <button className="primary-button" type="submit" disabled={isSaving}>
-                        <Save size={18} />
-                        {editingEstadoEquipo ? 'Actualizar estado' : 'Guardar estado'}
-                      </button>
-                      {editingEstadoEquipo ? (
-                        <button className="secondary-button" type="button" onClick={() => setEditingEstadoEquipo(null)}>
-                          Cancelar
-                        </button>
-                      ) : null}
-                    </div>
-                  </form>
-                  <div className="lab-section-list">
-                    {state.estadosEquipo.map((estado) => (
-                      <article key={estado.id}>
-                        <div>
-                          <strong>{estado.descripcion || getEstadoEquipoLabel(estado.nombre)}</strong>
-                          <small>{estado.nombre}</small>
-                        </div>
-                        <span>{state.equipos.filter((equipo) => equipo.estado === estado.nombre).length}</span>
-                        <button className="icon-button" type="button" title="Editar estado" onClick={() => setEditingEstadoEquipo(estado)}>
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          className="icon-button danger-button"
-                          type="button"
-                          title="Eliminar estado"
-                          onClick={() => void handleDeleteCatalogo(estado)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </article>
-              </div>
-            ) : null}
-            {activeCatalogManager === 'secciones' ? (
-              <div className="modal-backdrop" role="presentation" onClick={closeCatalogManager}>
-                <article
-                  className="modal-panel lab-catalog-modal"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="lab-catalog-title"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <header className="lab-catalog-modal-header">
-                    <div>
-                      <span className="eyebrow">Ubicaciones</span>
-                      <h2 id="lab-catalog-title">{editingSeccion ? 'Editar ubicacion' : 'Agregar ubicacion'}</h2>
-                    </div>
-                    <button className="secondary-button" type="button" onClick={closeCatalogManager}>
-                      Cerrar
-                    </button>
-                  </header>
-                  <form className="stack-form" onSubmit={handleSeccionSubmit} key={editingSeccion?.id ?? 'new-section-modal'}>
-                    <div className="form-grid compact-form-grid">
-                      <label>
-                        Nombre
-                        <input name="nombre" required placeholder="Ej. Decanato" defaultValue={editingSeccion?.nombre} />
-                      </label>
-                      <label>
-                        Descripcion
-                        <input name="descripcion" placeholder="Opcional" defaultValue={editingSeccion?.descripcion} />
-                      </label>
-                    </div>
-                    <div className="page-actions">
-                      <button className="primary-button" type="submit" disabled={isSaving}>
-                        <Save size={18} />
-                        {editingSeccion ? 'Actualizar ubicacion' : 'Guardar ubicacion'}
-                      </button>
-                      {editingSeccion ? (
-                        <button className="secondary-button" type="button" onClick={() => setEditingSeccion(null)}>
-                          Cancelar
-                        </button>
-                      ) : null}
-                    </div>
-                  </form>
-                  <div className="lab-section-list">
-                    {state.secciones.map((seccion) => (
-                      <article key={seccion.id}>
-                        <div>
-                          <strong>{seccion.nombre}</strong>
-                          {seccion.descripcion ? <small>{seccion.descripcion}</small> : null}
-                        </div>
-                        <span>{state.equipos.filter((equipo) => equipo.ubicacion === seccion.nombre).length}</span>
-                        <button className="icon-button" type="button" title="Editar ubicacion" onClick={() => setEditingSeccion(seccion)}>
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          className="icon-button danger-button"
-                          type="button"
-                          title="Eliminar ubicacion"
-                          onClick={() => void handleDeleteSeccion(seccion)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </article>
-              </div>
-            ) : null}
+            <GestorCatalogosModal
+              activeCatalogManager={activeCatalogManager}
+              closeCatalogManager={closeCatalogManager}
+              editingCategoria={editingCategoria}
+              editingEstadoEquipo={editingEstadoEquipo}
+              editingSeccion={editingSeccion}
+              handleCatalogoSubmit={(event, tipo, item) => void handleCatalogoSubmit(event, tipo, item)}
+              handleDeleteCatalogo={(item) => void handleDeleteCatalogo(item)}
+              handleDeleteSeccion={(item) => void handleDeleteSeccion(item)}
+              handleSeccionSubmit={(event) => void handleSeccionSubmit(event)}
+              isSaving={isSaving}
+              setEditingCategoria={setEditingCategoria}
+              setEditingEstadoEquipo={setEditingEstadoEquipo}
+              setEditingSeccion={setEditingSeccion}
+              state={state}
+            />
       </section>
     </div>
   );
