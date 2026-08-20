@@ -52,6 +52,7 @@ import { formatDateTime } from '@/utilidades/formato';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
+import { ConfirmacionOperativoModal } from '@/modulos/laboratorio/componentes/bitacoras/ConfirmacionOperativoModal';
 import { VistaBitacoras } from '@/modulos/laboratorio/componentes/bitacoras/VistaBitacoras';
 import { GestorCatalogosModal } from '@/modulos/laboratorio/componentes/catalogos/GestorCatalogosModal';
 import { VistaDescartes } from '@/modulos/laboratorio/componentes/descartes/VistaDescartes';
@@ -1535,57 +1536,23 @@ export function PaginaLaboratorio() {
         ) : null}
 
 
-            {confirmacionOperativo ? (
-              <div className="modal-backdrop" role="presentation" onClick={() => setConfirmacionOperativo(null)}>
-                <article
-                  className="modal-panel lab-confirm-modal"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="lab-confirm-operativo-title"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <header className="lab-catalog-modal-header">
-                    <div>
-                      <span className="eyebrow">Confirmacion de inventario</span>
-                      <h2 id="lab-confirm-operativo-title">Devolver equipo a operativo</h2>
-                    </div>
-                    <button className="icon-button" type="button" onClick={() => setConfirmacionOperativo(null)} title="Cerrar">
-                      <XCircle size={18} />
-                    </button>
-                  </header>
-                  <p>
-                    Este registro esta resuelto o cerrado. Desea devolver el equipo{' '}
-                    <strong>{confirmacionOperativo.equipoAtendido.codigo} - {confirmacionOperativo.equipoAtendido.nombre}</strong> a estado operativo en el inventario?
-                  </p>
-                  <div className="lab-confirm-actions">
-                    <button
-                      className="primary-button"
-                      type="button"
-                      disabled={isSaving}
-                      onClick={() => {
-                        const pending = confirmacionOperativo;
-                        setConfirmacionOperativo(null);
-                        void guardarBitacoraConInventario(pending.input, pending.equipoAtendido, pending.nextEquipoEstado, true, pending.form);
-                      }}
-                    >
-                      Si, devolver a operativo
-                    </button>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      disabled={isSaving}
-                      onClick={() => {
-                        const pending = confirmacionOperativo;
-                        setConfirmacionOperativo(null);
-                        void guardarBitacoraConInventario(pending.input, pending.equipoAtendido, pending.nextEquipoEstado, false, pending.form);
-                      }}
-                    >
-                      No, solo guardar bitacora
-                    </button>
-                  </div>
-                </article>
-              </div>
-            ) : null}
+            <ConfirmacionOperativoModal
+              confirmacion={confirmacionOperativo}
+              isSaving={isSaving}
+              onClose={() => setConfirmacionOperativo(null)}
+              onConfirm={(shouldSyncEquipoEstado) => {
+                if (!confirmacionOperativo) return;
+                const pending = confirmacionOperativo;
+                setConfirmacionOperativo(null);
+                void guardarBitacoraConInventario(
+                  pending.input,
+                  pending.equipoAtendido,
+                  pending.nextEquipoEstado,
+                  shouldSyncEquipoEstado,
+                  pending.form,
+                );
+              }}
+            />
 
             <GestorCatalogosModal
               activeCatalogManager={activeCatalogManager}
