@@ -51,6 +51,7 @@ import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaI
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
 import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
+import { useEquipoFormModal } from '@/modulos/laboratorio/hooks/useEquipoFormModal';
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
 import { usePrestamosLaboratorio } from '@/modulos/laboratorio/hooks/usePrestamosLaboratorio';
 import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesLaboratorio';
@@ -80,7 +81,6 @@ import {
   resolveInventoryStatusFromBitacora,
   shouldImportEquipoRow,
   shouldRequestIssueDetailForEstado,
-  type ComponenteNuevoDraft,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 import {
   type ConfirmacionOperativoPendiente,
@@ -95,9 +95,7 @@ export function PaginaLaboratorio() {
   const [state, setState] = useState<LaboratorioState>(emptyState);
   const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
-  const [editingEquipo, setEditingEquipo] = useState<EquipoLaboratorio | null>(null);
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
-  const [showEquipoFormModal, setShowEquipoFormModal] = useState(false);
   const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -105,7 +103,6 @@ export function PaginaLaboratorio() {
   const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedReportLocation, setSelectedReportLocation] = useState('Todas');
   const [selectedReportEquipoId, setSelectedReportEquipoId] = useState('');
-  const [componentesNuevoEquipo, setComponentesNuevoEquipo] = useState<ComponenteNuevoDraft[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
@@ -122,6 +119,18 @@ export function PaginaLaboratorio() {
   );
   const responsableSesion = profile?.fullName || profile?.email || 'Soporte tecnico';
   const isLightTheme = theme === 'light';
+
+  const {
+    addComponenteNuevo,
+    closeEquipoFormModal,
+    componentesNuevoEquipo,
+    editingEquipo,
+    openEditarEquipoModal,
+    openNuevoEquipoModal,
+    removeComponenteNuevo,
+    showEquipoFormModal,
+    updateComponenteNuevoTipo,
+  } = useEquipoFormModal();
 
   const {
     activeCatalogManager,
@@ -215,40 +224,6 @@ export function PaginaLaboratorio() {
     setMessage,
     state,
   });
-
-  function createComponenteNuevoDraft(tipo: AsignacionComponenteLaboratorio['tipo'] = 'monitor'): ComponenteNuevoDraft {
-    return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tipo };
-  }
-
-  function openNuevoEquipoModal() {
-    setEditingEquipo(null);
-    setComponentesNuevoEquipo([]);
-    setShowEquipoFormModal(true);
-  }
-
-  function openEditarEquipoModal(equipo: EquipoLaboratorio) {
-    setEditingEquipo(equipo);
-    setComponentesNuevoEquipo([]);
-    setShowEquipoFormModal(true);
-  }
-
-  function closeEquipoFormModal() {
-    setShowEquipoFormModal(false);
-    setEditingEquipo(null);
-    setComponentesNuevoEquipo([]);
-  }
-
-  function addComponenteNuevo(tipo: AsignacionComponenteLaboratorio['tipo'] = 'monitor') {
-    setComponentesNuevoEquipo((current) => [...current, createComponenteNuevoDraft(tipo)]);
-  }
-
-  function removeComponenteNuevo(id: string) {
-    setComponentesNuevoEquipo((current) => current.filter((item) => item.id !== id));
-  }
-
-  function updateComponenteNuevoTipo(id: string, tipo: AsignacionComponenteLaboratorio['tipo']) {
-    setComponentesNuevoEquipo((current) => current.map((item) => (item.id === id ? { ...item, tipo } : item)));
-  }
 
   const categoriasEquipo = useMemo(() => {
     const catalogItems = state.categoriasEquipo
@@ -526,7 +501,6 @@ export function PaginaLaboratorio() {
             saveContext,
           );
         }
-        setEditingEquipo(null);
         setMessage(hasEstadoChange ? 'Equipo actualizado y bitacora automatica registrada.' : 'Equipo actualizado correctamente.');
       } else {
         const createdEquipo = await createEquipoLaboratorio(input, saveContext);
