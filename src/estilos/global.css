@@ -2283,6 +2283,103 @@ textarea {
   gap: 10px;
 }
 
+.modal-panel.lab-label-modal {
+  width: min(720px, calc(100vw - 32px));
+  max-height: min(820px, calc(100vh - 32px));
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  background: var(--surface-deep);
+}
+
+.inventory-label-preview {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  color: #082016;
+}
+
+.inventory-label-heading {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.inventory-label-heading strong {
+  font-size: 1.1rem;
+  line-height: 1.15;
+}
+
+.inventory-label-heading span,
+.inventory-label-heading small {
+  color: #315543;
+  font-weight: 900;
+}
+
+.inventory-label-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  align-items: center;
+  gap: 14px;
+}
+
+.barcode-box {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #d3dfc8;
+  border-radius: 12px;
+  background: #fff;
+  overflow: auto;
+}
+
+.barcode-box svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.inventory-label-body img {
+  width: 150px;
+  max-width: 100%;
+  border: 1px solid #d3dfc8;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.inventory-label-preview dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.inventory-label-preview dl div {
+  display: grid;
+  gap: 2px;
+  padding: 9px 10px;
+  border: 1px solid #d3dfc8;
+  border-radius: 10px;
+  background: #f8fbf3;
+}
+
+.inventory-label-preview dt {
+  color: #315543;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.inventory-label-preview dd {
+  margin: 0;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
 .lab-equipment-detail-grid {
   padding: 0;
 }
@@ -4186,6 +4283,28 @@ textarea {
 
   body {
     padding-bottom: 0;
+  }
+
+  .modal-panel.lab-label-modal {
+    width: min(420px, calc(100vw - 20px));
+    padding: 12px;
+  }
+
+  .inventory-label-preview {
+    padding: 14px;
+  }
+
+  .inventory-label-body {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-label-body img {
+    width: 180px;
+    justify-self: center;
+  }
+
+  .inventory-label-preview dl {
+    grid-template-columns: 1fr;
   }
 
   .app-shell,

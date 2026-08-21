@@ -1,5 +1,5 @@
-import { Dispatch, FormEvent, SetStateAction } from 'react';
-import { ArrowLeft, CheckCircle2, ClipboardList, Download, Eye, PackageCheck, Pencil, XCircle } from 'lucide-react';
+import { Dispatch, FormEvent, SetStateAction, useState } from 'react';
+import { ArrowLeft, Barcode, CheckCircle2, ClipboardList, Download, Eye, PackageCheck, Pencil, XCircle } from 'lucide-react';
 
 import {
   AsignacionComponenteLaboratorio,
@@ -13,6 +13,7 @@ import {
   getEstadoEquipoLabel,
   splitMarcaModelo,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
+import { EtiquetaInventarioModal } from '@/modulos/laboratorio/componentes/inventario/EtiquetaInventarioModal';
 
 type ExpedienteEquipoModalProps = {
   componentMoveTargets: Record<string, string>;
@@ -78,12 +79,15 @@ export function ExpedienteEquipoModal({
   onOpenFichaRecord,
   setComponentMoveTargets,
 }: ExpedienteEquipoModalProps) {
+  const [showEtiquetaModal, setShowEtiquetaModal] = useState(false);
   const { marca, modelo } = splitMarcaModelo(selectedEquipoDetalle.marcaModelo);
   const fichasEquipo = getFichasEquipo(selectedEquipoDetalle);
   const bitacorasEquipo = getBitacorasEquipo(selectedEquipoDetalle);
   const componentesActivos = getAsignacionesActivasEquipo(selectedEquipoDetalle);
   const componentesDisponibles = getComponentesDisponibles(selectedEquipoDetalle);
   const ultimoMantenimiento = getUltimoMantenimientoEquipo(fichasEquipo, bitacorasEquipo);
+  const estadoDetalle =
+    estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado);
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={closeEquipoDetalle}>
@@ -100,7 +104,7 @@ export function ExpedienteEquipoModal({
             <h2 id="lab-equipment-detail-title">{selectedEquipoDetalle.nombre}</h2>
             <p>
               {selectedEquipoDetalle.codigo || 'Sin inventario'} | {selectedEquipoDetalle.ubicacion || 'Sin ubicacion'} |{' '}
-              {estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado)}
+              {estadoDetalle}
             </p>
           </div>
           <button className="icon-button" type="button" aria-label="Cerrar detalle" onClick={closeEquipoDetalle}>
@@ -126,6 +130,10 @@ export function ExpedienteEquipoModal({
             <Pencil size={18} />
             Editar datos
           </button>
+          <button className="secondary-button" type="button" onClick={() => setShowEtiquetaModal(true)}>
+            <Barcode size={18} />
+            Etiqueta
+          </button>
           <button className="primary-button" type="button" onClick={() => onOpenFichaForEquipo(selectedEquipoDetalle)}>
             <ClipboardList size={18} />
             Nueva ficha tecnica
@@ -143,7 +151,7 @@ export function ExpedienteEquipoModal({
           <div><dt>Modelo</dt><dd>{modelo}</dd></div>
           <div><dt>Serie</dt><dd>{selectedEquipoDetalle.serie || 'S/N'}</dd></div>
           <div><dt>Ubicacion</dt><dd>{selectedEquipoDetalle.ubicacion || 'No indicada'}</dd></div>
-          <div><dt>Estado</dt><dd>{estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado)}</dd></div>
+          <div><dt>Estado</dt><dd>{estadoDetalle}</dd></div>
           <div>
             <dt>Ultimo mantenimiento</dt>
             <dd>{ultimoMantenimiento ? formatDateTime(ultimoMantenimiento) : 'Sin mantenimiento registrado'}</dd>
@@ -386,6 +394,14 @@ export function ExpedienteEquipoModal({
           <span className="eyebrow">Observaciones del inventario</span>
           <p>{selectedEquipoDetalle.observaciones || 'Sin observaciones registradas en inventario.'}</p>
         </section>
+
+        {showEtiquetaModal ? (
+          <EtiquetaInventarioModal
+            equipo={selectedEquipoDetalle}
+            estadoNombre={estadoDetalle}
+            onClose={() => setShowEtiquetaModal(false)}
+          />
+        ) : null}
       </article>
     </div>
   );
