@@ -2380,6 +2380,109 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.lab-qr-page {
+  display: grid;
+  gap: 16px;
+}
+
+.lab-qr-page > .secondary-button {
+  justify-self: start;
+}
+
+.lab-qr-hero {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(133, 210, 76, 0.14), transparent 58%),
+    var(--surface);
+}
+
+.lab-qr-hero h1,
+.lab-qr-hero p,
+.lab-qr-section h2,
+.lab-qr-section p {
+  margin: 0;
+}
+
+.lab-qr-hero h1 {
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1;
+}
+
+.lab-qr-hero p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.lab-qr-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lab-qr-summary-grid article {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab-qr-summary-grid svg {
+  color: var(--accent);
+}
+
+.lab-qr-summary-grid span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.lab-qr-summary-grid strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.lab-qr-section {
+  gap: 12px;
+}
+
+.lab-qr-notes {
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+
+.lab-qr-linked-card,
+.lab-qr-record {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-deep);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.lab-qr-linked-card {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.lab-qr-linked-card span {
+  grid-column: 2;
+  color: var(--muted);
+}
+
+.lab-qr-record span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .lab-equipment-detail-grid {
   padding: 0;
 }
@@ -4305,6 +4408,22 @@ textarea {
 
   .inventory-label-preview dl {
     grid-template-columns: 1fr;
+  }
+
+  .lab-qr-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-qr-hero {
+    padding: 16px;
+  }
+
+  .lab-qr-linked-card {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-qr-linked-card span {
+    grid-column: auto;
   }
 
   .app-shell,

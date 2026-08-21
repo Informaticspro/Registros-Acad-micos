@@ -127,8 +127,9 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
       : equipo.nombre;
   const barcodeValue = normalizeBarcodeValue(labelIdentifier);
   const barcode = useMemo(() => buildBarcodeSegments(barcodeValue), [barcodeValue]);
-  const qrPayload = [
-    'REGISTRO ACADEMICO - FACULTAD DE ECONOMIA',
+  const expedienteUrl = `${window.location.origin}/laboratorio/equipos/${equipo.id}`;
+  const detalleEquipo = [
+    `Expediente: ${expedienteUrl}`,
     `Inventario: ${inventoryDisplay}`,
     `Equipo: ${equipo.nombre || 'No indicado'}`,
     `Categoria: ${equipo.categoria || 'No indicada'}`,
@@ -140,8 +141,8 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
   ].join('\n');
 
   useEffect(() => {
-    void QRCode.toDataURL(qrPayload, { margin: 2, width: 260 }).then(setQrDataUrl);
-  }, [qrPayload]);
+    void QRCode.toDataURL(expedienteUrl, { margin: 2, width: 260 }).then(setQrDataUrl);
+  }, [expedienteUrl]);
 
   const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${barcode.width}" height="${barcode.height + 34}" viewBox="0 0 ${barcode.width} ${barcode.height + 34}">
   <rect width="100%" height="100%" fill="#fff"/>
@@ -220,7 +221,7 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
               Descargar QR
             </a>
           ) : null}
-          <button className="secondary-button" type="button" onClick={() => void navigator.clipboard?.writeText(qrPayload)}>
+          <button className="secondary-button" type="button" onClick={() => void navigator.clipboard?.writeText(detalleEquipo)}>
             <Clipboard size={18} />
             Copiar detalle
           </button>
