@@ -4,24 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import {
   BitacoraLaboratorioInput,
   EquipoLaboratorioInput,
-  FichaTecnicaLaboratorioInput,
   LaboratorioState,
   PrestamoLaboratorioInput,
   createAsignacionComponenteLaboratorio,
   createBitacoraLaboratorio,
   createDescarteLaboratorio,
   createEquipoLaboratorio,
-  createFichaTecnicaLaboratorio,
   deleteBitacoraLaboratorio,
   deleteDescarteLaboratorio,
   deleteEquipoLaboratorio,
-  deleteFichaTecnicaLaboratorio,
   importEquiposLaboratorio,
   listLaboratorioData,
   retirarAsignacionComponenteLaboratorio,
   updateBitacoraLaboratorio,
   updateEquipoLaboratorio,
-  updateFichaTecnicaLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import {
   AsignacionComponenteLaboratorio,
@@ -31,7 +27,6 @@ import {
   EstadoEquipoLaboratorio,
   EstadoTrabajoLaboratorio,
   ClaseRegistroLaboratorio,
-  FichaTecnicaLaboratorio,
   PrioridadLaboratorio,
 } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
@@ -52,6 +47,7 @@ import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamo
 import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
 import { useEquipoFormModal } from '@/modulos/laboratorio/hooks/useEquipoFormModal';
+import { useFichasLaboratorio } from '@/modulos/laboratorio/hooks/useFichasLaboratorio';
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
 import { usePrestamosLaboratorio } from '@/modulos/laboratorio/hooks/usePrestamosLaboratorio';
 import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesLaboratorio';
@@ -65,7 +61,6 @@ import {
   buildDescarteInput,
   buildDuplicateEquipoMessage,
   buildEquipoInput,
-  buildFichaTecnicaInput,
   filterUniqueEquipoInputsForImport,
   findDuplicateEquipoIdentity,
   getCategoriaComponenteDesdeTipo,
@@ -93,10 +88,7 @@ export function PaginaLaboratorio() {
   const { profile } = useAutenticacion();
   const [activeTab, setActiveTab] = useState<LabTab>('inicio');
   const [state, setState] = useState<LaboratorioState>(emptyState);
-  const [editingFicha, setEditingFicha] = useState<FichaTecnicaLaboratorio | null>(null);
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
-  const [selectedFicha, setSelectedFicha] = useState<FichaTecnicaLaboratorio | null>(null);
-  const [selectedEquipoFichaId, setSelectedEquipoFichaId] = useState('');
   const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -162,10 +154,25 @@ export function PaginaLaboratorio() {
     setMessage,
   });
 
-  const selectedEquipoFicha = useMemo(
-    () => state.equipos.find((item) => item.id === selectedEquipoFichaId) ?? null,
-    [selectedEquipoFichaId, state.equipos],
-  );
+  const {
+    editingFicha,
+    handleDeleteFicha,
+    handleFichaSubmit,
+    openFichaForEquipo: openFichaForEquipoBase,
+    selectedEquipoFicha,
+    selectedEquipoFichaId,
+    selectedFicha,
+    setEditingFicha,
+    setSelectedEquipoFichaId,
+    setSelectedFicha,
+  } = useFichasLaboratorio({
+    equipos: state.equipos,
+    refresh,
+    saveContext,
+    setError,
+    setIsSaving,
+    setMessage,
+  });
 
   const selectedDescarteEquipo = useMemo(
     () => state.equipos.find((item) => item.id === selectedDescarteEquipoId) ?? null,
@@ -317,36 +324,6 @@ export function PaginaLaboratorio() {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [activeCatalogManager, confirmacionOperativo, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
-
-  async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const input = buildFichaTecnicaInput(form);
-
-    setIsSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      if (editingFicha) {
-        const updated = await updateFichaTecnicaLaboratorio(editingFicha.id, input);
-        setEditingFicha(null);
-        setSelectedFicha(updated);
-        setMessage('Ficha tecnica actualizada correctamente.');
-      } else {
-        const created = await createFichaTecnicaLaboratorio(input, saveContext);
-        setSelectedFicha(created);
-        setSelectedEquipoFichaId('');
-        setMessage('Ficha tecnica guardada correctamente.');
-        form.reset();
-      }
-
-      await refresh();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la ficha tecnica.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
 
   async function guardarBitacoraConInventario(
     input: BitacoraLaboratorioInput,
@@ -749,13 +726,6 @@ export function PaginaLaboratorio() {
     await refresh();
   }
 
-  async function handleDeleteFicha(item: FichaTecnicaLaboratorio) {
-    if (!window.confirm(`Desea eliminar la ficha tecnica de "${item.pc}"?`)) return;
-    await deleteFichaTecnicaLaboratorio(item.id);
-    if (selectedFicha?.id === item.id) setSelectedFicha(null);
-    await refresh();
-  }
-
   async function handleDeleteEquipo(item: EquipoLaboratorio) {
     if (!window.confirm(`Desea eliminar el equipo "${item.nombre}"?`)) return;
     await deleteEquipoLaboratorio(item.id);
@@ -849,8 +819,7 @@ export function PaginaLaboratorio() {
 
   function openFichaForEquipo(equipo: EquipoLaboratorio) {
     closeEquipoDetalle();
-    setEditingFicha(null);
-    setSelectedEquipoFichaId(equipo.id);
+    openFichaForEquipoBase(equipo);
     setActiveTab('fichas');
   }
 
