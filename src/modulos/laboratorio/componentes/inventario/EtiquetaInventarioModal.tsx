@@ -110,19 +110,31 @@ function escapeSvgText(value: string) {
     .replace(/'/g, '&apos;');
 }
 
+function hasUsefulIdentifier(value?: string | null) {
+  const normalized = (value ?? '').trim().toUpperCase();
+  return Boolean(normalized) && !['N/A', 'NA', 'S/N', 'SN', 'SIN INVENTARIO', 'SIN SERIE'].includes(normalized);
+}
+
 export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: EtiquetaInventarioModalProps) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const { marca, modelo } = splitMarcaModelo(equipo.marcaModelo);
-  const barcodeValue = normalizeBarcodeValue(equipo.codigo);
+  const inventoryDisplay = hasUsefulIdentifier(equipo.codigo) ? equipo.codigo : 'Sin inventario';
+  const serialDisplay = hasUsefulIdentifier(equipo.serie) ? equipo.serie : 'Sin serie';
+  const labelIdentifier = hasUsefulIdentifier(equipo.codigo)
+    ? equipo.codigo
+    : hasUsefulIdentifier(equipo.serie)
+      ? equipo.serie
+      : equipo.nombre;
+  const barcodeValue = normalizeBarcodeValue(labelIdentifier);
   const barcode = useMemo(() => buildBarcodeSegments(barcodeValue), [barcodeValue]);
   const qrPayload = [
     'REGISTRO ACADEMICO - FACULTAD DE ECONOMIA',
-    `Inventario: ${equipo.codigo || 'S/N'}`,
+    `Inventario: ${inventoryDisplay}`,
     `Equipo: ${equipo.nombre || 'No indicado'}`,
     `Categoria: ${equipo.categoria || 'No indicada'}`,
     `Marca: ${marca}`,
     `Modelo: ${modelo}`,
-    `Serie: ${equipo.serie || 'S/N'}`,
+    `Serie: ${serialDisplay}`,
     `Ubicacion: ${equipo.ubicacion || 'Sin ubicacion'}`,
     `Estado: ${estadoNombre || getEstadoEquipoLabel(equipo.estado)}`,
   ].join('\n');
@@ -147,7 +159,7 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
   <text x="380" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#082016">FACULTAD DE ECONOMIA</text>
   <text x="380" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#315543">UNIVERSIDAD AUTONOMA DE CHIRIQUI</text>
   <text x="42" y="126" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#082016">${escapeSvgText(equipo.nombre || 'Equipo')}</text>
-  <text x="42" y="152" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#315543">Inventario: ${escapeSvgText(equipo.codigo || 'S/N')} | Serie: ${escapeSvgText(equipo.serie || 'S/N')}</text>
+  <text x="42" y="152" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#315543">Inventario: ${escapeSvgText(inventoryDisplay)} | Serie: ${escapeSvgText(serialDisplay)}</text>
   <text x="42" y="176" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#315543">Ubicacion: ${escapeSvgText(equipo.ubicacion || 'Sin ubicacion')} | Estado: ${escapeSvgText(estadoNombre)}</text>
   <rect x="42" y="202" width="450" height="126" rx="12" fill="#fff" stroke="#d3dfc8"/>
   ${labelBarcodeRects}
@@ -164,7 +176,7 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
           <div>
             <span className="eyebrow">Etiqueta de inventario</span>
             <h2>{equipo.nombre}</h2>
-            <p>{equipo.codigo || 'Sin inventario'} | {equipo.ubicacion || 'Sin ubicacion'}</p>
+            <p>{inventoryDisplay} | Serie: {serialDisplay} | {equipo.ubicacion || 'Sin ubicacion'}</p>
           </div>
           <button className="icon-button" type="button" aria-label="Cerrar etiqueta" onClick={onClose}>
             <XCircle size={18} />
@@ -183,8 +195,8 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
           </div>
           <dl>
             <div><dt>Equipo</dt><dd>{equipo.nombre}</dd></div>
-            <div><dt>Inventario</dt><dd>{equipo.codigo || 'S/N'}</dd></div>
-            <div><dt>Serie</dt><dd>{equipo.serie || 'S/N'}</dd></div>
+            <div><dt>Inventario</dt><dd>{inventoryDisplay}</dd></div>
+            <div><dt>Serie</dt><dd>{serialDisplay}</dd></div>
             <div><dt>Ubicacion</dt><dd>{equipo.ubicacion || 'Sin ubicacion'}</dd></div>
           </dl>
         </section>
