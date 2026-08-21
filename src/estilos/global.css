@@ -1704,6 +1704,30 @@ textarea {
   white-space: nowrap;
 }
 
+.lab-scan-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid rgba(243, 189, 34, 0.6);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(243, 189, 34, 0.96), rgba(255, 211, 83, 0.9));
+  color: #102216;
+  font-weight: 950;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(243, 189, 34, 0.18);
+}
+
+.lab-scan-button svg {
+  flex: 0 0 auto;
+}
+
+.lab-scan-button:hover {
+  transform: translateY(-1px);
+}
+
 .lab-header-side {
   min-width: 0;
   display: grid;
@@ -2275,6 +2299,110 @@ textarea {
 .lab-equipment-detail-header p {
   margin: 6px 0 0;
   color: var(--muted);
+}
+
+.modal-panel.lab-scanner-modal {
+  width: min(560px, calc(100vw - 28px));
+  max-height: min(820px, calc(100vh - 28px));
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  background: var(--surface-deep);
+}
+
+.lab-scanner-backdrop {
+  z-index: 1300;
+}
+
+.lab-scanner-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+}
+
+.lab-scanner-header h2 {
+  margin: 2px 0 6px;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+
+.lab-scanner-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lab-scanner-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(243, 189, 34, 0.34);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at center, rgba(121, 183, 53, 0.12), transparent 52%),
+    #050a10;
+}
+
+.lab-scanner-preview .scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lab-scanner-reticle {
+  pointer-events: none;
+  position: absolute;
+  inset: 18%;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(243, 189, 34, 0.86);
+  border-radius: 22px;
+  color: rgba(243, 189, 34, 0.9);
+  box-shadow:
+    0 0 0 999px rgba(0, 0, 0, 0.18),
+    inset 0 0 24px rgba(121, 183, 53, 0.16);
+}
+
+.lab-scanner-success {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.lab-scanner-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.lab-scanner-message.success {
+  border: 1px solid rgba(121, 183, 53, 0.42);
+  background: rgba(121, 183, 53, 0.12);
+}
+
+.lab-scanner-message.error {
+  border: 1px solid rgba(239, 68, 68, 0.42);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.lab-scanner-message svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.lab-scanner-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .lab-equipment-detail-actions {
@@ -5325,14 +5453,22 @@ textarea {
 
   .lab-header-actions {
     justify-content: stretch;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
   }
 
   .lab-header-actions .theme-toggle {
-    flex: 0 0 42px;
+    width: 42px;
+  }
+
+  .lab-header-actions .lab-scan-button {
+    grid-column: 1 / -1;
+    min-height: 42px;
+    order: -1;
   }
 
   .lab-header-actions .lab-workspace-badge {
-    flex: 1;
+    min-height: 42px;
   }
 
   .lab-quick-stats {
@@ -5356,6 +5492,22 @@ textarea {
     min-width: 0;
     overflow-x: hidden;
     overflow-y: visible;
+  }
+
+  .modal-panel.lab-scanner-modal {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .lab-scanner-preview {
+    min-height: 260px;
+    max-height: 52vh;
+  }
+
+  .lab-scanner-actions {
+    grid-template-columns: 1fr;
   }
 
   .lab-tabs {

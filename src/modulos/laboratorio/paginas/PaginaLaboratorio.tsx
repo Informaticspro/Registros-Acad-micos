@@ -18,6 +18,7 @@ import {
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { formatDateTime } from '@/utilidades/formato';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
+import { EscanerInventarioModal } from '@/modulos/laboratorio/componentes/EscanerInventarioModal';
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
 import { ConfirmacionOperativoModal } from '@/modulos/laboratorio/componentes/bitacoras/ConfirmacionOperativoModal';
@@ -73,6 +74,7 @@ export function PaginaLaboratorio() {
   const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showInventoryScanner, setShowInventoryScanner] = useState(false);
 
   const saveContext = useMemo(
     () => ({
@@ -348,7 +350,15 @@ export function PaginaLaboratorio() {
   }, [message, error]);
 
   useEffect(() => {
-    if (!selectedFicha && !selectedEquipoDetalle && !showEquipoFormModal && !activeCatalogManager && !confirmacionOperativo) return undefined;
+    if (
+      !selectedFicha &&
+      !selectedEquipoDetalle &&
+      !showEquipoFormModal &&
+      !activeCatalogManager &&
+      !confirmacionOperativo &&
+      !showInventoryScanner
+    )
+      return undefined;
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
@@ -357,11 +367,19 @@ export function PaginaLaboratorio() {
       closeEquipoFormModal();
       setConfirmacionOperativo(null);
       closeCatalogManager();
+      setShowInventoryScanner(false);
     }
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [activeCatalogManager, confirmacionOperativo, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
+  }, [
+    activeCatalogManager,
+    confirmacionOperativo,
+    selectedEquipoDetalle,
+    selectedFicha,
+    showEquipoFormModal,
+    showInventoryScanner,
+  ]);
 
   async function handleDeleteEquipo(item: EquipoLaboratorio) {
     if (!window.confirm(`Desea eliminar el equipo "${item.nombre}"?`)) return;
@@ -417,6 +435,7 @@ export function PaginaLaboratorio() {
         indicadores={indicadores}
         isLightTheme={isLightTheme}
         onBack={() => navigate('/dashboard')}
+        onOpenScanner={() => setShowInventoryScanner(true)}
         onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
       />
 
@@ -653,6 +672,8 @@ export function PaginaLaboratorio() {
               state={state}
             />
       </section>
+
+      {showInventoryScanner ? <EscanerInventarioModal onClose={() => setShowInventoryScanner(false)} /> : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { ArrowLeft, ClipboardList, HardDrive, Moon, PackageCheck, Sun, Wrench } from 'lucide-react';
+import { ArrowLeft, ClipboardList, HardDrive, Moon, PackageCheck, ScanLine, Sun, Wrench } from 'lucide-react';
 
 type IndicadoresLaboratorio = {
   trabajosAbiertos: number;
@@ -11,6 +11,7 @@ type EncabezadoLaboratorioProps = {
   indicadores: IndicadoresLaboratorio;
   isLightTheme: boolean;
   onBack: () => void;
+  onOpenScanner: () => void;
   onToggleTheme: () => void;
 };
 
@@ -18,6 +19,7 @@ export function EncabezadoLaboratorio({
   indicadores,
   isLightTheme,
   onBack,
+  onOpenScanner,
   onToggleTheme,
 }: EncabezadoLaboratorioProps) {
   return (
@@ -33,6 +35,10 @@ export function EncabezadoLaboratorio({
       </div>
       <div className="lab-header-side">
         <div className="lab-header-actions">
+          <button className="lab-scan-button" type="button" onClick={onOpenScanner}>
+            <ScanLine size={18} />
+            Escanear equipo
+          </button>
           <button
             className="icon-button theme-toggle"
             type="button"
