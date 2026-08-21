@@ -2,7 +2,6 @@
 import { CheckCircle2, Settings2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
-  BitacoraLaboratorioInput,
   EquipoLaboratorioInput,
   LaboratorioState,
   PrestamoLaboratorioInput,
@@ -10,18 +9,15 @@ import {
   createBitacoraLaboratorio,
   createDescarteLaboratorio,
   createEquipoLaboratorio,
-  deleteBitacoraLaboratorio,
   deleteDescarteLaboratorio,
   deleteEquipoLaboratorio,
   importEquiposLaboratorio,
   listLaboratorioData,
   retirarAsignacionComponenteLaboratorio,
-  updateBitacoraLaboratorio,
   updateEquipoLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import {
   AsignacionComponenteLaboratorio,
-  BitacoraLaboratorio,
   DescarteLaboratorio,
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
@@ -45,6 +41,7 @@ import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventa
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
 import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
+import { useBitacorasLaboratorio } from '@/modulos/laboratorio/hooks/useBitacorasLaboratorio';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
 import { useEquipoFormModal } from '@/modulos/laboratorio/hooks/useEquipoFormModal';
 import { useFichasLaboratorio } from '@/modulos/laboratorio/hooks/useFichasLaboratorio';
@@ -56,7 +53,6 @@ import {
   estadoEquipoLabels,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
-  buildBitacoraInput,
   buildComponentesInicialesInput,
   buildDescarteInput,
   buildDuplicateEquipoMessage,
@@ -73,12 +69,10 @@ import {
   parseDescartesExcelRows,
   parseEquipoExcelRow,
   readString,
-  resolveInventoryStatusFromBitacora,
   shouldImportEquipoRow,
   shouldRequestIssueDetailForEstado,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 import {
-  type ConfirmacionOperativoPendiente,
   type LabTab,
   type TemaVisual,
 } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
@@ -88,7 +82,6 @@ export function PaginaLaboratorio() {
   const { profile } = useAutenticacion();
   const [activeTab, setActiveTab] = useState<LabTab>('inicio');
   const [state, setState] = useState<LaboratorioState>(emptyState);
-  const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
   const [selectedDescarteEquipoId, setSelectedDescarteEquipoId] = useState('');
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -98,7 +91,6 @@ export function PaginaLaboratorio() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
-  const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -273,6 +265,24 @@ export function PaginaLaboratorio() {
     state,
   });
 
+  const {
+    confirmacionOperativo,
+    editingBitacora,
+    guardarBitacoraConInventario,
+    handleBitacoraSubmit,
+    handleDeleteBitacora,
+    setConfirmacionOperativo,
+    setEditingBitacora,
+  } = useBitacorasLaboratorio({
+    equipos: state.equipos,
+    estadoEquipoNombre,
+    refresh,
+    saveContext,
+    setError,
+    setIsSaving,
+    setMessage,
+  });
+
   async function refresh() {
     setIsLoading(true);
     setError(null);
@@ -324,55 +334,6 @@ export function PaginaLaboratorio() {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [activeCatalogManager, confirmacionOperativo, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
-
-  async function guardarBitacoraConInventario(
-    input: BitacoraLaboratorioInput,
-    equipoAtendido: EquipoLaboratorio | undefined,
-    nextEquipoEstado: EstadoEquipoLaboratorio | null,
-    shouldSyncEquipoEstado: boolean,
-    form: HTMLFormElement,
-  ) {
-    if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
-      const previousEstadoLabel = estadoEquipoNombre[equipoAtendido.estado] ?? getEstadoEquipoLabel(equipoAtendido.estado);
-      const nextEstadoLabel = estadoEquipoNombre[nextEquipoEstado] ?? getEstadoEquipoLabel(nextEquipoEstado);
-      input.descripcion = `${input.descripcion.trim()}\n\nAuditoria de inventario: ${previousEstadoLabel} -> ${nextEstadoLabel}.`;
-      input.equipoOrigen = input.equipoOrigen || equipoAtendido.estado;
-    }
-
-    setIsSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      if (editingBitacora) {
-        await updateBitacoraLaboratorio(editingBitacora.id, input);
-        setEditingBitacora(null);
-        setMessage('Bitacora actualizada correctamente.');
-      } else {
-        await createBitacoraLaboratorio(input, saveContext);
-        setMessage('Bitacora registrada correctamente.');
-        form.reset();
-      }
-
-      if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
-        await updateEquipoLaboratorio(equipoAtendido.id, {
-          codigo: equipoAtendido.codigo,
-          nombre: equipoAtendido.nombre,
-          categoria: equipoAtendido.categoria,
-          marcaModelo: equipoAtendido.marcaModelo,
-          serie: equipoAtendido.serie,
-          ubicacion: equipoAtendido.ubicacion,
-          estado: nextEquipoEstado,
-          observaciones: equipoAtendido.observaciones,
-        });
-      }
-
-      await refresh();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la bitacora.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
 
   async function handleEquipoSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -549,27 +510,6 @@ export function PaginaLaboratorio() {
     }
   }
 
-  async function handleBitacoraSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const input = buildBitacoraInput(form);
-    const equipoAtendido = state.equipos.find((item) => item.id === input.equipoId);
-    const nextEquipoEstado = equipoAtendido ? resolveInventoryStatusFromBitacora(input) : null;
-    const shouldSyncEquipoEstado = Boolean(equipoAtendido && nextEquipoEstado);
-
-    if (equipoAtendido) {
-      input.equipoDestino = `${equipoAtendido.codigo} - ${equipoAtendido.nombre}`;
-      input.ubicacion = input.ubicacion || equipoAtendido.ubicacion;
-    }
-
-    if (equipoAtendido && nextEquipoEstado === 'operativo' && equipoAtendido.estado !== 'operativo') {
-      setConfirmacionOperativo({ input, equipoAtendido, nextEquipoEstado, form });
-      return;
-    }
-
-    await guardarBitacoraConInventario(input, equipoAtendido, nextEquipoEstado, shouldSyncEquipoEstado, form);
-  }
-
   async function handleQuickEstadoEquipo(item: EquipoLaboratorio, estado: EstadoEquipoLaboratorio) {
     if (item.estado === estado) return;
     const previousEstadoLabel = estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado);
@@ -718,12 +658,6 @@ export function PaginaLaboratorio() {
     } finally {
       setIsSaving(false);
     }
-  }
-
-  async function handleDeleteBitacora(item: BitacoraLaboratorio) {
-    if (!window.confirm(`Desea eliminar la bitacora "${item.titulo}"?`)) return;
-    await deleteBitacoraLaboratorio(item.id);
-    await refresh();
   }
 
   async function handleDeleteEquipo(item: EquipoLaboratorio) {
