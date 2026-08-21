@@ -35,7 +35,6 @@ import {
   PrioridadLaboratorio,
 } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
-import { supabase } from '@/infraestructura/supabase';
 import { formatDateTime } from '@/utilidades/formato';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
@@ -50,6 +49,7 @@ import { VistaInventario } from '@/modulos/laboratorio/componentes/inventario/Vi
 import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventario/ExpedienteEquipoModal';
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
+import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
 import { usePrestamosLaboratorio } from '@/modulos/laboratorio/hooks/usePrestamosLaboratorio';
@@ -57,7 +57,6 @@ import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesL
 import {
   emptyState,
   estadoEquipoLabels,
-  estadoTrabajoLabels,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
   buildBitacoraInput,
@@ -73,7 +72,6 @@ import {
   getEstadoChangeWorkType,
   getEstadoEquipoLabel,
   getInitialTheme,
-  isUuid,
   normalizeExcelKey,
   normalizeUniqueEquipoValue,
   parseDescartesExcelRows,
@@ -110,8 +108,6 @@ export function PaginaLaboratorio() {
   const [componentesNuevoEquipo, setComponentesNuevoEquipo] = useState<ComponenteNuevoDraft[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [profileNamesById, setProfileNamesById] = useState<Record<string, string>>({});
-  const [showMoreActivity, setShowMoreActivity] = useState(false);
   const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
   const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -284,6 +280,17 @@ export function PaginaLaboratorio() {
     [state.estadosEquipo],
   );
 
+  const {
+    actividadReciente,
+    indicadores,
+    setShowMoreActivity,
+    showMoreActivity,
+  } = useActividadLaboratorio({
+    estadoEquipoNombre,
+    profile,
+    state,
+  });
+
   async function refresh() {
     setIsLoading(true);
     setError(null);
@@ -308,27 +315,6 @@ export function PaginaLaboratorio() {
   useEffect(() => {
     void refresh();
   }, []);
-
-  useEffect(() => {
-    const registeredIds = Array.from(new Set(state.equipos.map((item) => item.registradoPor).filter((value) => value && isUuid(value))));
-    const missingIds = registeredIds.filter((id) => !profileNamesById[id]);
-    if (profile?.id && profile.fullName) {
-      setProfileNamesById((current) => (current[profile.id] ? current : { ...current, [profile.id]: profile.fullName }));
-    }
-    if (!supabase || missingIds.length === 0) return;
-
-    supabase
-      .from('profiles')
-      .select('id, full_name')
-      .in('id', missingIds)
-      .then(({ data }) => {
-        if (!data?.length) return;
-        setProfileNamesById((current) => ({
-          ...current,
-          ...Object.fromEntries(data.map((row) => [row.id, row.full_name])),
-        }));
-      });
-  }, [profile?.fullName, profile?.id, profileNamesById, state.equipos]);
 
   useEffect(() => {
     if (!message && !error) return undefined;
@@ -356,75 +342,6 @@ export function PaginaLaboratorio() {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [activeCatalogManager, confirmacionOperativo, selectedEquipoDetalle, selectedFicha, showEquipoFormModal]);
-
-  const indicadores = useMemo(() => {
-    const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
-    const equiposMantenimiento = state.equipos.filter((item) => item.estado === 'mantenimiento').length;
-    const equiposPendientes = state.equipos.filter((item) => item.estado !== 'operativo').length;
-    const prestamosActivos = state.prestamos.filter((item) => item.estado === 'activo').length;
-    const descartesRegistrados = state.descartes.length;
-    const evidencias = state.bitacoras.filter((item) => item.evidenciaUrl || item.evidenciaTitulo).length;
-
-    return { trabajosAbiertos, equiposMantenimiento, equiposPendientes, prestamosActivos, descartesRegistrados, evidencias };
-  }, [state]);
-
-  const actividadReciente = useMemo(() => {
-    const bitacoras = state.bitacoras.map((item) => ({
-      id: `bitacora-${item.id}`,
-      fecha: item.fecha,
-      tipo: 'Bitacora',
-      titulo: item.titulo,
-      detalle: `${item.responsable || 'Sin responsable'} | ${estadoTrabajoLabels[item.estado]}`,
-      tab: 'bitacoras' as LabTab,
-    }));
-    const fichas = state.fichas.map((item) => ({
-      id: `ficha-${item.id}`,
-      fecha: item.updatedAt,
-      tipo: 'Ficha tecnica',
-      titulo: item.pc,
-      detalle: `${item.ubicacion || 'Sin ubicacion'} | ${item.responsable || 'Sin responsable'}`,
-      tab: 'fichas' as LabTab,
-    }));
-    const prestamos = state.prestamos.map((item) => ({
-      id: `prestamo-${item.id}`,
-      fecha: item.fechaPrestamo,
-      tipo: 'Prestamo',
-      titulo: item.equipo,
-      detalle: `${item.entregadoA} | ${item.estado}`,
-      tab: 'prestamos' as LabTab,
-    }));
-    const descartes = state.descartes.map((item) => ({
-      id: `descarte-${item.id}`,
-      fecha: item.fecha,
-      tipo: 'Descarte',
-      titulo: item.equipo,
-      detalle: `${item.responsable || 'Sin responsable'} | ${item.ubicacion || 'Sin ubicacion'}`,
-      tab: 'descartes' as LabTab,
-    }));
-    const equipos = state.equipos.map((item) => {
-      const isCreation = Math.abs(new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime()) < 2000;
-      const responsable =
-        item.registradoPor && item.registradoPor === profile?.id
-          ? profile.fullName
-          : item.registradoPor && profileNamesById[item.registradoPor]
-            ? profileNamesById[item.registradoPor]
-          : item.registradoPor && !isUuid(item.registradoPor)
-            ? item.registradoPor
-            : 'Usuario del sistema';
-      return {
-        id: `equipo-${item.id}`,
-        fecha: item.updatedAt || item.createdAt,
-        tipo: isCreation ? 'Equipo registrado' : 'Equipo actualizado',
-        titulo: item.nombre,
-        detalle: `${responsable} | ${item.ubicacion || 'Sin ubicacion'} | ${estadoEquipoNombre[item.estado] ?? getEstadoEquipoLabel(item.estado)}`,
-        tab: 'inventario' as LabTab,
-      };
-    });
-
-    return [...bitacoras, ...fichas, ...prestamos, ...descartes, ...equipos]
-      .sort((first, second) => second.fecha.localeCompare(first.fecha))
-      .slice(0, showMoreActivity ? 20 : 8);
-  }, [estadoEquipoNombre, profile?.fullName, profile?.id, profileNamesById, showMoreActivity, state.bitacoras, state.descartes, state.equipos, state.fichas, state.prestamos]);
 
   async function handleFichaSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
