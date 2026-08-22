@@ -149,25 +149,34 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
   ${barcode.rects.map((rect) => `<rect x="${rect.x}" y="10" width="${rect.width}" height="${barcode.height}" fill="#111"/>`).join('')}
   <text x="${barcode.width / 2}" y="${barcode.height + 26}" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700">${escapeSvgText(barcodeValue)}</text>
 </svg>`;
-  const labelBarcodeScale = Math.min(1.6, 440 / barcode.width);
+  const labelBarcodeBoxWidth = 650;
+  const labelBarcodeScale = Math.min(1.18, labelBarcodeBoxWidth / barcode.width);
   const labelBarcodeHeight = barcode.height * labelBarcodeScale;
+  const labelBarcodeX = 55 + (labelBarcodeBoxWidth - barcode.width * labelBarcodeScale) / 2;
   const labelBarcodeRects = barcode.rects
-    .map((rect) => `<rect x="${42 + rect.x * labelBarcodeScale}" y="212" width="${rect.width * labelBarcodeScale}" height="${labelBarcodeHeight}" fill="#111"/>`)
+    .map((rect) => `<rect x="${labelBarcodeX + rect.x * labelBarcodeScale}" y="158" width="${rect.width * labelBarcodeScale}" height="${labelBarcodeHeight}" fill="#111"/>`)
     .join('');
-  const labelSvgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420">
-  <rect width="760" height="420" rx="24" fill="#ffffff"/>
-  <rect x="18" y="18" width="724" height="384" rx="18" fill="#f8fbf3" stroke="#163d2d" stroke-width="4"/>
-  <text x="380" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#082016">FACULTAD DE ECONOMIA</text>
-  <text x="380" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#315543">UNIVERSIDAD AUTONOMA DE CHIRIQUI</text>
-  <text x="42" y="126" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#082016">${escapeSvgText(equipo.nombre || 'Equipo')}</text>
-  <text x="42" y="152" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#315543">Inventario: ${escapeSvgText(inventoryDisplay)} | Serie: ${escapeSvgText(serialDisplay)}</text>
-  <text x="42" y="176" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#315543">Ubicacion: ${escapeSvgText(equipo.ubicacion || 'Sin ubicacion')} | Estado: ${escapeSvgText(estadoNombre)}</text>
-  <rect x="42" y="202" width="450" height="126" rx="12" fill="#fff" stroke="#d3dfc8"/>
+  const labelSvgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="290" viewBox="0 0 760 290">
+  <rect width="760" height="290" rx="18" fill="#ffffff"/>
+  <rect x="4" y="4" width="752" height="282" rx="16" fill="#f8fbf3" stroke="#163d2d" stroke-width="3"/>
+  <text x="380" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="900" fill="#082016">FACULTAD DE ECONOMIA</text>
+  <text x="380" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="900" fill="#315543">INVENTARIO TECNICO</text>
+  <text x="32" y="98" font-family="Arial, sans-serif" font-size="26" font-weight="900" fill="#082016">${escapeSvgText(equipo.nombre || 'Equipo')}</text>
+  <text x="32" y="120" font-family="Arial, sans-serif" font-size="12" font-weight="800" fill="#315543">${escapeSvgText(equipo.categoria || 'Sin categoria')} | ${escapeSvgText(equipo.ubicacion || 'Sin ubicacion')}</text>
+  <text x="32" y="138" font-family="Arial, sans-serif" font-size="12" font-weight="800" fill="#315543">${escapeSvgText(marca || 'S/N')}${modelo ? ` - ${escapeSvgText(modelo)}` : ''}</text>
+  ${qrDataUrl ? `<image href="${qrDataUrl}" x="632" y="70" width="92" height="92"/>` : ''}
+  <rect x="32" y="150" width="696" height="64" rx="9" fill="#fff" stroke="#d3dfc8"/>
   ${labelBarcodeRects}
-  <text x="267" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="800" fill="#111">${escapeSvgText(barcodeValue)}</text>
-  ${qrDataUrl ? `<image href="${qrDataUrl}" x="536" y="128" width="160" height="160"/>` : ''}
-  <text x="616" y="316" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="800" fill="#082016">Escanee para ver detalle</text>
-  <text x="380" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#315543">Registros Academicos - Inventario tecnico</text>
+  <text x="380" y="207" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="900" fill="#111">${escapeSvgText(barcodeValue)}</text>
+  <rect x="32" y="224" width="222" height="44" rx="8" fill="#f8fbf3" stroke="#d3dfc8"/>
+  <text x="44" y="241" font-family="Arial, sans-serif" font-size="9" font-weight="900" fill="#315543">INVENTARIO</text>
+  <text x="44" y="258" font-family="Arial, sans-serif" font-size="13" font-weight="900" fill="#082016">${escapeSvgText(inventoryDisplay)}</text>
+  <rect x="269" y="224" width="222" height="44" rx="8" fill="#f8fbf3" stroke="#d3dfc8"/>
+  <text x="281" y="241" font-family="Arial, sans-serif" font-size="9" font-weight="900" fill="#315543">SERIE</text>
+  <text x="281" y="258" font-family="Arial, sans-serif" font-size="13" font-weight="900" fill="#082016">${escapeSvgText(serialDisplay)}</text>
+  <rect x="506" y="224" width="222" height="44" rx="8" fill="#f8fbf3" stroke="#d3dfc8"/>
+  <text x="518" y="241" font-family="Arial, sans-serif" font-size="9" font-weight="900" fill="#315543">UBICACION</text>
+  <text x="518" y="258" font-family="Arial, sans-serif" font-size="13" font-weight="900" fill="#082016">${escapeSvgText(equipo.ubicacion || 'Sin ubicacion')}</text>
 </svg>`;
 
   return (
@@ -186,8 +195,7 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
 
         <section className="inventory-label-preview">
           <div className="inventory-label-heading">
-            <strong>Universidad Autonoma de Chiriqui</strong>
-            <span>Facultad de Economia</span>
+            <strong>Facultad de Economia</strong>
             <small>Inventario tecnico</small>
           </div>
           <div className="inventory-label-body">
@@ -195,7 +203,6 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
             {qrDataUrl ? <img src={qrDataUrl} alt="QR con detalle del equipo" /> : null}
           </div>
           <dl>
-            <div><dt>Equipo</dt><dd>{equipo.nombre}</dd></div>
             <div><dt>Inventario</dt><dd>{inventoryDisplay}</dd></div>
             <div><dt>Serie</dt><dd>{serialDisplay}</dd></div>
             <div><dt>Ubicacion</dt><dd>{equipo.ubicacion || 'Sin ubicacion'}</dd></div>
