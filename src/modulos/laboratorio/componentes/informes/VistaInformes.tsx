@@ -58,7 +58,7 @@ export function VistaInformes({
     <div className="lab-report-grid">
       <article className="lab-report-card lab-report-card-priority full">
         <div>
-          <span className="eyebrow">Prioridad del laboratorio</span>
+          <span className="eyebrow">Equipos de la Facultad</span>
           <HardDrive size={30} />
           <h2>Informe de inventario</h2>
           <p>
