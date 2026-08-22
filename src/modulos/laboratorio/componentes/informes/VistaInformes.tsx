@@ -56,6 +56,28 @@ export function VistaInformes({
 }: VistaInformesProps) {
   return (
     <div className="lab-report-grid">
+      <article className="lab-report-card lab-report-card-priority full">
+        <div>
+          <span className="eyebrow">Prioridad del laboratorio</span>
+          <HardDrive size={30} />
+          <h2>Informe de inventario</h2>
+          <p>
+            Excel formal con inventario ordenado por ubicacion, categoria y equipo, mas resumen por areas. Use este reporte
+            como documento principal para revision, entrega o seguimiento institucional.
+          </p>
+        </div>
+        <div className="lab-report-priority-actions">
+          <button className="primary-button" type="button" onClick={exportInventoryExcel}>
+            <Download size={18} />
+            Descargar Excel
+          </button>
+          <button className="secondary-button" type="button" onClick={exportInventoryLabels}>
+            <Download size={18} />
+            Descargar etiquetas para imprimir
+          </button>
+        </div>
+      </article>
+
       <article className="lab-report-card full">
         <Wrench size={26} />
         <h2>Informe de mantenimiento bajo demanda</h2>
@@ -142,20 +164,6 @@ export function VistaInformes({
         <button className="secondary-button" type="button" onClick={exportEquipmentHistoryReport}>
           <Download size={18} />
           Descargar historial
-        </button>
-      </article>
-
-      <article className="lab-report-card">
-        <HardDrive size={26} />
-        <h2>Informe de inventario</h2>
-        <p>Excel formal con inventario ordenado por ubicacion, categoria y equipo, mas resumen por areas.</p>
-        <button className="primary-button" type="button" onClick={exportInventoryExcel}>
-          <Download size={18} />
-          Descargar Excel
-        </button>
-        <button className="secondary-button" type="button" onClick={exportInventoryLabels}>
-          <Download size={18} />
-          Descargar etiquetas para imprimir
         </button>
       </article>
 
