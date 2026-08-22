@@ -202,6 +202,7 @@ export function PaginaLaboratorio() {
     exportEquipmentHistoryById,
     exportEquipmentHistoryReport,
     exportInventoryExcel,
+    exportInventoryLabels,
     exportLocationReport,
     exportMonthlyReport,
     exportPendingReport,
@@ -623,6 +624,7 @@ export function PaginaLaboratorio() {
             exportDiscardsExcel={exportDiscardsExcel}
             exportEquipmentHistoryReport={exportEquipmentHistoryReport}
             exportInventoryExcel={exportInventoryExcel}
+            exportInventoryLabels={() => void exportInventoryLabels()}
             exportLocationReport={exportLocationReport}
             exportMonthlyReport={exportMonthlyReport}
             exportPendingReport={exportPendingReport}

@@ -1675,6 +1675,321 @@ function isInventoryNoteRow(item: EquipoLaboratorio) {
   );
 }
 
+const code39Patterns: Record<string, string> = {
+  '0': '101001101101',
+  '1': '110100101011',
+  '2': '101100101011',
+  '3': '110110010101',
+  '4': '101001101011',
+  '5': '110100110101',
+  '6': '101100110101',
+  '7': '101001011011',
+  '8': '110100101101',
+  '9': '101100101101',
+  A: '110101001011',
+  B: '101101001011',
+  C: '110110100101',
+  D: '101011001011',
+  E: '110101100101',
+  F: '101101100101',
+  G: '101010011011',
+  H: '110101001101',
+  I: '101101001101',
+  J: '101011001101',
+  K: '110101010011',
+  L: '101101010011',
+  M: '110110101001',
+  N: '101011010011',
+  O: '110101101001',
+  P: '101101101001',
+  Q: '101010110011',
+  R: '110101011001',
+  S: '101101011001',
+  T: '101011011001',
+  U: '110010101011',
+  V: '100110101011',
+  W: '110011010101',
+  X: '100101101011',
+  Y: '110010110101',
+  Z: '100110110101',
+  '-': '100101011011',
+  '.': '110010101101',
+  ' ': '100110101101',
+  '$': '100100100101',
+  '/': '100100101001',
+  '+': '100101001001',
+  '%': '101001001001',
+  '*': '100101101101',
+};
+
+function hasUsefulIdentifier(value?: string | null) {
+  const normalized = (value ?? '').trim().toUpperCase();
+  return Boolean(normalized) && !['N/A', 'NA', 'S/N', 'SN', 'SIN INVENTARIO', 'SIN SERIE'].includes(normalized);
+}
+
+function normalizeBarcodeValue(value: string) {
+  const normalized = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ./$+%-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return normalized || 'SIN INVENTARIO';
+}
+
+function buildBarcodeSvg(value: string) {
+  const fullValue = `*${normalizeBarcodeValue(value)}*`;
+  const moduleWidth = 1.65;
+  const height = 44;
+  const quietZone = 8;
+  let x = quietZone;
+  const rects: Array<{ x: number; width: number }> = [];
+
+  fullValue.split('').forEach((char) => {
+    const pattern = code39Patterns[char] ?? code39Patterns[' '];
+    pattern.split('').forEach((bit) => {
+      const width = bit === '1' ? moduleWidth * 2 : moduleWidth;
+      if (bit === '1') rects.push({ x, width });
+      x += width;
+    });
+    x += moduleWidth;
+  });
+
+  const width = x + quietZone;
+  const escapedValue = escapeHtml(normalizeBarcodeValue(value));
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height + 18}" role="img" aria-label="Codigo de barras ${escapedValue}">
+    <rect width="100%" height="100%" fill="#fff"/>
+    ${rects.map((rect) => `<rect x="${rect.x}" y="5" width="${rect.width}" height="${height}" fill="#111"/>`).join('')}
+    <text x="${width / 2}" y="${height + 15}" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="800">${escapedValue}</text>
+  </svg>`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function downloadHtmlFile(content: string, fileName: string) {
+  const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function getInventoryLabelIdentifier(item: EquipoLaboratorio) {
+  if (hasUsefulIdentifier(item.codigo)) return item.codigo;
+  if (hasUsefulIdentifier(item.serie)) return item.serie;
+  return item.nombre || 'Sin identificador';
+}
+
+export async function exportEtiquetasInventarioLaboratorioHtml(state: LaboratorioState) {
+  const { default: QRCode } = await import('qrcode');
+  const sortedEquipos = state.equipos.filter((item) => !isInventoryNoteRow(item)).sort((first, second) => {
+    const byLocation = first.ubicacion.localeCompare(second.ubicacion, 'es');
+    if (byLocation !== 0) return byLocation;
+    return first.nombre.localeCompare(second.nombre, 'es', { numeric: true });
+  });
+  const baseUrl = window.location.origin;
+
+  const labels = await Promise.all(
+    sortedEquipos.map(async (item) => {
+      const inventoryDisplay = hasUsefulIdentifier(item.codigo) ? item.codigo : 'Sin inventario';
+      const serialDisplay = hasUsefulIdentifier(item.serie) ? item.serie : 'Sin serie';
+      const barcodeValue = getInventoryLabelIdentifier(item);
+      const expedienteUrl = `${baseUrl}/laboratorio/equipos/${item.id}`;
+      const qrDataUrl = await QRCode.toDataURL(expedienteUrl, { margin: 1, width: 180 });
+      const { marca, modelo } = splitMarcaModeloReporte(item.marcaModelo);
+
+      return `<article class="label-card">
+        <header>
+          <strong>FACULTAD DE ECONOMIA</strong>
+          <span>Inventario tecnico</span>
+        </header>
+        <section class="label-main">
+          <div>
+            <h2>${escapeHtml(item.nombre || 'Equipo')}</h2>
+            <p>${escapeHtml(item.categoria || 'Sin categoria')} | ${escapeHtml(item.ubicacion || 'Sin ubicacion')}</p>
+            <p>${escapeHtml(marca || 'S/N')} ${modelo ? `- ${escapeHtml(modelo)}` : ''}</p>
+          </div>
+          <img src="${qrDataUrl}" alt="QR del expediente ${escapeHtml(item.nombre)}" />
+        </section>
+        <div class="barcode">${buildBarcodeSvg(barcodeValue)}</div>
+        <dl>
+          <div><dt>Inventario</dt><dd>${escapeHtml(inventoryDisplay)}</dd></div>
+          <div><dt>Serie</dt><dd>${escapeHtml(serialDisplay)}</dd></div>
+          <div><dt>Estado</dt><dd>${escapeHtml(estadoEquipoLabels[item.estado] ?? item.estado)}</dd></div>
+        </dl>
+      </article>`;
+    }),
+  );
+
+  const generatedDate = new Date().toLocaleDateString('es-PA');
+  const html = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Etiquetas de inventario - Facultad de Economia</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 18px;
+      background: #f4f7ef;
+      color: #102216;
+      font-family: Arial, sans-serif;
+    }
+    .sheet-header {
+      margin: 0 0 14px;
+      padding: 12px 16px;
+      border: 1px solid #b9cfaa;
+      border-radius: 14px;
+      background: #fff;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .sheet-header h1,
+    .sheet-header p {
+      margin: 0;
+    }
+    .sheet-header h1 {
+      font-size: 18px;
+    }
+    .sheet-header p {
+      margin-top: 4px;
+      color: #315543;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .labels-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .label-card {
+      min-height: 218px;
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      border: 2px solid #163d2d;
+      border-radius: 16px;
+      background: #fff;
+    }
+    .label-card header {
+      display: grid;
+      gap: 1px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .label-card header strong {
+      font-size: 13px;
+    }
+    .label-card header span {
+      color: #315543;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+    .label-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 82px;
+      align-items: center;
+      gap: 8px;
+    }
+    .label-main h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+    .label-main p {
+      margin: 2px 0;
+      color: #315543;
+      font-size: 10px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+    .label-main img {
+      width: 82px;
+      height: 82px;
+      border: 1px solid #d3dfc8;
+      border-radius: 8px;
+    }
+    .barcode {
+      display: grid;
+      place-items: center;
+      min-height: 64px;
+      border: 1px solid #d3dfc8;
+      border-radius: 9px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .barcode svg {
+      width: 100%;
+      max-height: 62px;
+    }
+    dl {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+      margin: 0;
+    }
+    dl div {
+      padding: 5px 6px;
+      border: 1px solid #d3dfc8;
+      border-radius: 8px;
+      background: #f8fbf3;
+    }
+    dt {
+      color: #315543;
+      font-size: 8px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    dd {
+      margin: 2px 0 0;
+      font-size: 11px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+    @page {
+      size: letter;
+      margin: 10mm;
+    }
+    @media print {
+      body { padding: 0; background: #fff; }
+      .sheet-header { border-radius: 0; }
+      .labels-grid { gap: 6mm; }
+      .label-card { min-height: 48mm; }
+    }
+  </style>
+</head>
+<body>
+  <header class="sheet-header">
+    <h1>Universidad Autonoma de Chiriqui</h1>
+    <p>Facultad de Economia | Etiquetas de inventario | ${escapeHtml(generatedDate)} | ${sortedEquipos.length} registros</p>
+  </header>
+  <main class="labels-grid">
+    ${labels.join('\n')}
+  </main>
+</body>
+</html>`;
+
+  downloadHtmlFile(html, `etiquetas-inventario-${slugifyFileName(new Date().toISOString().slice(0, 10))}.html`);
+}
+
 export function exportInventarioLaboratorioExcel(state: LaboratorioState) {
   const sortedEquipos = state.equipos.filter((item) => !isInventoryNoteRow(item)).sort((first, second) => {
     const byLocation = first.ubicacion.localeCompare(second.ubicacion, 'es');

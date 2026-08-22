@@ -7,6 +7,7 @@ import {
   exportInformeMensualMantenimientoExcel,
   exportInformePendientesLaboratorioExcel,
   exportInformeUbicacionLaboratorioExcel,
+  exportEtiquetasInventarioLaboratorioHtml,
   exportInventarioLaboratorioExcel,
   exportLaboratorioCsv,
 } from '@/servicios/laboratorio.servicio';
@@ -48,6 +49,20 @@ export function useReportesLaboratorio({
     }
     exportInventarioLaboratorioExcel(state);
     setMessage('Informe de inventario descargado correctamente.');
+  }
+
+  async function exportInventoryLabels() {
+    if (state.equipos.length === 0) {
+      setError('No hay equipos registrados para generar etiquetas de inventario.');
+      return;
+    }
+
+    try {
+      await exportEtiquetasInventarioLaboratorioHtml(state);
+      setMessage('Etiquetas de inventario descargadas correctamente. Abra el HTML para imprimir o guardar como PDF.');
+    } catch {
+      setError('No se pudieron generar las etiquetas de inventario.');
+    }
   }
 
   function exportDiscardsExcel() {
@@ -103,6 +118,7 @@ export function useReportesLaboratorio({
     exportEquipmentHistoryById,
     exportEquipmentHistoryReport,
     exportInventoryExcel,
+    exportInventoryLabels,
     exportLocationReport,
     exportMonthlyReport,
     exportPendingReport,

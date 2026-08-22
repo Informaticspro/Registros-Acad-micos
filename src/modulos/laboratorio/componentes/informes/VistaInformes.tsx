@@ -17,6 +17,7 @@ type VistaInformesProps = {
   exportDiscardsExcel: () => void;
   exportEquipmentHistoryReport: () => void;
   exportInventoryExcel: () => void;
+  exportInventoryLabels: () => void;
   exportLocationReport: () => void;
   exportMonthlyReport: () => void;
   exportPendingReport: () => void;
@@ -41,6 +42,7 @@ export function VistaInformes({
   exportDiscardsExcel,
   exportEquipmentHistoryReport,
   exportInventoryExcel,
+  exportInventoryLabels,
   exportLocationReport,
   exportMonthlyReport,
   exportPendingReport,
@@ -150,6 +152,10 @@ export function VistaInformes({
         <button className="primary-button" type="button" onClick={exportInventoryExcel}>
           <Download size={18} />
           Descargar Excel
+        </button>
+        <button className="secondary-button" type="button" onClick={exportInventoryLabels}>
+          <Download size={18} />
+          Descargar etiquetas para imprimir
         </button>
       </article>
 
