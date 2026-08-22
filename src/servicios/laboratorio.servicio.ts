@@ -1827,7 +1827,7 @@ export async function exportEtiquetasInventarioLaboratorioHtml(state: Laboratori
         <dl>
           <div><dt>Inventario</dt><dd>${escapeHtml(inventoryDisplay)}</dd></div>
           <div><dt>Serie</dt><dd>${escapeHtml(serialDisplay)}</dd></div>
-          <div><dt>Estado</dt><dd>${escapeHtml(estadoEquipoLabels[item.estado] ?? item.estado)}</dd></div>
+          <div><dt>Ubicacion</dt><dd>${escapeHtml(item.ubicacion || 'Sin ubicacion')}</dd></div>
         </dl>
       </article>`;
     }),
