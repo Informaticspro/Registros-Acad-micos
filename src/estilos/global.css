@@ -2582,23 +2582,6 @@ textarea {
   font-weight: 900;
 }
 
-.inventory-label-purpose {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-}
-
-.inventory-label-purpose span {
-  padding: 4px 8px;
-  border: 1px solid #d3dfc8;
-  border-radius: 999px;
-  background: #f8fbf3;
-  color: #315543;
-  font-size: 0.74rem;
-  font-weight: 900;
-}
-
 .inventory-label-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 150px;
@@ -2606,12 +2589,14 @@ textarea {
   gap: 14px;
 }
 
-.barcode-stack {
+.barcode-stack,
+.qr-stack {
   display: grid;
   gap: 4px;
 }
 
-.barcode-stack > span {
+.barcode-stack > span,
+.qr-stack > span {
   color: #315543;
   font-size: 0.72rem;
   font-weight: 900;

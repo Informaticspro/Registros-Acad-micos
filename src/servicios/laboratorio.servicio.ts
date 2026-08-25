@@ -2081,11 +2081,13 @@ export async function exportEtiquetasInventarioLaboratorioPdf(state: Laboratorio
     const brandLine = `${marca || 'S/N'}${modelo ? ` - ${modelo}` : ''}`;
     doc.text(doc.splitTextToSize(brandLine, labelWidth - 33).slice(0, 2), x + 3, y + 31);
 
-    doc.addImage(qrDataUrl, 'PNG', x + labelWidth - 22, y + 14, 18, 18);
-
     doc.setFontSize(4.8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(49, 85, 67);
+    doc.text('EXPEDIENTE COMPLETO', x + labelWidth - 13, y + 13, { align: 'center' });
+    doc.addImage(qrDataUrl, 'PNG', x + labelWidth - 22, y + 14, 18, 18);
+
+    doc.setFontSize(4.8);
     doc.text('FICHA TECNICA', x + labelWidth / 2, y + 31.2, { align: 'center' });
     doc.setDrawColor(211, 223, 200);
     doc.setFillColor(255, 255, 255);
@@ -2121,9 +2123,7 @@ export async function exportEtiquetasInventarioLaboratorioPdf(state: Laboratorio
 
     doc.setFontSize(4.2);
     doc.setTextColor(80, 97, 87);
-    doc.text(`QR: expediente completo | Barras: ficha tecnica | ${generatedDate}`, x + labelWidth / 2, y + labelHeight - 2, {
-      align: 'center',
-    });
+    doc.text(generatedDate, x + labelWidth / 2, y + labelHeight - 2, { align: 'center' });
   }
 
   doc.save(`etiquetas-inventario-${slugifyFileName(new Date().toISOString().slice(0, 10))}.pdf`);

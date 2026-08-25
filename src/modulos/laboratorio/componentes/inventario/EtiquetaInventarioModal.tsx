@@ -164,8 +164,10 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
   <text x="32" y="98" font-family="Arial, sans-serif" font-size="26" font-weight="900" fill="#082016">${escapeSvgText(equipo.nombre || 'Equipo')}</text>
   <text x="32" y="120" font-family="Arial, sans-serif" font-size="12" font-weight="800" fill="#315543">${escapeSvgText(equipo.categoria || 'Sin categoria')} | ${escapeSvgText(equipo.ubicacion || 'Sin ubicacion')}</text>
   <text x="32" y="138" font-family="Arial, sans-serif" font-size="12" font-weight="800" fill="#315543">${escapeSvgText(marca || 'S/N')}${modelo ? ` - ${escapeSvgText(modelo)}` : ''}</text>
-  ${qrDataUrl ? `<image href="${qrDataUrl}" x="632" y="70" width="92" height="92"/>` : ''}
+  <text x="678" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="900" fill="#315543">EXPEDIENTE COMPLETO</text>
+  ${qrDataUrl ? `<image href="${qrDataUrl}" x="632" y="72" width="92" height="92"/>` : ''}
   <rect x="32" y="150" width="696" height="64" rx="9" fill="#fff" stroke="#d3dfc8"/>
+  <text x="380" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="900" fill="#315543">FICHA TECNICA</text>
   ${labelBarcodeRects}
   <text x="380" y="207" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="900" fill="#111">${escapeSvgText(barcodeValue)}</text>
   <rect x="32" y="224" width="222" height="44" rx="8" fill="#f8fbf3" stroke="#d3dfc8"/>
@@ -198,16 +200,17 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
             <strong>Facultad de Economia</strong>
             <small>Inventario tecnico</small>
           </div>
-          <div className="inventory-label-purpose">
-            <span>QR: expediente completo</span>
-            <span>Codigo de barras: ficha tecnica</span>
-          </div>
           <div className="inventory-label-body">
             <div className="barcode-stack">
               <span>Ficha tecnica</span>
               <div className="barcode-box" dangerouslySetInnerHTML={{ __html: svgContent }} />
             </div>
-            {qrDataUrl ? <img src={qrDataUrl} alt="QR con detalle del equipo" /> : null}
+            {qrDataUrl ? (
+              <div className="qr-stack">
+                <span>Expediente completo</span>
+                <img src={qrDataUrl} alt="QR con detalle del equipo" />
+              </div>
+            ) : null}
           </div>
           <dl>
             <div><dt>Inventario</dt><dd>{inventoryDisplay}</dd></div>
