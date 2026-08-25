@@ -31,6 +31,7 @@ import { VistaInventario } from '@/modulos/laboratorio/componentes/inventario/Vi
 import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventario/ExpedienteEquipoModal';
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
+import { MapaFacultad } from '@/modulos/laboratorio/componentes/mapa/MapaFacultad';
 import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
 import { useBitacorasLaboratorio } from '@/modulos/laboratorio/hooks/useBitacorasLaboratorio';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
@@ -460,6 +461,18 @@ export function PaginaLaboratorio() {
             showMoreActivity={showMoreActivity}
             onChangeTab={setActiveTab}
             onToggleActivityLimit={() => setShowMoreActivity((current) => !current)}
+          />
+        ) : null}
+
+        {activeTab === 'mapa' ? (
+          <MapaFacultad
+            estadoEquipoNombre={estadoEquipoNombre}
+            estadosAlertaPorUbicacion={estadosAlertaPorUbicacion}
+            getFilterCount={getInventoryFilterCount}
+            onSelectLocation={(ubicacion) => {
+              setActiveTab('inventario');
+              handleInventoryLocationFilter(ubicacion);
+            }}
           />
         ) : null}
 

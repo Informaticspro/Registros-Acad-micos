@@ -1822,6 +1822,11 @@ textarea {
   background: rgba(64, 125, 245, 0.08);
 }
 
+.lab-tabs .lab-tab-mapa {
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(34, 197, 94, 0.1);
+}
+
 .lab-tabs .lab-tab-inventario {
   border-color: rgba(34, 197, 94, 0.34);
   background: rgba(34, 197, 94, 0.1);
@@ -2276,6 +2281,134 @@ textarea {
 .lab-inventory-hero-actions .primary-button,
 .lab-inventory-hero-actions .secondary-button {
   grid-column: span 2;
+}
+
+.faculty-map-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(121, 183, 53, 0.1), transparent 50%),
+    var(--surface-deep);
+}
+
+.faculty-map-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.faculty-map-heading h2 {
+  margin: 2px 0 0;
+  font-size: clamp(1.65rem, 3vw, 2.6rem);
+}
+
+.faculty-map-heading p {
+  max-width: 560px;
+  color: var(--muted);
+}
+
+.faculty-map {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid rgba(168, 180, 195, 0.2);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(90deg, transparent 0 31%, rgba(243, 189, 34, 0.08) 31% 69%, transparent 69%),
+    var(--surface);
+}
+
+.faculty-map-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(240px, 1.18fr) minmax(180px, 0.9fr);
+  gap: 10px;
+  min-width: 760px;
+}
+
+.faculty-map-zone {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(121, 183, 53, 0.09), transparent 70%),
+    var(--surface-deep);
+  color: var(--text);
+  text-align: left;
+}
+
+.faculty-map-zone.clickable {
+  cursor: pointer;
+}
+
+.faculty-map-zone.clickable:hover,
+.faculty-map-zone.clickable:focus-visible {
+  border-color: rgba(243, 189, 34, 0.7);
+  box-shadow: 0 0 0 3px rgba(243, 189, 34, 0.14);
+}
+
+.faculty-map-zone.muted {
+  opacity: 0.62;
+  cursor: default;
+}
+
+.faculty-map-zone-center {
+  justify-items: center;
+  background:
+    linear-gradient(90deg, rgba(168, 180, 195, 0.08), rgba(243, 189, 34, 0.08), rgba(168, 180, 195, 0.08)),
+    var(--surface);
+  text-align: center;
+}
+
+.faculty-map-zone-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(121, 183, 53, 0.14);
+  color: var(--accent);
+}
+
+.faculty-map-zone strong {
+  min-width: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.faculty-map-zone small {
+  justify-self: end;
+  padding: 5px 9px;
+  border: 1px solid rgba(121, 183, 53, 0.32);
+  border-radius: 999px;
+  background: rgba(121, 183, 53, 0.1);
+  color: var(--text);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.faculty-map-alerts {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.faculty-map-alerts i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
 }
 
 .modal-panel.lab-equipment-modal {
@@ -5037,6 +5170,62 @@ textarea {
     min-height: 38px;
     padding: 0 10px;
     font-size: 0.9rem;
+  }
+
+  .faculty-map-panel {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .faculty-map-heading {
+    display: grid;
+    gap: 6px;
+  }
+
+  .faculty-map-heading h2 {
+    font-size: 1.55rem;
+    line-height: 1.05;
+  }
+
+  .faculty-map-heading p {
+    font-size: 0.92rem;
+  }
+
+  .faculty-map {
+    padding: 10px;
+    background: var(--surface);
+  }
+
+  .faculty-map-row {
+    grid-template-columns: repeat(3, minmax(142px, 1fr));
+    min-width: 470px;
+    gap: 8px;
+  }
+
+  .faculty-map-zone {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    min-height: 96px;
+    padding: 10px;
+  }
+
+  .faculty-map-zone-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .faculty-map-zone strong {
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+
+  .faculty-map-zone small {
+    justify-self: start;
+    font-size: 0.72rem;
+  }
+
+  .faculty-map-alerts {
+    grid-column: auto;
   }
 
   .lab-inventory-workspace {

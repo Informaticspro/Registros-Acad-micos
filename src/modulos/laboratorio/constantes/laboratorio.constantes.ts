@@ -16,6 +16,7 @@ const emptyState: LaboratorioState = {
 
 const tabLabels: Record<LabTab, string> = {
   inicio: 'Inicio',
+  mapa: 'Mapa',
   fichas: 'Ficha tecnica',
   bitacoras: 'Mantenimientos e incidencias',
   inventario: 'Inventario',
@@ -24,7 +25,7 @@ const tabLabels: Record<LabTab, string> = {
   informes: 'Informes',
 };
 
-const labTabOrder: LabTab[] = ['inicio', 'inventario', 'fichas', 'bitacoras', 'descartes', 'prestamos', 'informes'];
+const labTabOrder: LabTab[] = ['inicio', 'mapa', 'inventario', 'fichas', 'bitacoras', 'descartes', 'prestamos', 'informes'];
 
 const aplicacionesBase = [
   'Windows',

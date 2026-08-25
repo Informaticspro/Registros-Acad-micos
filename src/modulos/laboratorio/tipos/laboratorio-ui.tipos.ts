@@ -6,7 +6,7 @@ import type {
   EstadoEquipoLaboratorio,
 } from '@/tipos/dominio';
 
-type LabTab = 'inicio' | 'fichas' | 'bitacoras' | 'inventario' | 'descartes' | 'prestamos' | 'informes';
+type LabTab = 'inicio' | 'mapa' | 'fichas' | 'bitacoras' | 'inventario' | 'descartes' | 'prestamos' | 'informes';
 type CatalogManagerType = 'secciones' | 'categorias' | 'estados';
 type TemaVisual = 'dark' | 'light';
 type ConfirmacionOperativoPendiente = {
