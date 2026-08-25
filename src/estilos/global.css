@@ -2606,6 +2606,19 @@ textarea {
   gap: 14px;
 }
 
+.barcode-stack {
+  display: grid;
+  gap: 4px;
+}
+
+.barcode-stack > span {
+  color: #315543;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .barcode-box {
   min-width: 0;
   padding: 10px;

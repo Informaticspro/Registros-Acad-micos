@@ -2083,6 +2083,10 @@ export async function exportEtiquetasInventarioLaboratorioPdf(state: Laboratorio
 
     doc.addImage(qrDataUrl, 'PNG', x + labelWidth - 22, y + 14, 18, 18);
 
+    doc.setFontSize(4.8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(49, 85, 67);
+    doc.text('FICHA TECNICA', x + labelWidth / 2, y + 31.2, { align: 'center' });
     doc.setDrawColor(211, 223, 200);
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x + 3, y + 32, labelWidth - 6, 17, 2, 2, 'FD');
