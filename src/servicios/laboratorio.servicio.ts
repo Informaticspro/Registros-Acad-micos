@@ -1767,6 +1767,24 @@ function buildBarcodeSvg(value: string) {
   </svg>`;
 }
 
+function buildBarcodeRects(value: string, moduleWidth = 0.42) {
+  const fullValue = `*${normalizeBarcodeValue(value)}*`;
+  let x = 0;
+  const rects: Array<{ x: number; width: number }> = [];
+
+  fullValue.split('').forEach((char) => {
+    const pattern = code39Patterns[char] ?? code39Patterns[' '];
+    pattern.split('').forEach((bit) => {
+      const width = bit === '1' ? moduleWidth * 2 : moduleWidth;
+      if (bit === '1') rects.push({ x, width });
+      x += width;
+    });
+    x += moduleWidth;
+  });
+
+  return { rects, width: x };
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -1833,6 +1851,10 @@ export async function exportEtiquetasInventarioLaboratorioHtml(state: Laboratori
     }),
   );
 
+  const labelPages = Array.from({ length: Math.ceil(labels.length / 8) }, (_, index) =>
+    `<section class="labels-page">${labels.slice(index * 8, index * 8 + 8).join('\n')}</section>`,
+  );
+
   const generatedDate = new Date().toLocaleDateString('es-PA');
   const html = `<!doctype html>
 <html lang="es">
@@ -1871,13 +1893,21 @@ export async function exportEtiquetasInventarioLaboratorioHtml(state: Laboratori
       font-size: 12px;
       font-weight: 800;
     }
-    .labels-grid {
+    .labels-page {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 6mm;
+      min-height: 247mm;
+      page-break-after: always;
+      break-after: page;
+    }
+    .labels-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
     }
     .label-card {
-      min-height: 218px;
+      min-height: 0;
       display: grid;
       gap: 8px;
       padding: 10px;
@@ -1971,8 +2001,7 @@ export async function exportEtiquetasInventarioLaboratorioHtml(state: Laboratori
     @media print {
       body { padding: 0; background: #fff; }
       .sheet-header { border-radius: 0; }
-      .labels-grid { gap: 6mm; }
-      .label-card { min-height: 48mm; }
+      .labels-page { min-height: 247mm; }
     }
   </style>
 </head>
@@ -1981,13 +2010,119 @@ export async function exportEtiquetasInventarioLaboratorioHtml(state: Laboratori
     <h1>Universidad Autonoma de Chiriqui</h1>
     <p>Facultad de Economia | Etiquetas de inventario | ${escapeHtml(generatedDate)} | ${sortedEquipos.length} registros</p>
   </header>
-  <main class="labels-grid">
-    ${labels.join('\n')}
+  <main>
+    ${labelPages.join('\n')}
   </main>
 </body>
 </html>`;
 
   downloadHtmlFile(html, `etiquetas-inventario-${slugifyFileName(new Date().toISOString().slice(0, 10))}.html`);
+}
+
+export async function exportEtiquetasInventarioLaboratorioPdf(state: LaboratorioState) {
+  const [{ default: QRCode }, { default: jsPDF }] = await Promise.all([import('qrcode'), import('jspdf')]);
+  const sortedEquipos = state.equipos.filter((item) => !isInventoryNoteRow(item)).sort((first, second) => {
+    const byLocation = first.ubicacion.localeCompare(second.ubicacion, 'es');
+    if (byLocation !== 0) return byLocation;
+    return first.nombre.localeCompare(second.nombre, 'es', { numeric: true });
+  });
+
+  const baseUrl = window.location.origin;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const pageWidth = 215.9;
+  const pageHeight = 279.4;
+  const margin = 8;
+  const gap = 4;
+  const labelWidth = (pageWidth - margin * 2 - gap) / 2;
+  const labelHeight = (pageHeight - margin * 2 - gap * 3) / 4;
+  const generatedDate = new Date().toLocaleDateString('es-PA');
+
+  for (let index = 0; index < sortedEquipos.length; index += 1) {
+    if (index > 0 && index % 8 === 0) doc.addPage();
+
+    const item = sortedEquipos[index];
+    const position = index % 8;
+    const col = position % 2;
+    const row = Math.floor(position / 2);
+    const x = margin + col * (labelWidth + gap);
+    const y = margin + row * (labelHeight + gap);
+    const inventoryDisplay = hasUsefulIdentifier(item.codigo) ? item.codigo : 'Sin inventario';
+    const serialDisplay = hasUsefulIdentifier(item.serie) ? item.serie : 'Sin serie';
+    const barcodeValue = normalizeBarcodeValue(getInventoryLabelIdentifier(item));
+    const expedienteUrl = `${baseUrl}/laboratorio/equipos/${item.id}`;
+    const qrDataUrl = await QRCode.toDataURL(expedienteUrl, { margin: 1, width: 180 });
+    const { marca, modelo } = splitMarcaModeloReporte(item.marcaModelo);
+    const barcode = buildBarcodeRects(barcodeValue, 0.25);
+    const barcodeMaxWidth = labelWidth - 14;
+    const barcodeScale = Math.min(1, barcodeMaxWidth / barcode.width);
+    const barcodeWidth = barcode.width * barcodeScale;
+    const barcodeX = x + (labelWidth - barcodeWidth) / 2;
+    const barcodeY = y + 33;
+    const barcodeHeight = 11;
+
+    doc.setDrawColor(22, 61, 45);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(x, y, labelWidth, labelHeight, 3, 3);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(8, 32, 22);
+    doc.setFontSize(7.5);
+    doc.text('FACULTAD DE ECONOMIA', x + labelWidth / 2, y + 6, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text('INVENTARIO TECNICO', x + labelWidth / 2, y + 10, { align: 'center' });
+
+    doc.setFontSize(13);
+    const titleLines = doc.splitTextToSize(item.nombre || 'Equipo', labelWidth - 33).slice(0, 2);
+    doc.text(titleLines, x + 3, y + 20);
+
+    doc.setFontSize(5.8);
+    doc.setTextColor(22, 61, 45);
+    doc.text(`${item.categoria || 'Sin categoria'} | ${item.ubicacion || 'Sin ubicacion'}`, x + 3, y + 27);
+    const brandLine = `${marca || 'S/N'}${modelo ? ` - ${modelo}` : ''}`;
+    doc.text(doc.splitTextToSize(brandLine, labelWidth - 33).slice(0, 2), x + 3, y + 31);
+
+    doc.addImage(qrDataUrl, 'PNG', x + labelWidth - 22, y + 14, 18, 18);
+
+    doc.setDrawColor(211, 223, 200);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x + 3, y + 32, labelWidth - 6, 17, 2, 2, 'FD');
+    doc.setFillColor(17, 17, 17);
+    barcode.rects.forEach((rect) => {
+      doc.rect(barcodeX + rect.x * barcodeScale, barcodeY, rect.width * barcodeScale, barcodeHeight, 'F');
+    });
+    doc.setFontSize(5.5);
+    doc.setTextColor(17, 17, 17);
+    doc.text(barcodeValue, x + labelWidth / 2, y + 47.5, { align: 'center' });
+
+    const infoY = y + 51;
+    const infoWidth = (labelWidth - 10) / 3;
+    const infoBlocks = [
+      ['INVENTARIO', inventoryDisplay],
+      ['SERIE', serialDisplay],
+      ['UBICACION', item.ubicacion || 'Sin ubicacion'],
+    ];
+    infoBlocks.forEach(([label, value], blockIndex) => {
+      const blockX = x + 3 + blockIndex * (infoWidth + 2);
+      doc.setDrawColor(211, 223, 200);
+      doc.setFillColor(248, 251, 243);
+      doc.roundedRect(blockX, infoY, infoWidth, 9, 1.6, 1.6, 'FD');
+      doc.setFontSize(4.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(49, 85, 67);
+      doc.text(label, blockX + 1.4, infoY + 3);
+      doc.setFontSize(5.5);
+      doc.setTextColor(8, 32, 22);
+      doc.text(doc.splitTextToSize(value, infoWidth - 2).slice(0, 1), blockX + 1.4, infoY + 7);
+    });
+
+    doc.setFontSize(4.2);
+    doc.setTextColor(80, 97, 87);
+    doc.text(`QR: expediente completo | Barras: ficha tecnica | ${generatedDate}`, x + labelWidth / 2, y + labelHeight - 2, {
+      align: 'center',
+    });
+  }
+
+  doc.save(`etiquetas-inventario-${slugifyFileName(new Date().toISOString().slice(0, 10))}.pdf`);
 }
 
 export function exportInventarioLaboratorioExcel(state: LaboratorioState) {

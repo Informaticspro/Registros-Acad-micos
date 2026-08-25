@@ -198,6 +198,10 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
             <strong>Facultad de Economia</strong>
             <small>Inventario tecnico</small>
           </div>
+          <div className="inventory-label-purpose">
+            <span>QR: expediente completo</span>
+            <span>Codigo de barras: ficha tecnica</span>
+          </div>
           <div className="inventory-label-body">
             <div className="barcode-box" dangerouslySetInnerHTML={{ __html: svgContent }} />
             {qrDataUrl ? <img src={qrDataUrl} alt="QR con detalle del equipo" /> : null}

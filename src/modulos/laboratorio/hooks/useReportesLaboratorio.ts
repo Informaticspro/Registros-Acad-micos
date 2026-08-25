@@ -7,7 +7,7 @@ import {
   exportInformeMensualMantenimientoExcel,
   exportInformePendientesLaboratorioExcel,
   exportInformeUbicacionLaboratorioExcel,
-  exportEtiquetasInventarioLaboratorioHtml,
+  exportEtiquetasInventarioLaboratorioPdf,
   exportInventarioLaboratorioExcel,
   exportLaboratorioCsv,
 } from '@/servicios/laboratorio.servicio';
@@ -58,8 +58,8 @@ export function useReportesLaboratorio({
     }
 
     try {
-      await exportEtiquetasInventarioLaboratorioHtml(state);
-      setMessage('Etiquetas de inventario descargadas correctamente. Abra el HTML para imprimir o guardar como PDF.');
+      await exportEtiquetasInventarioLaboratorioPdf(state);
+      setMessage('Etiquetas de inventario descargadas en PDF correctamente.');
     } catch {
       setError('No se pudieron generar las etiquetas de inventario.');
     }

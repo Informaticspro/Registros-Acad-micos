@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, Cpu, Package, Wrench } from 'lucide-react';
 
 import { listLaboratorioData, type LaboratorioState } from '@/servicios/laboratorio.servicio';
@@ -99,7 +99,9 @@ function DetailCard({ label, value }: { label: string; value: string }) {
 
 export function PaginaEquipoLaboratorio() {
   const { equipoId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  const fichasSectionRef = useRef<HTMLElement | null>(null);
   const [state, setState] = useState<LaboratorioState | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -133,6 +135,15 @@ export function PaginaEquipoLaboratorio() {
   const bitacoras = useMemo(() => (state && equipo ? getBitacorasEquipo(state, equipo) : []), [equipo, state]);
   const inventario = useMemo(() => (equipo ? getInventarioCalculado(equipo, componentes) : null), [componentes, equipo]);
   const ultimoMantenimiento = useMemo(() => getUltimoMantenimiento(fichas, bitacoras), [bitacoras, fichas]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (!isLoading && params.get('seccion') === 'fichas') {
+      window.setTimeout(() => {
+        fichasSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+    }
+  }, [isLoading, location.search]);
 
   if (isLoading) {
     return <div className="screen-loader">Cargando expediente tecnico...</div>;
@@ -228,7 +239,7 @@ export function PaginaEquipoLaboratorio() {
         </section>
       ) : null}
 
-      <section className="lab-equipment-detail-section lab-qr-section">
+      <section ref={fichasSectionRef} className="lab-equipment-detail-section lab-qr-section">
         <h2>Componentes asignados</h2>
         {componentes.length === 0 ? <p>Este equipo no tiene componentes relacionados actualmente.</p> : null}
         {componentes.map(({ asignacion, componente }) => (

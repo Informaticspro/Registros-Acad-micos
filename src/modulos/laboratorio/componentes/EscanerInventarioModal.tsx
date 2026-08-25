@@ -3,11 +3,23 @@ import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { Camera, CheckCircle2, ScanLine, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { listLaboratorioData } from '@/servicios/laboratorio.servicio';
+import type { EquipoLaboratorio } from '@/tipos/dominio';
+
 type EscanerInventarioModalProps = {
   onClose: () => void;
 };
 
-function getEquipoPathFromScan(rawValue: string) {
+function normalizeScanValue(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getEquipoPathFromQr(rawValue: string) {
   const value = rawValue.trim();
   const urlMatch = value.match(/https?:\/\/[^\s]+/i);
   const candidate = urlMatch?.[0] ?? value;
@@ -22,6 +34,17 @@ function getEquipoPathFromScan(rawValue: string) {
 
   const uuidMatch = value.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
   return uuidMatch ? `/laboratorio/equipos/${uuidMatch[0]}` : null;
+}
+
+function findEquipoByBarcode(rawValue: string, equipos: EquipoLaboratorio[]) {
+  const scanned = normalizeScanValue(rawValue.replace(/^\*|\*$/g, ''));
+  if (!scanned) return null;
+
+  return (
+    equipos.find((equipo) => normalizeScanValue(equipo.codigo) === scanned) ??
+    equipos.find((equipo) => normalizeScanValue(equipo.serie) === scanned) ??
+    null
+  );
 }
 
 function playInventoryScanSound(success: boolean) {
@@ -50,17 +73,35 @@ export function EscanerInventarioModal({ onClose }: EscanerInventarioModalProps)
   const controlsRef = useRef<IScannerControls | null>(null);
   const didNavigateRef = useRef(false);
   const [isScanning, setIsScanning] = useState(true);
-  const [message, setMessage] = useState('Apunte la camara al QR de la etiqueta del equipo.');
+  const [message, setMessage] = useState('Apunte la camara al QR o al codigo de barras de la etiqueta.');
   const [error, setError] = useState<string | null>(null);
 
   const handleScan = useCallback(
-    (rawValue: string) => {
+    async (rawValue: string) => {
       if (didNavigateRef.current) return;
 
-      const equipoPath = getEquipoPathFromScan(rawValue);
+      let equipoPath = getEquipoPathFromQr(rawValue);
+      let targetLabel = 'expediente tecnico';
+
       if (!equipoPath) {
-        setError('El codigo escaneado no corresponde a un expediente de inventario.');
-        setMessage('Escanee el QR generado desde la etiqueta del equipo.');
+        try {
+          const data = await listLaboratorioData();
+          const equipo = findEquipoByBarcode(rawValue, data.equipos);
+          if (equipo) {
+            equipoPath = `/laboratorio/equipos/${equipo.id}?seccion=fichas`;
+            targetLabel = 'fichas tecnicas';
+          }
+        } catch {
+          setError('No se pudo consultar el inventario para validar el codigo de barras.');
+          setMessage('Revise la conexion e intente nuevamente.');
+          playInventoryScanSound(false);
+          return;
+        }
+      }
+
+      if (!equipoPath) {
+        setError('El codigo escaneado no coincide con ningun equipo registrado.');
+        setMessage('Use el QR para expediente completo o el codigo de barras para ficha tecnica.');
         playInventoryScanSound(false);
         return;
       }
@@ -68,7 +109,7 @@ export function EscanerInventarioModal({ onClose }: EscanerInventarioModalProps)
       didNavigateRef.current = true;
       playInventoryScanSound(true);
       setError(null);
-      setMessage('Equipo encontrado. Abriendo expediente tecnico...');
+      setMessage(`Equipo encontrado. Abriendo ${targetLabel}...`);
       controlsRef.current?.stop();
       setIsScanning(false);
 
@@ -91,7 +132,7 @@ export function EscanerInventarioModal({ onClose }: EscanerInventarioModalProps)
         controlsRef.current = controls;
         if (!active) return;
         if (scanResult) {
-          handleScan(scanResult.getText());
+          void handleScan(scanResult.getText());
           return;
         }
         if (scanError && scanError.name !== 'NotFoundException') {
@@ -119,8 +160,8 @@ export function EscanerInventarioModal({ onClose }: EscanerInventarioModalProps)
         <div className="lab-scanner-header">
           <div>
             <span className="eyebrow">Escaner de inventario</span>
-            <h2 id="lab-scanner-title">Buscar equipo por QR</h2>
-            <p>Escanee la etiqueta para abrir la ficha viva del equipo, componentes, historial y reportes.</p>
+            <h2 id="lab-scanner-title">Buscar equipo por etiqueta</h2>
+            <p>QR: expediente completo. Codigo de barras: ficha tecnica del equipo.</p>
           </div>
           <button className="icon-button" type="button" aria-label="Cerrar escaner" onClick={onClose}>
             <X size={18} />
