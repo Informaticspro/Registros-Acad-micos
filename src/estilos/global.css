@@ -3230,8 +3230,41 @@ textarea {
 }
 
 .lab-inventory-row {
+  position: relative;
   min-height: 44px;
   background: var(--surface-deep);
+}
+
+.lab-inventory-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: transparent;
+}
+
+.lab-inventory-row.inventory-row-en_reparacion::before {
+  background: #f97316;
+}
+
+.lab-inventory-row.inventory-row-pendiente_revision::before {
+  background: var(--gold);
+}
+
+.lab-inventory-row.inventory-row-mantenimiento::before {
+  background: #60a5fa;
+}
+
+.lab-inventory-row.inventory-row-prestado::before {
+  background: #a78bfa;
+}
+
+.lab-inventory-row.inventory-row-baja::before {
+  background: var(--danger);
+}
+
+.lab-inventory-row.inventory-row-operativo::before {
+  background: rgba(121, 183, 53, 0.82);
 }
 
 .lab-inventory-row.clickable {
@@ -3355,22 +3388,56 @@ textarea {
 
 .inventory-component-list {
   display: grid;
-  gap: 3px;
+  gap: 5px;
   max-width: 100%;
   font-style: normal;
 }
 
 .inventory-component-list i {
-  display: block;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 6px;
   max-width: 100%;
   overflow: hidden;
+  padding: 5px 7px;
+  border: 1px solid rgba(121, 183, 53, 0.24);
+  border-radius: 8px;
+  background: rgba(121, 183, 53, 0.07);
   color: var(--muted);
   font-size: 0.68rem;
   font-style: normal;
   font-weight: 800;
   line-height: 1.25;
+}
+
+.inventory-component-list i b {
+  color: var(--accent);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.inventory-component-list i > span {
+  display: block;
+  justify-content: initial;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  color: var(--text);
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.inventory-component-list i small {
+  display: inline;
+  justify-content: initial;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-transform: none;
 }
 
 .compact-form-grid {
@@ -5170,7 +5237,7 @@ textarea {
   .inventory-actions {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 92px repeat(3, 44px);
+    grid-template-columns: 92px repeat(2, 44px);
     justify-content: start;
     align-items: center;
     padding-top: 8px;

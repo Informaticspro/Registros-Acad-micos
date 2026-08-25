@@ -176,7 +176,7 @@ export function VistaInventario({
 
                 return (
                   <div
-                    className="lab-inventory-row clickable"
+                    className={`lab-inventory-row clickable inventory-row-${getEstadoEquipoClass(item.estado)}`}
                     key={item.id}
                     role="button"
                     tabIndex={0}
@@ -207,7 +207,10 @@ export function VistaInventario({
                         <em className="inventory-component-list">
                           {inventarioCalculado.componentes.map(({ asignacion, componente }) => (
                             <i key={asignacion.id}>
-                              {asignacion.tipo}: {componente.codigo || 'S/N'} - {componente.nombre}
+                              <b>{asignacion.tipo}</b>
+                              <span>{componente.nombre}</span>
+                              <small>Inv. {componente.codigo || 'S/N'}</small>
+                              <small>Serie {componente.serie || 'S/N'}</small>
                             </i>
                           ))}
                         </em>
