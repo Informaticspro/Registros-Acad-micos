@@ -87,7 +87,7 @@ export function MapaFacultad({
     <section className="faculty-map-panel">
       <div className="faculty-map-heading">
         <span className="eyebrow">Mapa interactivo</span>
-        <h2>Facultad de Economia - tercer piso</h2>
+        <h2>Facultad de Economia</h2>
         <p>Toque un salon, laboratorio o area para ver sus equipos en el inventario.</p>
       </div>
 
