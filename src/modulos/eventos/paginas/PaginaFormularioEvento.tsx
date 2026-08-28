@@ -3,9 +3,18 @@ import { Plus, Save, Trash2 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
-import { SEMINARIO_DATE_OPTIONS, SEMINARIO_PURPOSE_OPTIONS } from '@/modulos/registro/configuracion-registro';
+import {
+  SEMINARIO_DATE_OPTIONS,
+  SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT,
+  SEMINARIO_PURPOSE_OPTIONS,
+} from '@/modulos/registro/configuracion-registro';
 import { createEvent, getEvent, updateEvent } from '@/servicios/eventos.servicio';
-import { CampoFormularioPersonalizado, EventoAcademico, TipoCampoFormularioPersonalizado } from '@/tipos/dominio';
+import {
+  CampoFormularioPersonalizado,
+  ContenidoSeminarioEducacionContinua,
+  EventoAcademico,
+  TipoCampoFormularioPersonalizado,
+} from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { isRegistroPermanenteEvento } from '@/utilidades/estado-evento';
 
@@ -68,11 +77,56 @@ function parseOptions(value: string) {
     .filter(Boolean);
 }
 
+function parseLines(value: string) {
+  return parseOptions(value);
+}
+
 function getSchemaFieldOptions(event: EventoAcademico | null, fieldId: string, fallback: readonly string[]) {
   return event?.customFormSchema?.fields.find((field) => field.id === fieldId)?.options ?? [...fallback];
 }
 
-function buildEducationContinuaSchema(dateOptions: string[], purposeOptions: string[]) {
+type EducationContentForm = {
+  introText: string;
+  costText: string;
+  paymentText: string;
+  cancellationText: string;
+  capacityText: string;
+  considerationsText: string;
+};
+
+function getEducationContent(event: EventoAcademico | null): Required<ContenidoSeminarioEducacionContinua> {
+  const content = event?.customFormSchema?.educationContent ?? {};
+  return {
+    introText: content.introText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.introText,
+    costText: content.costText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.costText,
+    paymentText: content.paymentText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.paymentText,
+    cancellationText:
+      content.cancellationText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.cancellationText,
+    capacityText: content.capacityText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.capacityText,
+    considerations:
+      content.considerations && content.considerations.length > 0
+        ? content.considerations
+        : [...SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.considerations],
+  };
+}
+
+function buildEducationContentForm(event: EventoAcademico | null): EducationContentForm {
+  const content = getEducationContent(event);
+  return {
+    introText: content.introText,
+    costText: content.costText,
+    paymentText: content.paymentText,
+    cancellationText: content.cancellationText,
+    capacityText: content.capacityText,
+    considerationsText: content.considerations.join('\n'),
+  };
+}
+
+function buildEducationContinuaSchema(
+  dateOptions: string[],
+  purposeOptions: string[],
+  educationContent: EducationContentForm,
+) {
   return {
     fields: [
       {
@@ -90,6 +144,15 @@ function buildEducationContinuaSchema(dateOptions: string[], purposeOptions: str
         options: purposeOptions,
       },
     ],
+    educationContent: {
+      introText: educationContent.introText.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.introText,
+      costText: educationContent.costText.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.costText,
+      paymentText: educationContent.paymentText.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.paymentText,
+      cancellationText:
+        educationContent.cancellationText.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.cancellationText,
+      capacityText: educationContent.capacityText.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.capacityText,
+      considerations: parseLines(educationContent.considerationsText),
+    },
   };
 }
 
@@ -114,6 +177,9 @@ export function PaginaFormularioEvento() {
   const [customFields, setCustomFields] = useState<CampoFormularioPersonalizado[]>([]);
   const [seminarDateOptionsText, setSeminarDateOptionsText] = useState(SEMINARIO_DATE_OPTIONS.join('\n'));
   const [seminarPurposeOptionsText, setSeminarPurposeOptionsText] = useState(SEMINARIO_PURPOSE_OPTIONS.join('\n'));
+  const [educationContentForm, setEducationContentForm] = useState<EducationContentForm>(
+    buildEducationContentForm(null),
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = Boolean(eventId);
@@ -160,6 +226,7 @@ export function PaginaFormularioEvento() {
     const sourceEvent = eventToEdit ?? duplicateFrom;
     setSeminarDateOptionsText(getSchemaFieldOptions(sourceEvent, 'seminarDate', SEMINARIO_DATE_OPTIONS).join('\n'));
     setSeminarPurposeOptionsText(getSchemaFieldOptions(sourceEvent, 'seminarPurpose', SEMINARIO_PURPOSE_OPTIONS).join('\n'));
+    setEducationContentForm(buildEducationContentForm(sourceEvent));
   }, [initialValues.customFormSchema, initialValues.registrationFormType, initialValues.isPermanent]);
 
   const isEducacionContinuaSelected =
@@ -225,7 +292,11 @@ export function PaginaFormularioEvento() {
         status: String(form.get('status') ?? 'published') as EventoAcademico['status'],
         customFormSchema:
           registrationFormType === 'educacion_continua'
-            ? buildEducationContinuaSchema(parseOptions(seminarDateOptionsText), parseOptions(seminarPurposeOptionsText))
+            ? buildEducationContinuaSchema(
+                parseOptions(seminarDateOptionsText),
+                parseOptions(seminarPurposeOptionsText),
+                educationContentForm,
+              )
             : registrationFormType === 'personalizado'
               ? {
                   fields: customFields
@@ -250,6 +321,9 @@ export function PaginaFormularioEvento() {
         }
         if (parseOptions(seminarPurposeOptionsText).length === 0) {
           throw new Error('Agregue al menos un motivo para Educacion Continua');
+        }
+        if (educationContentForm.considerationsText.trim() && parseLines(educationContentForm.considerationsText).length === 0) {
+          throw new Error('Revise las consideraciones importantes del seminario');
         }
       }
 
@@ -342,13 +416,63 @@ export function PaginaFormularioEvento() {
           <section className="custom-form-builder full-field">
             <div>
               <span className="eyebrow">Educacion continua</span>
-              <h2>Opciones editables del formulario</h2>
+              <h2>Formulario editable de Informatica Intermedia</h2>
               <p className="form-hint">
-                Estas opciones se duplican junto con el evento. Deje una opcion por linea; si quiere una sola fecha,
-                borre las demas.
+                Todo esto se guarda con el evento y tambien se copia cuando duplique el seminario.
               </p>
             </div>
-            <div className="form-grid">
+            <div className="form-grid compact-form-grid">
+              <label className="full-field">
+                Texto informativo superior
+                <textarea
+                  rows={4}
+                  value={educationContentForm.introText}
+                  onChange={(event) =>
+                    setEducationContentForm((current) => ({ ...current, introText: event.currentTarget.value }))
+                  }
+                  placeholder="Explique horario, modalidad e instrucciones generales"
+                />
+              </label>
+              <label>
+                Costo
+                <input
+                  value={educationContentForm.costText}
+                  onChange={(event) =>
+                    setEducationContentForm((current) => ({ ...current, costText: event.currentTarget.value }))
+                  }
+                  placeholder="B/. 75.00 balboas"
+                />
+              </label>
+              <label>
+                Forma de pago
+                <input
+                  value={educationContentForm.paymentText}
+                  onChange={(event) =>
+                    setEducationContentForm((current) => ({ ...current, paymentText: event.currentTarget.value }))
+                  }
+                  placeholder="Recibira instrucciones al inscribirse"
+                />
+              </label>
+              <label>
+                Cancelacion
+                <input
+                  value={educationContentForm.cancellationText}
+                  onChange={(event) =>
+                    setEducationContentForm((current) => ({ ...current, cancellationText: event.currentTarget.value }))
+                  }
+                  placeholder="Debe cancelar antes de iniciar clases"
+                />
+              </label>
+              <label>
+                Cupo por fecha
+                <input
+                  value={educationContentForm.capacityText}
+                  onChange={(event) =>
+                    setEducationContentForm((current) => ({ ...current, capacityText: event.currentTarget.value }))
+                  }
+                  placeholder="hasta 25 participantes por cada fecha disponible"
+                />
+              </label>
               <label>
                 Fechas disponibles
                 <textarea
@@ -365,6 +489,20 @@ export function PaginaFormularioEvento() {
                   value={seminarPurposeOptionsText}
                   onChange={(event) => setSeminarPurposeOptionsText(event.currentTarget.value)}
                   placeholder="Requisito de ingreso a posgrado y maestria"
+                />
+              </label>
+              <label className="full-field">
+                Consideraciones importantes
+                <textarea
+                  rows={4}
+                  value={educationContentForm.considerationsText}
+                  onChange={(event) =>
+                    setEducationContentForm((current) => ({
+                      ...current,
+                      considerationsText: event.currentTarget.value,
+                    }))
+                  }
+                  placeholder={'No pagar en las cajas de UNACHI\nEspere instrucciones de pago'}
                 />
               </label>
             </div>

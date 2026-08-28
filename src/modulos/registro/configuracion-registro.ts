@@ -7,6 +7,19 @@ export type TipoFormularioSeminario = NonNullable<EventoAcademico['registrationF
 export const SEMINARIO_INFORMATICA_INTERMEDIA_TITULO =
   'Seminario de Informatica Intermedia como requisito de Posgrado y Maestria';
 
+export const SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT = {
+  introText:
+    'El Seminario de Informatica Intermedia como requisito de Posgrado y Maestria se dictara de forma virtual, el horario sera de 6:00 a 10:00 p.m., durante una semana y cada facilitador se contactara con el grupo antes de iniciar el curso.',
+  costText: 'B/. 75.00 balboas',
+  paymentText: 'Cuando se inscriba recibira informacion de la forma de pago.',
+  cancellationText: 'Los participantes del seminario deben cancelar antes de iniciar las clases.',
+  capacityText: 'hasta 25 participantes por cada fecha disponible',
+  considerations: [
+    'No pagar en las cajas de UNACHI; ese recibo no es valido para estos seminarios.',
+    'Espere instrucciones de pago, ya que cada fecha tiene un codigo distinto.',
+  ],
+} as const;
+
 function normalizeText(value: string) {
   return value
     .toLowerCase()

@@ -25,8 +25,18 @@ export type CampoFormularioPersonalizado = {
   options?: string[];
 };
 
+export type ContenidoSeminarioEducacionContinua = {
+  introText?: string;
+  costText?: string;
+  paymentText?: string;
+  cancellationText?: string;
+  capacityText?: string;
+  considerations?: string[];
+};
+
 export type FormularioPersonalizado = {
   fields: CampoFormularioPersonalizado[];
+  educationContent?: ContenidoSeminarioEducacionContinua;
 };
 
 export type EventoAcademico = {

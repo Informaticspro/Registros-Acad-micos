@@ -5,9 +5,9 @@ import {
   CONGRESO_PARTICIPATION_TYPE_OPTIONS,
   CONGRESO_SEX_OPTIONS,
   InscripcionFormKind,
-  SEMINARIO_INFORMATICA_INTERMEDIA_TITULO,
   SEMINARIO_DATE_OPTIONS,
   SEMINARIO_DISABILITY_OPTIONS,
+  SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT,
   SEMINARIO_FACULTY_OPTIONS,
   SEMINARIO_GENERAL_PARTICIPANT_TYPE_OPTIONS,
   SEMINARIO_GENERAL_REGIONAL_CENTER_OPTIONS,
@@ -50,6 +50,22 @@ function getConfiguredOptions(
 ) {
   const configuredOptions = customFormSchema?.fields.find((field) => field.id === fieldId)?.options ?? [];
   return configuredOptions.length > 0 ? configuredOptions : fallback;
+}
+
+function getEducationContent(customFormSchema: FormularioPersonalizado | null | undefined) {
+  const content = customFormSchema?.educationContent ?? {};
+  return {
+    introText: content.introText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.introText,
+    costText: content.costText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.costText,
+    paymentText: content.paymentText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.paymentText,
+    cancellationText:
+      content.cancellationText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.cancellationText,
+    capacityText: content.capacityText?.trim() || SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.capacityText,
+    considerations:
+      content.considerations && content.considerations.length > 0
+        ? content.considerations
+        : SEMINARIO_EDUCACION_CONTINUA_CONTENIDO_DEFAULT.considerations,
+  };
 }
 
 function CustomField({ field }: { field: FormularioPersonalizado['fields'][number] }) {
@@ -117,6 +133,7 @@ function CustomField({ field }: { field: FormularioPersonalizado['fields'][numbe
 export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) {
   const seminarDateOptions = getConfiguredOptions(customFormSchema, 'seminarDate', SEMINARIO_DATE_OPTIONS);
   const seminarPurposeOptions = getConfiguredOptions(customFormSchema, 'seminarPurpose', SEMINARIO_PURPOSE_OPTIONS);
+  const educationContent = getEducationContent(customFormSchema);
 
   return (
     <>
@@ -206,31 +223,27 @@ export function CamposFormularioRegistro({ formKind, customFormSchema }: Props) 
           <fieldset className="choice-group full-field">
             <legend>Fecha de seminario disponible</legend>
             <aside className="seminar-info-card" aria-label="Informacion importante del seminario">
-              <p>
-                El {SEMINARIO_INFORMATICA_INTERMEDIA_TITULO} se dictara de
-                forma virtual, el horario sera de 6:00 a 10:00 p.m., durante una semana y cada facilitador se contactara
-                con el grupo antes de iniciar el curso.
-              </p>
+              <p>{educationContent.introText}</p>
               <ol className="seminar-letter-list" type="a">
                 <li>
-                  Costo del Seminario: <strong>B/. 75.00 balboas</strong>
+                  Costo del Seminario: <strong>{educationContent.costText}</strong>
                 </li>
                 <li>
-                  Cuando se inscriba <strong>recibira</strong> informacion de la forma de pago.
+                  {educationContent.paymentText}
                 </li>
                 <li>
-                  <strong>Los participantes del seminario deben cancelar antes de iniciar las clases.</strong>
+                  <strong>{educationContent.cancellationText}</strong>
                 </li>
                 <li>
-                  La cantidad de participantes por grupo sera de <strong>hasta 25 participantes</strong> por cada fecha
-                  disponible.
+                  La cantidad de participantes por grupo sera de <strong>{educationContent.capacityText}</strong>.
                 </li>
               </ol>
               <div className="seminar-warning">
                 <strong>Consideraciones importantes</strong>
                 <ul>
-                  <li>No pagar en las cajas de UNACHI; ese recibo no es valido para estos seminarios.</li>
-                  <li>Espere instrucciones de pago, ya que cada fecha tiene un codigo distinto.</li>
+                  {educationContent.considerations.map((consideration) => (
+                    <li key={consideration}>{consideration}</li>
+                  ))}
                 </ul>
               </div>
             </aside>
