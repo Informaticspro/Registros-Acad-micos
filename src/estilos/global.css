@@ -2552,8 +2552,8 @@ textarea {
 
 .faculty-map-panel {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 12px;
+  padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
@@ -2582,8 +2582,8 @@ textarea {
 .faculty-map {
   position: relative;
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 10px;
+  padding: 12px;
   overflow: auto;
   border: 2px solid rgba(18, 64, 44, 0.28);
   border-radius: var(--radius);
@@ -2635,9 +2635,9 @@ textarea {
 .faculty-map-graphic {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(210px, 0.76fr) minmax(280px, 1.25fr) minmax(210px, 0.76fr);
+  grid-template-columns: minmax(190px, 0.76fr) minmax(230px, 1.05fr) minmax(190px, 0.76fr);
   gap: 0;
-  min-width: 880px;
+  min-width: 720px;
   align-items: stretch;
 }
 
@@ -2645,36 +2645,36 @@ textarea {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-rows: auto repeat(9, minmax(58px, auto));
-  gap: 8px;
-  padding: 8px 0;
+  grid-template-rows: auto repeat(9, minmax(44px, auto));
+  gap: 5px;
+  padding: 5px 0;
 }
 
 .faculty-map-wing-left {
-  padding-right: 14px;
-  border-right: 6px solid rgba(129, 97, 62, 0.2);
+  padding-right: 10px;
+  border-right: 4px solid rgba(129, 97, 62, 0.2);
 }
 
 .faculty-map-wing-right {
-  padding-left: 14px;
-  border-left: 6px solid rgba(129, 97, 62, 0.2);
+  padding-left: 10px;
+  border-left: 4px solid rgba(129, 97, 62, 0.2);
 }
 
 .faculty-map-side-label {
   justify-self: center;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border: 1px solid rgba(121, 183, 53, 0.32);
   border-radius: 999px;
   background: rgba(231, 248, 218, 0.84);
   color: #36523e;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 950;
   text-transform: uppercase;
 }
 
 .faculty-map-perspective {
   position: relative;
-  min-height: 640px;
+  min-height: 460px;
   overflow: hidden;
   border-block: 3px solid rgba(129, 97, 62, 0.18);
   background:
@@ -2715,38 +2715,38 @@ textarea {
 
 .faculty-map-ceiling {
   position: absolute;
-  top: 16px;
+  top: 12px;
   right: 24%;
   left: 24%;
   z-index: 2;
   display: grid;
-  gap: 26px;
+  gap: 18px;
   justify-items: center;
 }
 
 .faculty-map-ceiling span {
   display: block;
-  width: 74px;
-  height: 9px;
+  width: 58px;
+  height: 7px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 0 18px rgba(255, 255, 255, 0.55);
 }
 
 .faculty-map-ceiling span:nth-child(2) {
-  width: 62px;
+  width: 48px;
 }
 
 .faculty-map-ceiling span:nth-child(3) {
-  width: 50px;
-}
-
-.faculty-map-ceiling span:nth-child(4) {
   width: 38px;
 }
 
+.faculty-map-ceiling span:nth-child(4) {
+  width: 30px;
+}
+
 .faculty-map-ceiling span:nth-child(5) {
-  width: 26px;
+  width: 22px;
 }
 
 .faculty-map-vanishing-point {
@@ -2754,8 +2754,8 @@ textarea {
   top: 46%;
   left: 50%;
   z-index: 3;
-  width: 54px;
-  height: 64px;
+  width: 42px;
+  height: 50px;
   border: 2px solid rgba(93, 69, 48, 0.32);
   border-radius: 4px 4px 0 0;
   background: rgba(114, 73, 41, 0.2);
@@ -2802,15 +2802,15 @@ textarea {
 
 .faculty-map-perspective strong {
   position: absolute;
-  bottom: 22px;
+  bottom: 16px;
   left: 50%;
   z-index: 4;
-  padding: 7px 14px;
+  padding: 5px 11px;
   border: 1px solid rgba(243, 189, 34, 0.48);
   border-radius: 999px;
   background: rgba(255, 252, 235, 0.92);
   color: #314337;
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   transform: translateX(-50%);
 }
@@ -2819,7 +2819,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
-  min-width: 760px;
+  min-width: 720px;
   padding-top: 4px;
 }
 
@@ -2836,10 +2836,10 @@ textarea {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  min-height: 74px;
-  margin: 5px 0;
-  padding: 12px;
+  gap: 7px;
+  min-height: 52px;
+  margin: 3px 0;
+  padding: 8px 10px;
   border: 2px solid rgba(18, 64, 44, 0.18);
   border-radius: var(--radius);
   background:
@@ -2862,8 +2862,8 @@ textarea {
   content: "";
   position: absolute;
   top: 50%;
-  width: 18px;
-  height: 28px;
+  width: 14px;
+  height: 22px;
   border: 2px solid rgba(138, 92, 43, 0.58);
   border-bottom: 0;
   border-radius: 10px 10px 0 0;
@@ -2872,12 +2872,12 @@ textarea {
 }
 
 .faculty-map-zone-left::after {
-  right: -16px;
+  right: -13px;
   border-left: 0;
 }
 
 .faculty-map-zone-right::after {
-  left: -16px;
+  left: -13px;
   border-right: 0;
 }
 
@@ -2946,8 +2946,8 @@ textarea {
 .faculty-map-zone-icon {
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 10px;
   background: rgba(121, 183, 53, 0.14);
   color: var(--accent);
@@ -2971,19 +2971,20 @@ textarea {
 
 .faculty-map-zone strong {
   min-width: 0;
-  font-size: 0.92rem;
+  font-size: 0.8rem;
   line-height: 1.18;
   text-transform: uppercase;
 }
 
 .faculty-map-zone small {
   justify-self: end;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border: 1px solid rgba(121, 183, 53, 0.48);
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(231, 248, 218, 0.96), rgba(203, 237, 178, 0.86));
   color: var(--text);
   font-weight: 900;
+  font-size: 0.7rem;
   white-space: nowrap;
 }
 
@@ -5821,8 +5822,8 @@ textarea {
   }
 
   .faculty-map-panel {
-    padding: 12px;
-    gap: 12px;
+    padding: 10px;
+    gap: 10px;
   }
 
   .faculty-map-heading {
@@ -5831,12 +5832,12 @@ textarea {
   }
 
   .faculty-map-heading h2 {
-    font-size: 1.55rem;
+    font-size: 1.32rem;
     line-height: 1.05;
   }
 
   .faculty-map-heading p {
-    font-size: 0.92rem;
+    font-size: 0.86rem;
   }
 
   .faculty-map {
@@ -5847,8 +5848,8 @@ textarea {
   }
 
   .faculty-map-graphic {
-    grid-template-columns: minmax(142px, 0.82fr) minmax(190px, 1fr) minmax(142px, 0.82fr);
-    min-width: 540px;
+    grid-template-columns: minmax(120px, 0.82fr) minmax(160px, 1fr) minmax(120px, 0.82fr);
+    min-width: 430px;
   }
 
   .faculty-map-wing {
@@ -5866,17 +5867,17 @@ textarea {
   }
 
   .faculty-map-perspective {
-    min-height: 680px;
+    min-height: 500px;
   }
 
   .faculty-map-ceiling {
     right: 18%;
     left: 18%;
-    gap: 32px;
+    gap: 22px;
   }
 
   .faculty-map-center-zones {
-    min-width: 540px;
+    min-width: 430px;
   }
 
   .faculty-map-row {
@@ -5887,9 +5888,9 @@ textarea {
 
   .faculty-map-zone {
     grid-template-columns: 1fr;
-    gap: 6px;
-    min-height: 96px;
-    padding: 10px;
+    gap: 5px;
+    min-height: 74px;
+    padding: 8px;
   }
 
   .faculty-map-zone-left::after,
@@ -5899,18 +5900,18 @@ textarea {
   }
 
   .faculty-map-zone-icon {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
   }
 
   .faculty-map-zone strong {
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     line-height: 1.15;
   }
 
   .faculty-map-zone small {
     justify-self: start;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
   }
 
   .faculty-map-alerts {
