@@ -3560,7 +3560,9 @@ textarea {
   padding: 10px;
   border: 2px solid var(--line);
   border-bottom: 0;
-  background: var(--surface);
+  background:
+    linear-gradient(135deg, rgba(121, 183, 53, 0.1), rgba(243, 189, 34, 0.08)),
+    var(--surface);
 }
 
 .lab-inventory-filter button {
@@ -3569,19 +3571,40 @@ textarea {
   gap: 8px;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(121, 183, 53, 0.42);
   border-radius: 999px;
-  background: var(--surface-deep);
-  color: var(--muted);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(232, 244, 220, 0.92));
+  color: #34513f;
   cursor: pointer;
   font-weight: 900;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .lab-inventory-filter button:hover,
 .lab-inventory-filter button.active {
-  border-color: rgba(121, 183, 53, 0.62);
-  background: rgba(121, 183, 53, 0.14);
-  color: var(--text);
+  border-color: rgba(243, 189, 34, 0.9);
+  background: linear-gradient(180deg, #ffd557, #f4b915);
+  color: #102015;
+  box-shadow:
+    0 0 0 3px rgba(243, 189, 34, 0.16),
+    0 8px 18px rgba(90, 96, 37, 0.14);
+  transform: translateY(-1px);
+}
+
+.lab-inventory-filter button:nth-child(3n + 2):not(.active):not(:hover) {
+  border-color: rgba(43, 103, 199, 0.34);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(225, 238, 255, 0.9));
+}
+
+.lab-inventory-filter button:nth-child(3n):not(.active):not(:hover) {
+  border-color: rgba(42, 143, 89, 0.36);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(219, 243, 229, 0.9));
 }
 
 .lab-inventory-filter button span {
@@ -3591,9 +3614,16 @@ textarea {
   place-items: center;
   padding: 0 7px;
   border-radius: 999px;
-  background: var(--surface-soft);
-  color: var(--green);
+  background: rgba(16, 92, 58, 0.1);
+  color: #0d6b3d;
   font-size: 0.74rem;
+  font-weight: 950;
+}
+
+.lab-inventory-filter button:hover span,
+.lab-inventory-filter button.active span {
+  background: rgba(255, 255, 255, 0.42);
+  color: #0b1d10;
 }
 
 .lab-inventory-filter button .inventory-filter-alerts {
