@@ -2552,12 +2552,12 @@ textarea {
 
 .faculty-map-panel {
   display: grid;
-  gap: 16px;
+  gap: 14px;
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
-    linear-gradient(135deg, rgba(121, 183, 53, 0.1), transparent 50%),
+    linear-gradient(135deg, rgba(121, 183, 53, 0.14), rgba(243, 189, 34, 0.08) 42%, transparent 72%),
     var(--surface-deep);
 }
 
@@ -2570,7 +2570,8 @@ textarea {
 
 .faculty-map-heading h2 {
   margin: 2px 0 0;
-  font-size: clamp(1.65rem, 3vw, 2.6rem);
+  font-size: clamp(1.45rem, 2.6vw, 2.05rem);
+  line-height: 1.08;
 }
 
 .faculty-map-heading p {
@@ -2579,22 +2580,59 @@ textarea {
 }
 
 .faculty-map {
+  position: relative;
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: 0;
+  padding: 18px;
   overflow: auto;
-  border: 1px solid rgba(168, 180, 195, 0.2);
+  border: 2px solid rgba(18, 64, 44, 0.28);
   border-radius: var(--radius);
   background:
-    linear-gradient(90deg, transparent 0 31%, rgba(243, 189, 34, 0.08) 31% 69%, transparent 69%),
+    linear-gradient(90deg, rgba(121, 183, 53, 0.08) 0 31%, rgba(250, 244, 224, 0.7) 31% 69%, rgba(43, 103, 199, 0.07) 69%),
+    repeating-linear-gradient(0deg, transparent 0 47px, rgba(168, 180, 195, 0.08) 48px),
     var(--surface);
+  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.32);
+}
+
+.faculty-map::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 50%;
+  width: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(243, 189, 34, 0.26), rgba(121, 183, 53, 0.18));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.faculty-map::after {
+  content: "PASILLO CENTRAL";
+  position: sticky;
+  top: 0;
+  left: calc(50% - 86px);
+  z-index: 1;
+  width: 172px;
+  justify-self: center;
+  margin: 0 auto -16px;
+  padding: 5px 10px;
+  border: 1px solid rgba(243, 189, 34, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 252, 235, 0.92);
+  color: #425045;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-align: center;
+  pointer-events: none;
 }
 
 .faculty-map-row {
   display: grid;
   grid-template-columns: minmax(180px, 0.9fr) minmax(240px, 1.18fr) minmax(180px, 0.9fr);
-  gap: 10px;
+  gap: 14px;
   min-width: 760px;
+  align-items: stretch;
 }
 
 .faculty-map-zone {
@@ -2603,15 +2641,48 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  min-height: 68px;
+  min-height: 74px;
+  margin: 5px 0;
   padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 2px solid rgba(18, 64, 44, 0.18);
+  border-radius: var(--radius);
   background:
-    linear-gradient(135deg, rgba(121, 183, 53, 0.09), transparent 70%),
+    linear-gradient(135deg, rgba(121, 183, 53, 0.11), transparent 64%),
     var(--surface-deep);
   color: var(--text);
   text-align: left;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 8px 20px rgba(10, 34, 24, 0.08);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.faculty-map-zone-left::after,
+.faculty-map-zone-right::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 28px;
+  border: 2px solid rgba(138, 92, 43, 0.58);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  background: rgba(170, 111, 59, 0.18);
+  transform: translateY(-50%);
+}
+
+.faculty-map-zone-left::after {
+  right: -16px;
+  border-left: 0;
+}
+
+.faculty-map-zone-right::after {
+  left: -16px;
+  border-right: 0;
 }
 
 .faculty-map-zone.clickable {
@@ -2621,20 +2692,47 @@ textarea {
 .faculty-map-zone.clickable:hover,
 .faculty-map-zone.clickable:focus-visible {
   border-color: rgba(243, 189, 34, 0.7);
-  box-shadow: 0 0 0 3px rgba(243, 189, 34, 0.14);
+  background:
+    linear-gradient(135deg, rgba(243, 189, 34, 0.22), rgba(121, 183, 53, 0.12)),
+    var(--surface-deep);
+  box-shadow:
+    0 0 0 3px rgba(243, 189, 34, 0.16),
+    0 12px 24px rgba(10, 34, 24, 0.12);
+  transform: translateY(-1px);
 }
 
 .faculty-map-zone.muted {
-  opacity: 0.62;
+  opacity: 0.72;
   cursor: default;
 }
 
 .faculty-map-zone-center {
   justify-items: center;
+  border-color: rgba(243, 189, 34, 0.24);
   background:
-    linear-gradient(90deg, rgba(168, 180, 195, 0.08), rgba(243, 189, 34, 0.08), rgba(168, 180, 195, 0.08)),
-    var(--surface);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.42), rgba(243, 189, 34, 0.12), rgba(255, 255, 255, 0.42)),
+    rgba(248, 246, 236, 0.74);
   text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(243, 189, 34, 0.12);
+}
+
+.faculty-map-zone-center::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  left: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(90deg, rgba(148, 129, 83, 0.38) 0 10px, transparent 10px 18px);
+  transform: translateY(-50%);
+}
+
+.faculty-map-zone-center .faculty-map-zone-icon,
+.faculty-map-zone-center strong {
+  position: relative;
+  z-index: 1;
+  background: inherit;
 }
 
 .faculty-map-zone-icon {
@@ -2647,18 +2745,35 @@ textarea {
   color: var(--accent);
 }
 
+.faculty-map-zone-laboratorio .faculty-map-zone-icon {
+  background: rgba(42, 143, 89, 0.18);
+  color: #117a45;
+}
+
+.faculty-map-zone-biblioteca .faculty-map-zone-icon {
+  background: rgba(43, 103, 199, 0.16);
+  color: #2b67c7;
+}
+
+.faculty-map-zone-servicio .faculty-map-zone-icon,
+.faculty-map-zone-escalera .faculty-map-zone-icon {
+  background: rgba(243, 189, 34, 0.18);
+  color: #966c00;
+}
+
 .faculty-map-zone strong {
   min-width: 0;
-  font-size: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.18;
   text-transform: uppercase;
 }
 
 .faculty-map-zone small {
   justify-self: end;
-  padding: 5px 9px;
-  border: 1px solid rgba(121, 183, 53, 0.32);
+  padding: 6px 10px;
+  border: 1px solid rgba(121, 183, 53, 0.48);
   border-radius: 999px;
-  background: rgba(121, 183, 53, 0.1);
+  background: linear-gradient(180deg, rgba(231, 248, 218, 0.96), rgba(203, 237, 178, 0.86));
   color: var(--text);
   font-weight: 900;
   white-space: nowrap;
@@ -5518,7 +5633,9 @@ textarea {
 
   .faculty-map {
     padding: 10px;
-    background: var(--surface);
+    background:
+      linear-gradient(90deg, rgba(121, 183, 53, 0.08) 0 31%, rgba(250, 244, 224, 0.72) 31% 69%, rgba(43, 103, 199, 0.07) 69%),
+      var(--surface);
   }
 
   .faculty-map-row {
@@ -5532,6 +5649,12 @@ textarea {
     gap: 6px;
     min-height: 96px;
     padding: 10px;
+  }
+
+  .faculty-map-zone-left::after,
+  .faculty-map-zone-right::after {
+    width: 14px;
+    height: 22px;
   }
 
   .faculty-map-zone-icon {

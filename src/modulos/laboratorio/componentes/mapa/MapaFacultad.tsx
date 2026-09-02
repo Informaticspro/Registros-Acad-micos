@@ -91,7 +91,7 @@ export function MapaFacultad({
         <p>Toque un salon, laboratorio o area para ver sus equipos en el inventario.</p>
       </div>
 
-      <div className="faculty-map">
+      <div className="faculty-map" aria-label="Plano interactivo de ubicaciones">
         {zonas.map((fila, index) => (
           <div className="faculty-map-row" key={`fila-${index}`}>
             {fila.map((zona) => {
@@ -101,9 +101,9 @@ export function MapaFacultad({
 
               return (
                 <button
-                  className={`faculty-map-zone faculty-map-zone-${zona.lado}${zona.muted ? ' muted' : ''}${
-                    isClickable ? ' clickable' : ''
-                  }`}
+                  className={`faculty-map-zone faculty-map-zone-${zona.lado} faculty-map-zone-${
+                    zona.icono ?? 'aula'
+                  }${zona.muted ? ' muted' : ''}${isClickable ? ' clickable' : ''}`}
                   disabled={!isClickable}
                   key={`${zona.etiqueta}-${zona.lado}-${index}`}
                   type="button"
