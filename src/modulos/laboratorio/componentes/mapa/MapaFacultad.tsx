@@ -77,12 +77,57 @@ function getIcon(icono: MapaZona['icono']) {
   return <MapPinned size={18} />;
 }
 
+function getSideZones(lado: MapaZona['lado']) {
+  return zonas.map((fila) => fila.find((zona) => zona.lado === lado)).filter((zona): zona is MapaZona => Boolean(zona));
+}
+
 export function MapaFacultad({
   estadoEquipoNombre,
   estadosAlertaPorUbicacion,
   getFilterCount,
   onSelectLocation,
 }: MapaFacultadProps) {
+  const zonasIzquierda = getSideZones('left');
+  const zonasDerecha = getSideZones('right');
+  const zonasCentrales = getSideZones('center').filter((zona) => zona.ubicacion);
+
+  function renderZona(zona: MapaZona, index: number) {
+    const count = zona.ubicacion ? getFilterCount(zona.ubicacion) : 0;
+    const alertas = zona.ubicacion ? estadosAlertaPorUbicacion[zona.ubicacion] ?? [] : [];
+    const isClickable = Boolean(zona.ubicacion);
+
+    return (
+      <button
+        className={`faculty-map-zone faculty-map-zone-${zona.lado} faculty-map-zone-${
+          zona.icono ?? 'aula'
+        }${zona.muted ? ' muted' : ''}${isClickable ? ' clickable' : ''}`}
+        disabled={!isClickable}
+        key={`${zona.etiqueta}-${zona.lado}-${index}`}
+        type="button"
+        onClick={() => zona.ubicacion && onSelectLocation(zona.ubicacion)}
+      >
+        <span className="faculty-map-zone-icon">{getIcon(zona.icono)}</span>
+        <strong>{zona.etiqueta}</strong>
+        {zona.ubicacion ? (
+          <small>
+            {count} {count === 1 ? 'equipo' : 'equipos'}
+          </small>
+        ) : null}
+        {alertas.length ? (
+          <span className="faculty-map-alerts" aria-label="Estados con atencion">
+            {alertas.map((estado) => (
+              <i
+                className={`equipment-${getEstadoEquipoClass(estado)}`}
+                key={estado}
+                title={estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
+              />
+            ))}
+          </span>
+        ) : null}
+      </button>
+    );
+  }
+
   return (
     <section className="faculty-map-panel">
       <div className="faculty-map-heading">
@@ -92,46 +137,41 @@ export function MapaFacultad({
       </div>
 
       <div className="faculty-map" aria-label="Plano interactivo de ubicaciones">
-        {zonas.map((fila, index) => (
-          <div className="faculty-map-row" key={`fila-${index}`}>
-            {fila.map((zona) => {
-              const count = zona.ubicacion ? getFilterCount(zona.ubicacion) : 0;
-              const alertas = zona.ubicacion ? estadosAlertaPorUbicacion[zona.ubicacion] ?? [] : [];
-              const isClickable = Boolean(zona.ubicacion);
-
-              return (
-                <button
-                  className={`faculty-map-zone faculty-map-zone-${zona.lado} faculty-map-zone-${
-                    zona.icono ?? 'aula'
-                  }${zona.muted ? ' muted' : ''}${isClickable ? ' clickable' : ''}`}
-                  disabled={!isClickable}
-                  key={`${zona.etiqueta}-${zona.lado}-${index}`}
-                  type="button"
-                  onClick={() => zona.ubicacion && onSelectLocation(zona.ubicacion)}
-                >
-                  <span className="faculty-map-zone-icon">{getIcon(zona.icono)}</span>
-                  <strong>{zona.etiqueta}</strong>
-                  {zona.ubicacion ? (
-                    <small>
-                      {count} {count === 1 ? 'equipo' : 'equipos'}
-                    </small>
-                  ) : null}
-                  {alertas.length ? (
-                    <span className="faculty-map-alerts" aria-label="Estados con atencion">
-                      {alertas.map((estado) => (
-                        <i
-                          className={`equipment-${getEstadoEquipoClass(estado)}`}
-                          key={estado}
-                          title={estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
-                        />
-                      ))}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
+        <div className="faculty-map-graphic">
+          <div className="faculty-map-wing faculty-map-wing-left">
+            <span className="faculty-map-side-label">Ala izquierda</span>
+            {zonasIzquierda.map(renderZona)}
           </div>
-        ))}
+
+          <div className="faculty-map-perspective" aria-hidden="true">
+            <div className="faculty-map-ceiling">
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="faculty-map-vanishing-point" />
+            <div className="faculty-map-floor">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <strong>Pasillo central</strong>
+          </div>
+
+          <div className="faculty-map-wing faculty-map-wing-right">
+            <span className="faculty-map-side-label">Ala derecha</span>
+            {zonasDerecha.map(renderZona)}
+          </div>
+        </div>
+
+        {zonasCentrales.length ? (
+          <div className="faculty-map-center-zones">
+            {zonasCentrales.map((zona, index) => renderZona(zona, index))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

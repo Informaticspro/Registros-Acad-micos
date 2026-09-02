@@ -2582,7 +2582,7 @@ textarea {
 .faculty-map {
   position: relative;
   display: grid;
-  gap: 0;
+  gap: 14px;
   padding: 18px;
   overflow: auto;
   border: 2px solid rgba(18, 64, 44, 0.28);
@@ -2625,6 +2625,202 @@ textarea {
   font-weight: 950;
   text-align: center;
   pointer-events: none;
+}
+
+.faculty-map::before,
+.faculty-map::after {
+  display: none;
+}
+
+.faculty-map-graphic {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.76fr) minmax(280px, 1.25fr) minmax(210px, 0.76fr);
+  gap: 0;
+  min-width: 880px;
+  align-items: stretch;
+}
+
+.faculty-map-wing {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto repeat(9, minmax(58px, auto));
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.faculty-map-wing-left {
+  padding-right: 14px;
+  border-right: 6px solid rgba(129, 97, 62, 0.2);
+}
+
+.faculty-map-wing-right {
+  padding-left: 14px;
+  border-left: 6px solid rgba(129, 97, 62, 0.2);
+}
+
+.faculty-map-side-label {
+  justify-self: center;
+  padding: 4px 10px;
+  border: 1px solid rgba(121, 183, 53, 0.32);
+  border-radius: 999px;
+  background: rgba(231, 248, 218, 0.84);
+  color: #36523e;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.faculty-map-perspective {
+  position: relative;
+  min-height: 640px;
+  overflow: hidden;
+  border-block: 3px solid rgba(129, 97, 62, 0.18);
+  background:
+    linear-gradient(90deg, rgba(218, 210, 190, 0.96) 0 14%, transparent 14% 86%, rgba(218, 210, 190, 0.96) 86%),
+    linear-gradient(180deg, rgba(248, 248, 244, 0.95) 0 28%, rgba(234, 226, 205, 0.88) 28% 63%, rgba(220, 209, 184, 0.96) 63%),
+    var(--surface);
+  box-shadow:
+    inset 42px 0 45px rgba(109, 83, 58, 0.1),
+    inset -42px 0 45px rgba(109, 83, 58, 0.1);
+  perspective: 900px;
+}
+
+.faculty-map-perspective::before,
+.faculty-map-perspective::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  pointer-events: none;
+}
+
+.faculty-map-perspective::before {
+  left: 0;
+  clip-path: polygon(0 0, 54% 0, 100% 50%, 56% 100%, 0 100%);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 58px, rgba(129, 97, 62, 0.2) 59px 61px),
+    linear-gradient(90deg, rgba(209, 199, 178, 0.84), rgba(255, 255, 255, 0.08));
+}
+
+.faculty-map-perspective::after {
+  right: 0;
+  clip-path: polygon(46% 0, 100% 0, 100% 100%, 44% 100%, 0 50%);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 58px, rgba(129, 97, 62, 0.2) 59px 61px),
+    linear-gradient(270deg, rgba(209, 199, 178, 0.84), rgba(255, 255, 255, 0.08));
+}
+
+.faculty-map-ceiling {
+  position: absolute;
+  top: 16px;
+  right: 24%;
+  left: 24%;
+  z-index: 2;
+  display: grid;
+  gap: 26px;
+  justify-items: center;
+}
+
+.faculty-map-ceiling span {
+  display: block;
+  width: 74px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.55);
+}
+
+.faculty-map-ceiling span:nth-child(2) {
+  width: 62px;
+}
+
+.faculty-map-ceiling span:nth-child(3) {
+  width: 50px;
+}
+
+.faculty-map-ceiling span:nth-child(4) {
+  width: 38px;
+}
+
+.faculty-map-ceiling span:nth-child(5) {
+  width: 26px;
+}
+
+.faculty-map-vanishing-point {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  z-index: 3;
+  width: 54px;
+  height: 64px;
+  border: 2px solid rgba(93, 69, 48, 0.32);
+  border-radius: 4px 4px 0 0;
+  background: rgba(114, 73, 41, 0.2);
+  transform: translate(-50%, -50%);
+}
+
+.faculty-map-floor {
+  position: absolute;
+  right: 10%;
+  bottom: -28px;
+  left: 10%;
+  height: 48%;
+  transform: rotateX(62deg);
+  transform-origin: bottom center;
+  background:
+    linear-gradient(90deg, transparent 0 48%, rgba(148, 129, 83, 0.28) 49% 51%, transparent 52%),
+    repeating-linear-gradient(90deg, transparent 0 54px, rgba(148, 129, 83, 0.22) 55px 57px),
+    repeating-linear-gradient(0deg, rgba(228, 220, 200, 0.7) 0 32px, rgba(148, 129, 83, 0.18) 33px 35px);
+}
+
+.faculty-map-floor span {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: rgba(148, 129, 83, 0.28);
+}
+
+.faculty-map-floor span:nth-child(1) {
+  bottom: 18%;
+}
+
+.faculty-map-floor span:nth-child(2) {
+  bottom: 34%;
+}
+
+.faculty-map-floor span:nth-child(3) {
+  bottom: 54%;
+}
+
+.faculty-map-floor span:nth-child(4) {
+  bottom: 76%;
+}
+
+.faculty-map-perspective strong {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  z-index: 4;
+  padding: 7px 14px;
+  border: 1px solid rgba(243, 189, 34, 0.48);
+  border-radius: 999px;
+  background: rgba(255, 252, 235, 0.92);
+  color: #314337;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+.faculty-map-center-zones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  min-width: 760px;
+  padding-top: 4px;
 }
 
 .faculty-map-row {
@@ -2685,6 +2881,14 @@ textarea {
   border-right: 0;
 }
 
+.faculty-map-wing-left .faculty-map-zone {
+  border-right-color: rgba(138, 92, 43, 0.5);
+}
+
+.faculty-map-wing-right .faculty-map-zone {
+  border-left-color: rgba(138, 92, 43, 0.5);
+}
+
 .faculty-map-zone.clickable {
   cursor: pointer;
 }
@@ -2733,6 +2937,10 @@ textarea {
   position: relative;
   z-index: 1;
   background: inherit;
+}
+
+.faculty-map-center-zones .faculty-map-zone-center::before {
+  display: none;
 }
 
 .faculty-map-zone-icon {
@@ -5636,6 +5844,39 @@ textarea {
     background:
       linear-gradient(90deg, rgba(121, 183, 53, 0.08) 0 31%, rgba(250, 244, 224, 0.72) 31% 69%, rgba(43, 103, 199, 0.07) 69%),
       var(--surface);
+  }
+
+  .faculty-map-graphic {
+    grid-template-columns: minmax(142px, 0.82fr) minmax(190px, 1fr) minmax(142px, 0.82fr);
+    min-width: 540px;
+  }
+
+  .faculty-map-wing {
+    gap: 6px;
+  }
+
+  .faculty-map-wing-left {
+    padding-right: 8px;
+    border-right-width: 4px;
+  }
+
+  .faculty-map-wing-right {
+    padding-left: 8px;
+    border-left-width: 4px;
+  }
+
+  .faculty-map-perspective {
+    min-height: 680px;
+  }
+
+  .faculty-map-ceiling {
+    right: 18%;
+    left: 18%;
+    gap: 32px;
+  }
+
+  .faculty-map-center-zones {
+    min-width: 540px;
   }
 
   .faculty-map-row {
