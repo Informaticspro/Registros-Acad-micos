@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   CalendarDays,
   ClipboardCheck,
+  HardHat,
   KeyRound,
   LogOut,
   Menu,
@@ -100,6 +101,8 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
     return () => window.clearTimeout(timer);
   }, [query]);
 
+  const canAccessLab = profile?.role === 'propietario' || profile?.role === 'admin' || profile?.role === 'soporte';
+
   async function handleSignOut() {
     setIsUserMenuOpen(false);
     await signOut();
@@ -134,6 +137,12 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
       <button className="icon-button menu-button" type="button" aria-label="Mostrar u ocultar menu" onClick={onToggleMenu}>
         <Menu size={19} />
       </button>
+      {canAccessLab ? (
+        <button className="lab-entry-button" type="button" onClick={() => navigate('/laboratorio')}>
+          <HardHat size={18} />
+          <span>Soporte tecnico</span>
+        </button>
+      ) : null}
       <form className="global-search" onSubmit={handleSearchSubmit} ref={searchRef}>
         <div className="search-box">
           <Search size={18} />
