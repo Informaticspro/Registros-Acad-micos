@@ -1,4 +1,5 @@
 import { ArrowLeft, ClipboardList, HardDrive, Moon, PackageCheck, ScanLine, Sun, Wrench } from 'lucide-react';
+import { MenuNotificaciones } from '@/componentes/estructura/MenuNotificaciones';
 
 type IndicadoresLaboratorio = {
   trabajosAbiertos: number;
@@ -48,6 +49,7 @@ export function EncabezadoLaboratorio({
           >
             {isLightTheme ? <Moon size={18} /> : <Sun size={18} />}
           </button>
+          <MenuNotificaciones />
           <div className="lab-workspace-badge">
             <Wrench size={18} />
             Modo tecnico

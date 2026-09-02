@@ -553,6 +553,15 @@ a.primary-button {
   background: var(--surface-hover);
 }
 
+.notification-item.is-unread {
+  border-color: rgba(243, 189, 34, 0.35);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.notification-item.is-read {
+  opacity: 0.78;
+}
+
 .notification-item > span:first-child {
   width: 36px;
   height: 36px;
@@ -4980,7 +4989,7 @@ textarea {
     top: 0;
     height: 66px;
     display: grid;
-    grid-template-columns: 44px 44px minmax(0, 1fr) auto;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
     padding: 12px 14px;
     gap: 10px;

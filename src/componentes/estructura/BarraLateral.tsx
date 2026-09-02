@@ -33,7 +33,7 @@ const navItems = [
 ];
 
 const adminNavItem = { to: '/usuarios', label: 'Usuarios', icon: UserCog };
-const supportNavItem = { to: '/laboratorio', label: 'Soporte tecnico', icon: HardHat };
+const supportNavItem = { to: '/laboratorio', label: 'Soporte laboratorio', icon: HardHat };
 
 export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateralProps) {
   const { profile } = useAutenticacion();
@@ -43,7 +43,7 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
       : profile?.role === 'soporte'
         ? [supportNavItem]
       : profile?.role === 'admin' || profile?.role === 'propietario'
-        ? [...navItems.slice(0, 3), adminNavItem, ...navItems.slice(3)]
+        ? [...navItems.slice(0, 3), supportNavItem, adminNavItem, ...navItems.slice(3)]
         : navItems;
 
   return (
