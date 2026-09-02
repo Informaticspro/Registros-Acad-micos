@@ -1,4 +1,5 @@
-import { Building2, Copy, DoorOpen, MapPinned, Route, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Building2, Copy, DoorOpen, Maximize2, Minimize2, MapPinned, Route, Users } from 'lucide-react';
 
 import {
   getEstadoEquipoClass,
@@ -87,9 +88,26 @@ export function MapaFacultad({
   getFilterCount,
   onSelectLocation,
 }: MapaFacultadProps) {
+  const [isFullView, setIsFullView] = useState(false);
   const zonasIzquierda = getSideZones('left');
   const zonasDerecha = getSideZones('right');
   const zonasCentrales = getSideZones('center').filter((zona) => zona.ubicacion);
+
+  useEffect(() => {
+    if (!isFullView) return undefined;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsFullView(false);
+    }
+
+    document.body.classList.add('body-map-full-view');
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.classList.remove('body-map-full-view');
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isFullView]);
 
   function renderZona(zona: MapaZona, index: number) {
     const count = zona.ubicacion ? getFilterCount(zona.ubicacion) : 0;
@@ -129,11 +147,22 @@ export function MapaFacultad({
   }
 
   return (
-    <section className="faculty-map-panel">
+    <section className={`faculty-map-panel${isFullView ? ' is-full-view' : ''}`}>
       <div className="faculty-map-heading">
-        <span className="eyebrow">Mapa interactivo</span>
-        <h2>Facultad de Economia</h2>
-        <p>Toque un salon, laboratorio o area para ver sus equipos en el inventario.</p>
+        <div>
+          <span className="eyebrow">Mapa interactivo</span>
+          <h2>Facultad de Economia</h2>
+          <p>Toque un salon, laboratorio o area para ver sus equipos en el inventario.</p>
+        </div>
+        <button
+          className="secondary-button faculty-map-fullscreen-button"
+          type="button"
+          aria-pressed={isFullView}
+          onClick={() => setIsFullView((value) => !value)}
+        >
+          {isFullView ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+          {isFullView ? 'Salir de vista completa' : 'Vista completa'}
+        </button>
       </div>
 
       <div className="faculty-map" aria-label="Plano interactivo de ubicaciones">
