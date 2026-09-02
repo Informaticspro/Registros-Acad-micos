@@ -90,7 +90,7 @@ export function PaginaPanel() {
     .slice(0, recentActivityLimit);
 
   return (
-    <div className="page-stack">
+    <div className="page-stack dashboard-page">
       <PageEncabezado
         eyebrow="Panel administrativo"
         title="Panel de control"

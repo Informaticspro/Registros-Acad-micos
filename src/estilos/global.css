@@ -1105,6 +1105,122 @@ p {
   color: var(--muted);
 }
 
+.dashboard-page {
+  gap: 18px;
+}
+
+.dashboard-page .page-header {
+  align-items: flex-start;
+  padding: 4px 0 2px;
+}
+
+.dashboard-page .page-header h1 {
+  margin-bottom: 6px;
+  font-size: clamp(2.25rem, 3.4vw, 2.9rem);
+  line-height: 1;
+}
+
+.dashboard-page .page-header p {
+  font-size: 0.96rem;
+}
+
+.dashboard-page .stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-page .stat-card {
+  min-height: 112px;
+  align-items: center;
+  padding: 16px 18px;
+}
+
+.dashboard-page .stat-card span,
+.dashboard-page .stat-card small {
+  font-size: 0.84rem;
+}
+
+.dashboard-page .stat-card strong {
+  margin: 8px 0 6px;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.dashboard-page .stat-icon {
+  width: 38px;
+  height: 38px;
+}
+
+.dashboard-page .split-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.7fr);
+  gap: 18px;
+}
+
+.dashboard-page .panel {
+  padding: 18px 20px;
+}
+
+.dashboard-page .panel-heading {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dashboard-page .panel-heading h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.dashboard-page .panel-heading span {
+  font-size: 0.9rem;
+}
+
+.dashboard-page .table-list,
+.dashboard-page .timeline {
+  max-height: calc(100vh - 430px);
+  min-height: 260px;
+  gap: 0;
+}
+
+.dashboard-page .table-row {
+  min-height: 76px;
+  padding: 12px 0;
+}
+
+.dashboard-page .event-summary {
+  gap: 5px;
+}
+
+.dashboard-page .event-summary strong,
+.dashboard-page .timeline-item strong {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.dashboard-page .table-row small,
+.dashboard-page .event-summary span,
+.dashboard-page .timeline-item p,
+.dashboard-page .timeline-item small {
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.dashboard-page .timeline {
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.dashboard-page .timeline-item {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.dashboard-page .timeline-item > span {
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+}
+
 .definition-list {
   display: grid;
   gap: 14px;
