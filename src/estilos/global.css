@@ -2059,6 +2059,10 @@ textarea {
   padding: 16px 20px 18px;
 }
 
+.lab-shell-map {
+  min-height: calc(100vh - 174px);
+}
+
 .lab-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -2624,7 +2628,7 @@ textarea {
 }
 
 .faculty-map-panel.is-full-view .faculty-map-wing {
-  grid-template-rows: auto repeat(9, minmax(54px, 1fr));
+  grid-template-rows: auto repeat(10, minmax(50px, 1fr));
   gap: 7px;
 }
 
@@ -2706,7 +2710,7 @@ textarea {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-rows: auto repeat(9, minmax(44px, auto));
+  grid-template-rows: auto repeat(10, minmax(42px, auto));
   gap: 5px;
   padding: 5px 0;
 }

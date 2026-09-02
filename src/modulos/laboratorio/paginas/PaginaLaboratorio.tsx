@@ -441,7 +441,7 @@ export function PaginaLaboratorio() {
         onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
       />
 
-      <section className="panel lab-shell">
+      <section className={`panel lab-shell${activeTab === 'mapa' ? ' lab-shell-map' : ''}`}>
         <PestanasLaboratorio activeTab={activeTab} onChange={setActiveTab} />
 
         {message || error ? (
@@ -466,6 +466,7 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'mapa' ? (
           <MapaFacultad
+            defaultFullView
             estadoEquipoNombre={estadoEquipoNombre}
             estadosAlertaPorUbicacion={estadosAlertaPorUbicacion}
             getFilterCount={getInventoryFilterCount}

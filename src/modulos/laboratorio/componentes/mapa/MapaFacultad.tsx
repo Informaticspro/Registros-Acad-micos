@@ -7,6 +7,7 @@ import {
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
 type MapaFacultadProps = {
+  defaultFullView?: boolean;
   estadoEquipoNombre: Record<string, string>;
   estadosAlertaPorUbicacion: Record<string, string[]>;
   getFilterCount: (ubicacion: string) => number;
@@ -26,6 +27,11 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Salon 3A', ubicacion: '3A', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
     { etiqueta: 'Salon 3H', ubicacion: '3H', lado: 'right', icono: 'aula' },
+  ],
+  [
+    { etiqueta: 'Escalera', lado: 'left', icono: 'escalera', muted: true },
+    { etiqueta: 'Pasillo central', lado: 'center', muted: true },
+    { etiqueta: 'Copiadora / Banos mujeres', lado: 'right', icono: 'copiadora', muted: true },
   ],
   [
     { etiqueta: 'Salon de profesores', lado: 'left', icono: 'servicio', muted: true },
@@ -63,7 +69,7 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Oficina laboratorio', ubicacion: 'Seccion de Tecnologia', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: 'Escalera', lado: 'left', icono: 'escalera', muted: true },
+    { etiqueta: 'Acceso lateral', lado: 'left', icono: 'servicio', muted: true },
     { etiqueta: 'Acceso principal', lado: 'center', icono: 'servicio', muted: true },
     { etiqueta: 'Escalera', lado: 'right', icono: 'escalera', muted: true },
   ],
@@ -83,12 +89,13 @@ function getSideZones(lado: MapaZona['lado']) {
 }
 
 export function MapaFacultad({
+  defaultFullView = false,
   estadoEquipoNombre,
   estadosAlertaPorUbicacion,
   getFilterCount,
   onSelectLocation,
 }: MapaFacultadProps) {
-  const [isFullView, setIsFullView] = useState(false);
+  const [isFullView, setIsFullView] = useState(defaultFullView);
   const zonasIzquierda = getSideZones('left');
   const zonasDerecha = getSideZones('right');
   const zonasCentrales = getSideZones('center').filter((zona) => zona.ubicacion);
