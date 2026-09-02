@@ -32,12 +32,12 @@ const zonas: MapaZona[][] = [
   [
     { etiqueta: 'Escalera', lado: 'left', icono: 'escalera', muted: true },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: 'Copiadora / Banos mujeres', lado: 'right', icono: 'copiadora', muted: true },
+    { etiqueta: 'Copiadora', lado: 'right', icono: 'copiadora', muted: true },
   ],
   [
     { etiqueta: 'Maestria', ubicacion: 'maestría', lado: 'left', icono: 'servicio' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: '', lado: 'right', hidden: true, muted: true },
+    { etiqueta: 'Banos mujeres', lado: 'right', icono: 'servicio', muted: true },
   ],
   [
     { etiqueta: 'Salon 3B', ubicacion: '3B', lado: 'left', icono: 'aula' },
