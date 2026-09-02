@@ -19,6 +19,7 @@ type MapaZona = {
   ubicacion?: string;
   lado: 'left' | 'right' | 'center';
   icono?: 'aula' | 'laboratorio' | 'biblioteca' | 'servicio' | 'escalera' | 'copiadora';
+  hidden?: boolean;
   muted?: boolean;
 };
 
@@ -34,9 +35,9 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Copiadora / Banos mujeres', lado: 'right', icono: 'copiadora', muted: true },
   ],
   [
-    { etiqueta: 'Salon de profesores', lado: 'left', icono: 'servicio', muted: true },
+    { etiqueta: 'Maestria', ubicacion: 'maestría', lado: 'left', icono: 'servicio' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: 'Salon de profesores', lado: 'right', icono: 'servicio', muted: true },
+    { etiqueta: '', lado: 'right', hidden: true, muted: true },
   ],
   [
     { etiqueta: 'Salon 3B', ubicacion: '3B', lado: 'left', icono: 'aula' },
@@ -69,7 +70,7 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Oficina laboratorio', ubicacion: 'Seccion de Tecnologia', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: 'Acceso lateral', lado: 'left', icono: 'servicio', muted: true },
+    { etiqueta: '', lado: 'left', hidden: true, muted: true },
     { etiqueta: 'Acceso principal', lado: 'center', icono: 'servicio', muted: true },
     { etiqueta: 'Escalera', lado: 'right', icono: 'escalera', muted: true },
   ],
@@ -117,6 +118,10 @@ export function MapaFacultad({
   }, [isFullView]);
 
   function renderZona(zona: MapaZona, index: number) {
+    if (zona.hidden) {
+      return <span className="faculty-map-zone-placeholder" key={`placeholder-${zona.lado}-${index}`} />;
+    }
+
     const count = zona.ubicacion ? getFilterCount(zona.ubicacion) : 0;
     const alertas = zona.ubicacion ? estadosAlertaPorUbicacion[zona.ubicacion] ?? [] : [];
     const isClickable = Boolean(zona.ubicacion);

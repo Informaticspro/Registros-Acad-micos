@@ -2970,6 +2970,11 @@ textarea {
     transform 160ms ease;
 }
 
+.faculty-map-zone-placeholder {
+  min-height: 44px;
+  margin: 2px 0;
+}
+
 .faculty-map-zone-left::after,
 .faculty-map-zone-right::after {
   content: "";
