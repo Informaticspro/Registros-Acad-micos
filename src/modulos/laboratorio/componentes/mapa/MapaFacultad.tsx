@@ -65,12 +65,12 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Laboratorio 1', ubicacion: 'Laboratorio 1', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: 'Banos hombres', lado: 'left', icono: 'servicio', muted: true },
+    { etiqueta: '', lado: 'left', hidden: true, muted: true },
     { etiqueta: 'Decanato', ubicacion: 'Decanato', lado: 'center', icono: 'servicio' },
     { etiqueta: 'Oficina laboratorio', ubicacion: 'Seccion de Tecnologia', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: '', lado: 'left', hidden: true, muted: true },
+    { etiqueta: 'Banos hombres', lado: 'left', icono: 'servicio', muted: true },
     { etiqueta: 'Acceso principal', lado: 'center', icono: 'servicio', muted: true },
     { etiqueta: 'Escalera', lado: 'right', icono: 'escalera', muted: true },
   ],
