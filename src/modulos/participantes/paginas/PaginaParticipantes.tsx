@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { TarjetaQrParticipante } from '@/componentes/registro/TarjetaQrParticipante';
+import { useConfirmacion } from '@/hooks/useConfirmacion';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { listEvents } from '@/servicios/eventos.servicio';
 import {
@@ -122,6 +123,7 @@ export function PaginaParticipantes() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { confirmacionModal, confirmar } = useConfirmacion();
 
   async function loadParticipantes() {
     setIsLoading(true);
@@ -223,7 +225,12 @@ export function PaginaParticipantes() {
 
   async function handleDeleteRegistration(registration: Inscripcion, participant: Participante, event: EventoAcademico) {
     const fullName = `${participant.firstName} ${participant.lastName}`.trim();
-    const confirmed = window.confirm(`Desea quitar a ${fullName} del evento "${event.title}"?`);
+    const confirmed = await confirmar({
+      title: 'Quitar inscripcion',
+      message: `Desea quitar a ${fullName} del evento "${event.title}"?`,
+      confirmLabel: 'Quitar inscripcion',
+      tone: 'warning',
+    });
     if (!confirmed) return;
 
     setError(null);
@@ -242,7 +249,11 @@ export function PaginaParticipantes() {
 
   async function handleDeleteParticipant(participant: Participante) {
     const fullName = `${participant.firstName} ${participant.lastName}`.trim();
-    const confirmed = window.confirm(`Desea eliminar por completo a ${fullName}?`);
+    const confirmed = await confirmar({
+      title: 'Eliminar participante',
+      message: `Desea eliminar por completo a ${fullName}?`,
+      confirmLabel: 'Eliminar participante',
+    });
     if (!confirmed) return;
 
     setError(null);
@@ -490,6 +501,7 @@ export function PaginaParticipantes() {
           </section>
         </div>
       ) : null}
+      {confirmacionModal}
     </div>
   );
 }

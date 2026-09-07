@@ -10,6 +10,7 @@ import type {
   DescarteLaboratorio,
   EquipoLaboratorio,
 } from '@/tipos/dominio';
+import type { ConfirmarAccion } from '@/hooks/useConfirmacion';
 import {
   buildDescarteInput,
   normalizeExcelKey,
@@ -22,6 +23,7 @@ type SaveContext = {
 };
 
 type UseDescartesLaboratorioParams = {
+  confirmar: ConfirmarAccion;
   descartes: DescarteLaboratorio[];
   equipos: EquipoLaboratorio[];
   refresh: () => Promise<void>;
@@ -34,6 +36,7 @@ type UseDescartesLaboratorioParams = {
 };
 
 function useDescartesLaboratorio({
+  confirmar,
   descartes,
   equipos,
   refresh,
@@ -113,7 +116,13 @@ function useDescartesLaboratorio({
   }
 
   async function handleDeleteDescarte(item: DescarteLaboratorio) {
-    if (!window.confirm(`Desea eliminar el descarte de "${item.equipo}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar descarte',
+      message: `Desea eliminar el descarte de "${item.equipo}"?`,
+      confirmLabel: 'Eliminar descarte',
+    });
+    if (!confirmed) return;
+
     await deleteDescarteLaboratorio(item.id);
     await refresh();
   }

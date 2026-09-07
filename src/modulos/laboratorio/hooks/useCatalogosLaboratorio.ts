@@ -9,11 +9,13 @@ import {
   updateCatalogoLaboratorio,
   updateSeccionLaboratorio,
 } from '@/servicios/laboratorio.servicio';
+import type { ConfirmarAccion } from '@/hooks/useConfirmacion';
 import type { CatalogoLaboratorio, SeccionLaboratorio } from '@/tipos/dominio';
 import { buildSeccionInput } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 import type { CatalogManagerType } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
 
 type UseCatalogosLaboratorioOptions = {
+  confirmar: ConfirmarAccion;
   refresh: () => Promise<void>;
   saveContext: LaboratorioSaveContext;
   setError: (message: string | null) => void;
@@ -22,6 +24,7 @@ type UseCatalogosLaboratorioOptions = {
 };
 
 export function useCatalogosLaboratorio({
+  confirmar,
   refresh,
   saveContext,
   setError,
@@ -100,7 +103,13 @@ export function useCatalogosLaboratorio({
   }
 
   async function handleDeleteSeccion(item: SeccionLaboratorio) {
-    if (!window.confirm(`Desea eliminar la seccion "${item.nombre}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar seccion',
+      message: `Desea eliminar la seccion "${item.nombre}"?`,
+      confirmLabel: 'Eliminar seccion',
+    });
+    if (!confirmed) return;
+
     setError(null);
     setMessage(null);
     try {
@@ -114,7 +123,13 @@ export function useCatalogosLaboratorio({
   }
 
   async function handleDeleteCatalogo(item: CatalogoLaboratorio) {
-    if (!window.confirm(`Desea eliminar "${item.nombre}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar opcion',
+      message: `Desea eliminar "${item.nombre}"?`,
+      confirmLabel: 'Eliminar opcion',
+    });
+    if (!confirmed) return;
+
     setError(null);
     setMessage(null);
     try {

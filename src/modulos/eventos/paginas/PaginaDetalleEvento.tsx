@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Copy, Download, Edit, ExternalLink, Files, RefreshCw, Trash2, UserPlus } from 'lucide-react';
 import QRCode from 'qrcode';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
+import { useConfirmacion } from '@/hooks/useConfirmacion';
 import { env } from '@/infraestructura/entorno';
 import {
   deleteEventDailyAttendanceLog,
@@ -91,6 +92,7 @@ export function PaginaDetalleEvento() {
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [deletingAttendanceId, setDeletingAttendanceId] = useState<string | null>(null);
   const [lastAttendanceRefresh, setLastAttendanceRefresh] = useState<string | null>(null);
+  const { confirmacionModal, confirmar } = useConfirmacion();
   const canDeleteAttendance =
     profile?.role === 'propietario' || profile?.role === 'admin' || profile?.role === 'organizador';
   const registrationUrl = useMemo(() => {
@@ -149,7 +151,11 @@ export function PaginaDetalleEvento() {
 
   async function handleDelete() {
     if (!event) return;
-    const confirmed = window.confirm(`Desea eliminar el evento "${event.title}"? Esta accion no se puede deshacer.`);
+    const confirmed = await confirmar({
+      title: 'Eliminar evento',
+      message: `Desea eliminar el evento "${event.title}"? Esta accion no se puede deshacer.`,
+      confirmLabel: 'Eliminar evento',
+    });
     if (!confirmed) return;
 
     setError(null);
@@ -185,9 +191,11 @@ export function PaginaDetalleEvento() {
   }
 
   async function handleDeleteAttendance(row: EventDailyAttendance) {
-    const confirmed = window.confirm(
-      `Desea eliminar la asistencia de ${row.participantName} registrada el ${formatDateTime(row.checkedInAt)}?`,
-    );
+    const confirmed = await confirmar({
+      title: 'Eliminar asistencia',
+      message: `Desea eliminar la asistencia de ${row.participantName} registrada el ${formatDateTime(row.checkedInAt)}?`,
+      confirmLabel: 'Eliminar asistencia',
+    });
     if (!confirmed) return;
 
     setAttendanceError(null);
@@ -439,6 +447,7 @@ export function PaginaDetalleEvento() {
         </article>
 
       </section>
+      {confirmacionModal}
     </div>
   );
 }

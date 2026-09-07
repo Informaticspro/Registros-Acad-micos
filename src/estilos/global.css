@@ -4938,6 +4938,100 @@ textarea {
   margin: 6px 0 0;
 }
 
+.confirmation-backdrop {
+  z-index: 520;
+}
+
+.confirmation-modal {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  width: min(470px, calc(100vw - 32px));
+  padding: 18px;
+  overflow: visible;
+}
+
+.confirmation-modal .modal-close-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.confirmation-modal-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--danger);
+}
+
+.confirmation-modal-warning .confirmation-modal-icon {
+  background: rgba(243, 189, 34, 0.16);
+  color: #b27600;
+}
+
+.confirmation-modal-info .confirmation-modal-icon {
+  background: rgba(43, 103, 199, 0.14);
+  color: #2b67c7;
+}
+
+.confirmation-modal-copy {
+  min-width: 0;
+  padding-right: 42px;
+}
+
+.confirmation-modal-copy h2 {
+  margin: 4px 0 8px;
+  font-size: 1.28rem;
+  line-height: 1.12;
+}
+
+.confirmation-modal-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.confirmation-modal-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.confirmation-modal .danger-button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-color: rgba(255, 107, 107, 0.52);
+  border-radius: var(--radius);
+  background: rgba(255, 107, 107, 0.14);
+  cursor: pointer;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.confirmation-modal .danger-button:hover {
+  background: rgba(255, 107, 107, 0.22);
+}
+
+.confirmation-modal-warning .danger-button {
+  border-color: rgba(243, 189, 34, 0.58);
+  background: rgba(243, 189, 34, 0.16);
+  color: #7a5200;
+}
+
+.confirmation-modal-warning .danger-button:hover {
+  background: rgba(243, 189, 34, 0.26);
+}
+
 .qr-admin-modal {
   display: grid;
   gap: 14px;
@@ -5827,6 +5921,31 @@ textarea {
     width: calc(100vw - 28px);
     max-height: calc(100vh - 28px);
     padding: 16px;
+  }
+
+  .confirmation-modal {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+
+  .confirmation-modal-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .confirmation-modal-copy {
+    padding-right: 38px;
+  }
+
+  .confirmation-modal-copy h2 {
+    font-size: 1.12rem;
+  }
+
+  .confirmation-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .modal-panel.lab-confirm-modal {

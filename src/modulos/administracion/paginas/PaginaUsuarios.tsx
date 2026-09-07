@@ -1,6 +1,7 @@
 import { FormEvent, Fragment, useEffect, useState } from 'react';
 import { KeyRound, Pencil, RefreshCw, Save, Trash2, UserPlus, X } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
+import { useConfirmacion } from '@/hooks/useConfirmacion';
 import {
   createStaffUser,
   deleteStaffUser,
@@ -38,6 +39,7 @@ export function PaginaUsuarios() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { confirmacionModal, confirmar } = useConfirmacion();
 
   async function loadUsers() {
     setIsLoading(true);
@@ -96,7 +98,12 @@ export function PaginaUsuarios() {
   }
 
   async function handleDelete(user: UsuarioSistema) {
-    const confirmed = window.confirm(`Desea desactivar a ${user.fullName}? Ya no podra entrar a la app.`);
+    const confirmed = await confirmar({
+      title: 'Desactivar usuario',
+      message: `Desea desactivar a ${user.fullName}? Ya no podra entrar a la app.`,
+      confirmLabel: 'Desactivar usuario',
+      tone: 'warning',
+    });
     if (!confirmed) return;
 
     setError(null);
@@ -279,6 +286,7 @@ export function PaginaUsuarios() {
           {!isLoading && users.length === 0 ? <p className="form-hint">No hay usuarios registrados.</p> : null}
         </div>
       </section>
+      {confirmacionModal}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import type {
   EquipoLaboratorio,
   EstadoEquipoLaboratorio,
 } from '@/tipos/dominio';
+import type { ConfirmarAccion } from '@/hooks/useConfirmacion';
 import type { ConfirmacionOperativoPendiente } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
 import {
   buildBitacoraInput,
@@ -24,6 +25,7 @@ type SaveContext = {
 };
 
 type UseBitacorasLaboratorioParams = {
+  confirmar: ConfirmarAccion;
   equipos: EquipoLaboratorio[];
   estadoEquipoNombre: Record<string, string>;
   refresh: () => Promise<void>;
@@ -34,6 +36,7 @@ type UseBitacorasLaboratorioParams = {
 };
 
 function useBitacorasLaboratorio({
+  confirmar,
   equipos,
   estadoEquipoNombre,
   refresh,
@@ -116,7 +119,13 @@ function useBitacorasLaboratorio({
   }
 
   async function handleDeleteBitacora(item: BitacoraLaboratorio) {
-    if (!window.confirm(`Desea eliminar la bitacora "${item.titulo}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar bitacora',
+      message: `Desea eliminar la bitacora "${item.titulo}"?`,
+      confirmLabel: 'Eliminar bitacora',
+    });
+    if (!confirmed) return;
+
     await deleteBitacoraLaboratorio(item.id);
     await refresh();
   }

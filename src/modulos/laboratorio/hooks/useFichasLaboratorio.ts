@@ -8,6 +8,7 @@ import type {
   FichaTecnicaLaboratorio,
   EquipoLaboratorio,
 } from '@/tipos/dominio';
+import type { ConfirmarAccion } from '@/hooks/useConfirmacion';
 import { buildFichaTecnicaInput } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
 type SaveContext = {
@@ -16,6 +17,7 @@ type SaveContext = {
 };
 
 type UseFichasLaboratorioParams = {
+  confirmar: ConfirmarAccion;
   equipos: EquipoLaboratorio[];
   refresh: () => Promise<void>;
   saveContext: SaveContext;
@@ -25,6 +27,7 @@ type UseFichasLaboratorioParams = {
 };
 
 function useFichasLaboratorio({
+  confirmar,
   equipos,
   refresh,
   saveContext,
@@ -72,7 +75,13 @@ function useFichasLaboratorio({
   }
 
   async function handleDeleteFicha(item: FichaTecnicaLaboratorio) {
-    if (!window.confirm(`Desea eliminar la ficha tecnica de "${item.pc}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar ficha tecnica',
+      message: `Desea eliminar la ficha tecnica de "${item.pc}"?`,
+      confirmLabel: 'Eliminar ficha',
+    });
+    if (!confirmed) return;
+
     await deleteFichaTecnicaLaboratorio(item.id);
     if (selectedFicha?.id === item.id) setSelectedFicha(null);
     await refresh();

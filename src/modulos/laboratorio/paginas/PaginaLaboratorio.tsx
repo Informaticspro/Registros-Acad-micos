@@ -1,22 +1,15 @@
 ﻿import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Settings2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   LaboratorioState,
-  PrestamoLaboratorioInput,
-  createBitacoraLaboratorio,
   deleteEquipoLaboratorio,
   importEquiposLaboratorio,
   listLaboratorioData,
 } from '@/servicios/laboratorio.servicio';
-import {
-  EquipoLaboratorio,
-  EstadoTrabajoLaboratorio,
-  ClaseRegistroLaboratorio,
-  PrioridadLaboratorio,
-} from '@/tipos/dominio';
+import { EquipoLaboratorio } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
-import { formatDateTime } from '@/utilidades/formato';
+import { useConfirmacion } from '@/hooks/useConfirmacion';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
 import { EscanerInventarioModal } from '@/modulos/laboratorio/componentes/EscanerInventarioModal';
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
@@ -43,15 +36,11 @@ import { useFichasLaboratorio } from '@/modulos/laboratorio/hooks/useFichasLabor
 import { useInventarioLaboratorio } from '@/modulos/laboratorio/hooks/useInventarioLaboratorio';
 import { usePrestamosLaboratorio } from '@/modulos/laboratorio/hooks/usePrestamosLaboratorio';
 import { useReportesLaboratorio } from '@/modulos/laboratorio/hooks/useReportesLaboratorio';
-import {
-  emptyState,
-  estadoEquipoLabels,
-} from '@/modulos/laboratorio/constantes/laboratorio.constantes';
+import { emptyState } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
   filterUniqueEquipoInputsForImport,
   getEstadoEquipoLabel,
   getInitialTheme,
-  normalizeExcelKey,
   parseEquipoExcelRow,
   shouldImportEquipoRow,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
@@ -76,6 +65,7 @@ export function PaginaLaboratorio() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showInventoryScanner, setShowInventoryScanner] = useState(false);
+  const { confirmacionModal, confirmar } = useConfirmacion();
 
   const saveContext = useMemo(
     () => ({
@@ -114,6 +104,7 @@ export function PaginaLaboratorio() {
     setEditingEstadoEquipo,
     setEditingSeccion,
   } = useCatalogosLaboratorio({
+    confirmar,
     refresh,
     saveContext,
     setError,
@@ -122,6 +113,7 @@ export function PaginaLaboratorio() {
   });
 
   const { editingPrestamo, handleDeletePrestamo, handlePrestamoSubmit, setEditingPrestamo } = usePrestamosLaboratorio({
+    confirmar,
     refresh,
     saveContext,
     setError,
@@ -141,6 +133,7 @@ export function PaginaLaboratorio() {
     setSelectedEquipoFichaId,
     setSelectedFicha,
   } = useFichasLaboratorio({
+    confirmar,
     equipos: state.equipos,
     refresh,
     saveContext,
@@ -153,7 +146,6 @@ export function PaginaLaboratorio() {
     componentMoveTargets,
     componentesAsignadosActivosIds,
     equipoDetalleHistory,
-    equiposComponentesAsignados,
     equiposInventarioFiltrados,
     equiposInventarioPrincipales,
     estadosAlertaPorUbicacion,
@@ -275,6 +267,7 @@ export function PaginaLaboratorio() {
     selectedDescarteEquipoId,
     setSelectedDescarteEquipoId,
   } = useDescartesLaboratorio({
+    confirmar,
     descartes: state.descartes,
     equipos: state.equipos,
     refresh,
@@ -306,6 +299,7 @@ export function PaginaLaboratorio() {
     setConfirmacionOperativo,
     setEditingBitacora,
   } = useBitacorasLaboratorio({
+    confirmar,
     equipos: state.equipos,
     estadoEquipoNombre,
     refresh,
@@ -384,7 +378,13 @@ export function PaginaLaboratorio() {
   ]);
 
   async function handleDeleteEquipo(item: EquipoLaboratorio) {
-    if (!window.confirm(`Desea eliminar el equipo "${item.nombre}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar equipo',
+      message: `Desea eliminar el equipo "${item.nombre}"?`,
+      confirmLabel: 'Eliminar equipo',
+    });
+    if (!confirmed) return;
+
     await deleteEquipoLaboratorio(item.id);
     await refresh();
   }
@@ -690,6 +690,7 @@ export function PaginaLaboratorio() {
       </section>
 
       {showInventoryScanner ? <EscanerInventarioModal onClose={() => setShowInventoryScanner(false)} /> : null}
+      {confirmacionModal}
     </div>
   );
 }

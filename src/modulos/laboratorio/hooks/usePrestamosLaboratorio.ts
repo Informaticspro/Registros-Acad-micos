@@ -6,10 +6,12 @@ import {
   deletePrestamoLaboratorio,
   updatePrestamoLaboratorio,
 } from '@/servicios/laboratorio.servicio';
+import type { ConfirmarAccion } from '@/hooks/useConfirmacion';
 import type { PrestamoLaboratorio } from '@/tipos/dominio';
 import { buildPrestamoInput } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
 type UsePrestamosLaboratorioOptions = {
+  confirmar: ConfirmarAccion;
   refresh: () => Promise<void>;
   saveContext: LaboratorioSaveContext;
   setError: (message: string | null) => void;
@@ -18,6 +20,7 @@ type UsePrestamosLaboratorioOptions = {
 };
 
 export function usePrestamosLaboratorio({
+  confirmar,
   refresh,
   saveContext,
   setError,
@@ -54,7 +57,13 @@ export function usePrestamosLaboratorio({
   }
 
   async function handleDeletePrestamo(item: PrestamoLaboratorio) {
-    if (!window.confirm(`Desea eliminar el prestamo de "${item.equipo}"?`)) return;
+    const confirmed = await confirmar({
+      title: 'Eliminar prestamo',
+      message: `Desea eliminar el prestamo de "${item.equipo}"?`,
+      confirmLabel: 'Eliminar prestamo',
+    });
+    if (!confirmed) return;
+
     await deletePrestamoLaboratorio(item.id);
     await refresh();
   }
