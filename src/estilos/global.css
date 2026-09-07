@@ -6533,9 +6533,9 @@ textarea {
     overflow-y: auto;
   }
 
-  .lab-workspace *,
-  .lab-workspace *::before,
-  .lab-workspace *::after {
+  .lab-workspace img,
+  .lab-workspace video,
+  .lab-workspace canvas {
     max-width: 100%;
   }
 
@@ -6592,11 +6592,22 @@ textarea {
   .lab-header-actions {
     justify-content: stretch;
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 42px 42px minmax(0, 1fr);
+    align-items: stretch;
   }
 
   .lab-header-actions .theme-toggle {
     width: 42px;
+  }
+
+  .lab-header-actions .notifications-menu {
+    width: 42px;
+    min-width: 42px;
+  }
+
+  .lab-header-actions .notification-button {
+    width: 42px;
+    min-width: 42px;
   }
 
   .lab-header-actions .lab-scan-button {
@@ -6606,7 +6617,13 @@ textarea {
   }
 
   .lab-header-actions .lab-workspace-badge {
+    grid-column: 3;
+    min-width: 0;
     min-height: 42px;
+    padding: 0 10px;
+    font-size: 0.72rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .lab-quick-stats {
@@ -6616,7 +6633,7 @@ textarea {
   .lab-workspace-title h1 {
     max-width: 100%;
     overflow-wrap: anywhere;
-    font-size: clamp(1.5rem, 8vw, 1.85rem);
+    font-size: clamp(1.38rem, 7.2vw, 1.72rem);
     line-height: 1.02;
   }
 
@@ -6683,6 +6700,65 @@ textarea {
   .lab-tabs button.active,
   .lab-tabs button:hover {
     box-shadow: inset 0 -2px 0 var(--gold);
+  }
+
+  .dashboard-page {
+    gap: 12px;
+  }
+
+  .dashboard-page .page-header h1 {
+    font-size: clamp(1.45rem, 7.2vw, 1.85rem);
+  }
+
+  .dashboard-page .page-header p {
+    font-size: 0.9rem;
+  }
+
+  .dashboard-page .stats-grid,
+  .dashboard-page .split-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .dashboard-page .stat-card {
+    min-height: 92px;
+    padding: 14px;
+  }
+
+  .dashboard-page .stat-card strong {
+    margin: 6px 0 4px;
+    font-size: 1.55rem;
+  }
+
+  .dashboard-page .panel {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .dashboard-page .panel-heading {
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .dashboard-page .panel-heading h2 {
+    font-size: 1.15rem;
+  }
+
+  .dashboard-page .table-list,
+  .dashboard-page .timeline {
+    max-height: none;
+    min-height: 0;
+  }
+
+  .dashboard-page .table-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    min-height: 0;
+    padding: 10px 0;
+  }
+
+  .dashboard-page .timeline-item p {
+    white-space: normal;
   }
 
   .lab-list {
