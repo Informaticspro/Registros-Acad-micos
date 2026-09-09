@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -29,7 +28,6 @@ const navItems = [
   { to: '/certificados', label: 'Certificados', icon: ClipboardCheck },
   { to: '/exportaciones', label: 'Exportaciones', icon: FileSpreadsheet },
   { to: '/historial', label: 'Historial', icon: FileArchive },
-  { to: '/dashboard', label: 'Estadisticas', icon: BarChart3 },
 ];
 
 const adminNavItem = { to: '/usuarios', label: 'Usuarios', icon: UserCog };

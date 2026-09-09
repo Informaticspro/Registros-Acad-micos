@@ -50,6 +50,17 @@ export function PaginaPanel() {
   }, []);
 
   const activeEvents = events.filter(isOpenEvent);
+  const upcomingEvents = events
+    .filter((event) =>
+      (event.status === 'published' || event.status === 'active') &&
+      (isRegistroPermanenteEvento(event) || (event.startsAt !== null && new Date(event.startsAt).getTime() >= Date.now())),
+    )
+    .sort((first, second) => {
+      const firstPermanent = isRegistroPermanenteEvento(first);
+      const secondPermanent = isRegistroPermanenteEvento(second);
+      if (firstPermanent !== secondPermanent) return firstPermanent ? 1 : -1;
+      return new Date(first.startsAt ?? 0).getTime() - new Date(second.startsAt ?? 0).getTime();
+    });
   const todayAttendance = attendance.filter((item) => isTodayInPanama(item.checkedInAt));
   const congressEvent =
     events.find((event) => event.eventType === 'congreso' && event.status === 'active') ??
@@ -122,11 +133,11 @@ export function PaginaPanel() {
       <section className="split-grid">
         <article className="panel">
           <div className="panel-heading">
-            <h2>Proximos eventos</h2>
-            <span>{events.length} registros</span>
+            <h2>Próximos eventos y registros abiertos</h2>
+            <span>{upcomingEvents.length} {upcomingEvents.length === 1 ? 'registro' : 'registros'}</span>
           </div>
           <div className="table-list">
-            {events.map((event) => (
+            {upcomingEvents.map((event) => (
               <div className="table-row" key={event.id}>
                 <div className="event-summary">
                   <strong>{event.title}</strong>
@@ -135,6 +146,7 @@ export function PaginaPanel() {
                 <small>{getEventDateLabel(event)}</small>
               </div>
             ))}
+            {upcomingEvents.length === 0 ? <p className="form-hint">No hay próximos eventos ni registros permanentes abiertos.</p> : null}
           </div>
         </article>
         <article className="panel">

@@ -7038,3 +7038,104 @@ textarea {
 }
 
 
+
+/* Comfortable reading in narrow panels and on phones. */
+.dashboard-page .split-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+
+.dashboard-page .panel-heading {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard-page .table-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.dashboard-page .event-summary,
+.dashboard-page .timeline-item > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-page .table-list,
+.dashboard-page .timeline {
+  max-height: none;
+  min-height: 0;
+}
+
+.auth-shell .login-panel {
+  gap: 18px;
+  padding: 24px;
+}
+
+.auth-brand {
+  flex-direction: row;
+  text-align: left;
+}
+
+.auth-brand .brand-mark {
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+  border-radius: 16px;
+  margin-inline: 0;
+}
+
+.login-panel .login-heading h1 {
+  font-size: clamp(1.4rem, 3vw, 1.7rem);
+}
+
+@media (max-width: 600px) {
+  .auth-layout .auth-shell {
+    padding: 16px;
+  }
+
+  .auth-shell .login-panel {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .auth-brand strong {
+    font-size: 1rem;
+  }
+
+  .login-panel input {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .login-panel .primary-button,
+  .login-panel .secondary-button {
+    min-height: 44px;
+  }
+}
+
+.dashboard-page .table-row {
+  display: grid;
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    height: auto;
+    grid-template-columns: 44px 44px minmax(0, 1fr);
+  }
+  .topbar .topbar-actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
+  .topbar .global-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .topbar .search-box input {
+    font-size: 16px;
+  }
+  .topbar .global-search-results,
+  .topbar .notifications-popover {
+    top: 126px;
+  }
+}

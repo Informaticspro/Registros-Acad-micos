@@ -138,7 +138,7 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
         <Menu size={19} />
       </button>
       {canAccessLab ? (
-        <button className="lab-entry-button" type="button" onClick={() => navigate('/laboratorio')}>
+        <button className="lab-entry-button" type="button" aria-label="Soporte técnico" onClick={() => navigate('/laboratorio')}>
           <HardHat size={18} />
           <span>Soporte tecnico</span>
         </button>
