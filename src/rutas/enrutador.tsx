@@ -1,41 +1,42 @@
-﻿import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { LayoutAplicacion } from '@/componentes/estructura/LayoutAplicacion';
 import { LayoutAutenticacion } from '@/componentes/estructura/LayoutAutenticacion';
 import { RutaProtegida } from '@/rutas/RutaProtegida';
 import { GuardaRol } from '@/rutas/GuardaRol';
 import { RedireccionRegistroEvento } from '@/rutas/RedireccionRegistroEvento';
-import { PaginaPanel } from '@/modulos/panel/paginas/PaginaPanel';
-import { PaginaDetalleEvento } from '@/modulos/eventos/paginas/PaginaDetalleEvento';
-import { PaginaFormularioEvento } from '@/modulos/eventos/paginas/PaginaFormularioEvento';
-import { PaginaEventos } from '@/modulos/eventos/paginas/PaginaEventos';
-import { PaginaLogin } from '@/modulos/autenticacion/paginas/PaginaLogin';
-import { PaginaActualizarContrasena } from '@/modulos/autenticacion/paginas/PaginaActualizarContrasena';
-import { PaginaRecuperarContrasena } from '@/modulos/autenticacion/paginas/PaginaRecuperarContrasena';
-import { PaginaParticipantes } from '@/modulos/participantes/paginas/PaginaParticipantes';
-import { PaginaRegistroParticipante } from '@/modulos/registro/paginas/PaginaRegistroParticipante';
-import { PaginaConsultaQrParticipante } from '@/modulos/registro/paginas/PaginaConsultaQrParticipante';
-import { PaginaEscaner } from '@/modulos/asistencia/paginas/PaginaEscaner';
-import { PaginaCertificados } from '@/modulos/certificados/paginas/PaginaCertificados';
-import { PaginaExportaciones } from '@/modulos/exportaciones/paginas/PaginaExportaciones';
-import { PaginaHistorial } from '@/modulos/historial/paginas/PaginaHistorial';
-import { PaginaUsuarios } from '@/modulos/administracion/paginas/PaginaUsuarios';
-import { PaginaMiCuenta } from '@/modulos/autenticacion/paginas/PaginaMiCuenta';
-import { PaginaLaboratorio } from '@/modulos/laboratorio/paginas/PaginaLaboratorio';
-import { PaginaEquipoLaboratorio } from '@/modulos/laboratorio/paginas/PaginaEquipoLaboratorio';
-import { PaginaNoEncontrada } from '@/paginas/PaginaNoEncontrada';
+const PaginaPanel = lazy(() => import('@/modulos/panel/paginas/PaginaPanel').then(module => ({ default: module.PaginaPanel })));
+const PaginaDetalleEvento = lazy(() => import('@/modulos/eventos/paginas/PaginaDetalleEvento').then(module => ({ default: module.PaginaDetalleEvento })));
+const PaginaFormularioEvento = lazy(() => import('@/modulos/eventos/paginas/PaginaFormularioEvento').then(module => ({ default: module.PaginaFormularioEvento })));
+const PaginaEventos = lazy(() => import('@/modulos/eventos/paginas/PaginaEventos').then(module => ({ default: module.PaginaEventos })));
+const PaginaLogin = lazy(() => import('@/modulos/autenticacion/paginas/PaginaLogin').then(module => ({ default: module.PaginaLogin })));
+const PaginaActualizarContrasena = lazy(() => import('@/modulos/autenticacion/paginas/PaginaActualizarContrasena').then(module => ({ default: module.PaginaActualizarContrasena })));
+const PaginaRecuperarContrasena = lazy(() => import('@/modulos/autenticacion/paginas/PaginaRecuperarContrasena').then(module => ({ default: module.PaginaRecuperarContrasena })));
+const PaginaParticipantes = lazy(() => import('@/modulos/participantes/paginas/PaginaParticipantes').then(module => ({ default: module.PaginaParticipantes })));
+const PaginaRegistroParticipante = lazy(() => import('@/modulos/registro/paginas/PaginaRegistroParticipante').then(module => ({ default: module.PaginaRegistroParticipante })));
+const PaginaConsultaQrParticipante = lazy(() => import('@/modulos/registro/paginas/PaginaConsultaQrParticipante').then(module => ({ default: module.PaginaConsultaQrParticipante })));
+const PaginaEscaner = lazy(() => import('@/modulos/asistencia/paginas/PaginaEscaner').then(module => ({ default: module.PaginaEscaner })));
+const PaginaCertificados = lazy(() => import('@/modulos/certificados/paginas/PaginaCertificados').then(module => ({ default: module.PaginaCertificados })));
+const PaginaExportaciones = lazy(() => import('@/modulos/exportaciones/paginas/PaginaExportaciones').then(module => ({ default: module.PaginaExportaciones })));
+const PaginaHistorial = lazy(() => import('@/modulos/historial/paginas/PaginaHistorial').then(module => ({ default: module.PaginaHistorial })));
+const PaginaUsuarios = lazy(() => import('@/modulos/administracion/paginas/PaginaUsuarios').then(module => ({ default: module.PaginaUsuarios })));
+const PaginaMiCuenta = lazy(() => import('@/modulos/autenticacion/paginas/PaginaMiCuenta').then(module => ({ default: module.PaginaMiCuenta })));
+const PaginaLaboratorio = lazy(() => import('@/modulos/laboratorio/paginas/PaginaLaboratorio').then(module => ({ default: module.PaginaLaboratorio })));
+const PaginaEquipoLaboratorio = lazy(() => import('@/modulos/laboratorio/paginas/PaginaEquipoLaboratorio').then(module => ({ default: module.PaginaEquipoLaboratorio })));
+const PaginaNoEncontrada = lazy(() => import('@/paginas/PaginaNoEncontrada').then(module => ({ default: module.PaginaNoEncontrada })));
 
 export const enrutador = createBrowserRouter([
   {
     element: <LayoutAutenticacion />,
     children: [
-      { path: '/login', element: <PaginaLogin /> },
-      { path: '/recuperar-contrasena', element: <PaginaRecuperarContrasena /> },
-      { path: '/actualizar-contrasena', element: <PaginaActualizarContrasena /> },
+      { path: '/login', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaLogin /></Suspense> },
+      { path: '/recuperar-contrasena', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaRecuperarContrasena /></Suspense> },
+      { path: '/actualizar-contrasena', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaActualizarContrasena /></Suspense> },
       { path: '/eventos/:eventId/registr', element: <RedireccionRegistroEvento /> },
       { path: '/eventos/:eventId/register', element: <RedireccionRegistroEvento /> },
-      { path: '/eventos/:eventId/registro', element: <PaginaRegistroParticipante /> },
-      { path: '/mi-codigo', element: <PaginaConsultaQrParticipante /> },
-      { path: '/eventos/:eventId/mi-codigo', element: <PaginaConsultaQrParticipante /> },
+      { path: '/eventos/:eventId/registro', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaRegistroParticipante /></Suspense> },
+      { path: '/mi-codigo', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaConsultaQrParticipante /></Suspense> },
+      { path: '/eventos/:eventId/mi-codigo', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaConsultaQrParticipante /></Suspense> },
     ],
   },
   {
@@ -50,7 +51,7 @@ export const enrutador = createBrowserRouter([
         path: '/dashboard',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaPanel />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaPanel /></Suspense>
           </GuardaRol>
         ),
       },
@@ -58,7 +59,7 @@ export const enrutador = createBrowserRouter([
         path: '/eventos',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaEventos />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaEventos /></Suspense>
           </GuardaRol>
         ),
       },
@@ -66,7 +67,7 @@ export const enrutador = createBrowserRouter([
         path: '/eventos/nuevo',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaFormularioEvento />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaFormularioEvento /></Suspense>
           </GuardaRol>
         ),
       },
@@ -74,7 +75,7 @@ export const enrutador = createBrowserRouter([
         path: '/eventos/:eventId',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaDetalleEvento />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaDetalleEvento /></Suspense>
           </GuardaRol>
         ),
       },
@@ -82,7 +83,7 @@ export const enrutador = createBrowserRouter([
         path: '/eventos/:eventId/editar',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaFormularioEvento />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaFormularioEvento /></Suspense>
           </GuardaRol>
         ),
       },
@@ -90,7 +91,7 @@ export const enrutador = createBrowserRouter([
         path: '/participantes',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaParticipantes />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaParticipantes /></Suspense>
           </GuardaRol>
         ),
       },
@@ -98,7 +99,7 @@ export const enrutador = createBrowserRouter([
         path: '/laboratorio',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'soporte']}>
-            <PaginaLaboratorio />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaLaboratorio /></Suspense>
           </GuardaRol>
         ),
       },
@@ -106,7 +107,7 @@ export const enrutador = createBrowserRouter([
         path: '/laboratorio/equipos/:equipoId',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'soporte']}>
-            <PaginaEquipoLaboratorio />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaEquipoLaboratorio /></Suspense>
           </GuardaRol>
         ),
       },
@@ -114,7 +115,7 @@ export const enrutador = createBrowserRouter([
         path: '/asistencia/escanear',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador', 'scanner']}>
-            <PaginaEscaner />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaEscaner /></Suspense>
           </GuardaRol>
         ),
       },
@@ -122,7 +123,7 @@ export const enrutador = createBrowserRouter([
         path: '/certificados',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaCertificados />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaCertificados /></Suspense>
           </GuardaRol>
         ),
       },
@@ -130,7 +131,7 @@ export const enrutador = createBrowserRouter([
         path: '/exportaciones',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaExportaciones />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaExportaciones /></Suspense>
           </GuardaRol>
         ),
       },
@@ -138,24 +139,24 @@ export const enrutador = createBrowserRouter([
         path: '/usuarios',
         element: (
           <GuardaRol roles={['propietario', 'admin']}>
-            <PaginaUsuarios />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaUsuarios /></Suspense>
           </GuardaRol>
         ),
       },
       {
         path: '/mi-cuenta',
-        element: <PaginaMiCuenta />,
+        element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaMiCuenta /></Suspense>,
       },
       {
         path: '/historial',
         element: (
           <GuardaRol roles={['propietario', 'admin', 'organizador']}>
-            <PaginaHistorial />
+            <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaHistorial /></Suspense>
           </GuardaRol>
         ),
       },
     ],
   },
-  { path: '*', element: <PaginaNoEncontrada /> },
+  { path: '*', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaNoEncontrada /></Suspense> },
 ]);
 

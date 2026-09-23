@@ -196,6 +196,7 @@ export function Encabezado({ onToggleMenu }: EncabezadoProps) {
           <button
             className="user-chip"
             type="button"
+            aria-label={`Cuenta de ${profile?.fullName ?? 'Usuario'}, ${profile?.role ?? 'admin'}`}
             aria-expanded={isUserMenuOpen}
             aria-haspopup="menu"
             onClick={() => setIsUserMenuOpen((value) => !value)}

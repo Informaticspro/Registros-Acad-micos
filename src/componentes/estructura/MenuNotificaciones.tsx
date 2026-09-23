@@ -3,7 +3,7 @@ import { Bell, CalendarDays, ClipboardCheck, MonitorCog } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { listEvents } from '@/servicios/eventos.servicio';
-import { listLaboratorioData } from '@/servicios/laboratorio.servicio';
+import { listLaboratorioAlerts } from '@/servicios/notificaciones.servicio';
 import { EventoAcademico } from '@/tipos/dominio';
 import { getErrorMessage } from '@/utilidades/errores';
 import { formatDateTime } from '@/utilidades/formato';
@@ -79,7 +79,7 @@ export function MenuNotificaciones() {
       try {
         const [eventsData, labData] = await Promise.all([
           canSeeEventAlerts ? listEvents() : Promise.resolve([] as EventoAcademico[]),
-          canAccessLab ? listLaboratorioData() : Promise.resolve(null),
+          canAccessLab ? listLaboratorioAlerts() : Promise.resolve(null),
         ]);
 
         if (!isMounted) return;

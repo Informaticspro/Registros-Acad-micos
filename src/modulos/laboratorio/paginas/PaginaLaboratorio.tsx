@@ -1,4 +1,4 @@
-﻿import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -375,6 +375,7 @@ export function PaginaLaboratorio() {
     selectedFicha,
     showEquipoFormModal,
     showInventoryScanner,
+    closeCatalogManager, closeEquipoDetalle, closeEquipoFormModal, setConfirmacionOperativo, setSelectedFicha,
   ]);
 
   async function handleDeleteEquipo(item: EquipoLaboratorio) {

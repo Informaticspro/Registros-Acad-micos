@@ -55,7 +55,7 @@ export function TarjetaQrParticipante({
           <dd>{documentId}</dd>
         </div>
         <div>
-          <dt>Codigo certificado</dt>
+          <dt>Código de recuperación (guárdelo)</dt>
           <dd>{certificateCode}</dd>
         </div>
       </dl>

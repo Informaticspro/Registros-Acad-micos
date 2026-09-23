@@ -1,3 +1,4 @@
+import { fetchAllPages, fetchByIdBatches } from '@/infraestructura/paginacion';
 import { utils, writeFile } from 'xlsx-js-style';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
@@ -20,6 +21,7 @@ type InscripcionBase = {
   certificate_code: string;
   created_at: string;
   checked_in_at: string | null;
+  registration_metadata?: Record<string, string> | null;
 };
 
 type ParticipanteBase = {
@@ -171,8 +173,7 @@ async function getInscripcionCounts(): Promise<Record<string, number>> {
   }
   if (!supabase) return {};
 
-  const { data, error } = await supabase.from('registrations').select('event_id');
-  if (error) throw error;
+  const data = await fetchAllPages((from, to) => supabase!.from('registrations').select('event_id').order('id').range(from, to));
 
   return (data ?? []).reduce<Record<string, number>>((acc, row) => {
     const eventId = row.event_id as string;
@@ -235,47 +236,40 @@ async function fetchEventInscripcions(event: EventoAcademico): Promise<ExportRow
   }
   if (!supabase) return [];
 
-  const { data: registrations, error: regError } = await supabase
+  const registrations = await fetchAllPages<InscripcionBase>((from, to) => supabase!
     .from('registrations')
-    .select('id, participant_id, certificate_code, created_at, checked_in_at')
+    .select('id, participant_id, certificate_code, created_at, checked_in_at, registration_metadata')
     .eq('event_id', event.id)
     .order('created_at', { ascending: true })
-    .returns<InscripcionBase[]>();
-
-  if (regError) throw regError;
+    .order('id').range(from, to).returns<InscripcionBase[]>());
   if (!registrations?.length) return [];
 
   const participantIds = [...new Set(registrations.map((row) => row.participant_id))];
-  const { data: participants, error: partError } = await supabase
+  const participants = await fetchByIdBatches(participantIds, (ids) => fetchAllPages<ParticipanteBase>((from, to) => supabase!
     .from('participants')
     .select('id, first_name, last_name, document_id, email, metadata')
-    .in('id', participantIds)
-    .returns<ParticipanteBase[]>();
-
-  if (partError) throw partError;
+    .in('id', ids)
+    .order('id').range(from, to).returns<ParticipanteBase[]>()));
 
   const participantMap = new Map((participants ?? []).map((row) => [row.id, row]));
-  const registrationIds = registrations.map((row) => row.id);
 
-  const { data: logs, error: logError } = await supabase
+  const logs = await fetchAllPages<DailyLog>((from, to) => supabase!
     .from('attendance_daily_logs')
     .select('registration_id, checked_in_at, scanned_by, attendance_period')
-    .in('registration_id', registrationIds)
-    .returns<DailyLog[]>();
+    .eq('event_id', event.id)
+    .order('id').range(from, to).returns<DailyLog[]>());
 
-  if (logError) {
-    console.warn('No se pudieron cargar asistencias diarias:', logError.message);
-  }
 
-  const { data: attendanceRecords, error: attendanceError } = await supabase
+
+
+  const attendanceRecords = await fetchAllPages<AttendanceRecord>((from, to) => supabase!
     .from('attendance_records')
     .select('registration_id, checked_in_at, scanned_by')
-    .in('registration_id', registrationIds)
-    .returns<AttendanceRecord[]>();
+    .eq('event_id', event.id)
+    .order('id').range(from, to).returns<AttendanceRecord[]>());
 
-  if (attendanceError) {
-    console.warn('No se pudieron cargar asistencias generales:', attendanceError.message);
-  }
+
+
 
   const scannerIds = [
     ...new Set([
@@ -283,10 +277,8 @@ async function fetchEventInscripcions(event: EventoAcademico): Promise<ExportRow
       ...(attendanceRecords ?? []).map((row) => row.scanned_by).filter(Boolean),
     ]),
   ] as string[];
-  const { data: scanners } =
-    scannerIds.length > 0
-      ? await supabase.from('profiles').select('id, full_name').in('id', scannerIds)
-      : { data: [] };
+  const scanners = await fetchByIdBatches(scannerIds, (ids) => fetchAllPages((from, to) => supabase!
+    .from('profiles').select('id, full_name').in('id', ids).order('id').range(from, to)));
   const scannerMap = new Map((scanners ?? []).map((row) => [row.id as string, row.full_name as string]));
 
   const logsByInscripcion = (logs ?? []).reduce<Record<string, ExportRowBundle['logs']>>((acc, row) => {
@@ -319,7 +311,7 @@ async function fetchEventInscripcions(event: EventoAcademico): Promise<ExportRow
   return registrations
     .map((registration) => {
       const participant = participantMap.get(registration.participant_id);
-      if (!participant) return null;
+      if (!participant) throw new Error('No se pudo leer un participante. No se generará un informe incompleto.');
       const fallbackLogs =
         event.eventType !== 'congreso'
           ? attendanceRecordsByInscripcion[registration.id] ??
@@ -335,7 +327,7 @@ async function fetchEventInscripcions(event: EventoAcademico): Promise<ExportRow
           : [];
       return {
         registration,
-        participant,
+        participant: { ...participant, metadata: registration.registration_metadata ?? participant.metadata },
         logs: logsByInscripcion[registration.id] ?? fallbackLogs,
       };
     })
@@ -348,7 +340,7 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
   return rows.map(({ registration, participant, logs }) => {
     const metadata = participant.metadata ?? {};
     const attendance = logs
-      .map((log) => `${log.attendance_period === 'registro' ? 'registro' : log.attendance_period ?? 'matutina'} - ${formatDateTime(log.checked_in_at)}`)
+      .map((log) => `${log.attendance_period === 'registro' ? 'registro histórico (presencia no verificada)' : log.attendance_period ?? 'matutina'} - ${formatDateTime(log.checked_in_at)}`)
       .filter(Boolean)
       .join(' | ');
 
@@ -358,7 +350,8 @@ function buildExportRows(event: EventoAcademico, rows: ExportRowBundle[]) {
       'Cedula': participant.document_id,
       'Correo institucional': participant.email,
       'Fecha registro': formatDateTime(registration.created_at),
-      'Codigo certificado': registration.certificate_code,
+      'Codigo de recuperación': registration.certificate_code,
+      'Asistencias (fecha y hora)': attendance || 'Sin asistencia registrada',
     };
 
     if (formKind === 'seminario') {
@@ -428,9 +421,9 @@ function buildAttendanceRows(rows: ExportRowBundle[]) {
         Nombre: participant.first_name,
         Apellido: participant.last_name,
         Cedula: participant.document_id,
-        Fecha: date.toLocaleDateString('es-PA'),
-        Jornada: log.attendance_period === 'registro' ? 'Registro' : log.attendance_period ?? 'matutina',
-        Hora: date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
+        Fecha: date.toLocaleDateString('es-PA', { timeZone: 'America/Panama' }),
+        Jornada: log.attendance_period === 'registro' ? 'Registro histórico (presencia no verificada)' : log.attendance_period ?? 'matutina',
+        Hora: date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Panama' }),
         'Fecha y hora': formatDateTime(log.checked_in_at),
         'Registrado por': log.scanner_name ?? log.scanned_by ?? '',
       };
@@ -485,7 +478,7 @@ function buildStyledWorksheet(event: EventoAcademico, sheetRows: Record<string, 
 export async function exportEventExcel(event: ExportableEvent) {
   const rows = await fetchEventInscripcions(event);
   const sheetRows = buildExportRows(event, rows);
-  const attendanceRows = event.eventType === 'congreso' ? buildAttendanceRows(rows) : [];
+  const attendanceRows = buildAttendanceRows(rows);
 
   if (sheetRows.length === 0) {
     throw new Error(

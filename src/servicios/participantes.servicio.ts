@@ -1,4 +1,5 @@
-﻿import { supabase } from '@/infraestructura/supabase';
+import { fetchAllPages } from '@/infraestructura/paginacion';
+import { supabase } from '@/infraestructura/supabase';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { mockParticipantes, mockInscripcions } from '@/datos/datosPrueba';
 import { Participante, Inscripcion } from '@/tipos/dominio';
@@ -50,13 +51,11 @@ export async function listParticipantes(): Promise<Participante[]> {
   if (!supabase && isDemoMode()) return mockParticipantes;
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const data = await fetchAllPages<ParticipanteRow>((from, to) => supabase!
     .from('participants')
     .select('id,first_name,last_name,email,document_id,institution,phone,metadata')
     .order('created_at', { ascending: false })
-    .returns<ParticipanteRow[]>();
-
-  if (error) throw error;
+    .order('id', { ascending: true }).range(from, to).returns<ParticipanteRow[]>());
   return data.map(mapParticipante);
 }
 
@@ -64,13 +63,11 @@ export async function listInscripcions(): Promise<Inscripcion[]> {
   if (!supabase && isDemoMode()) return mockInscripcions;
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const data = await fetchAllPages<InscripcionRow>((from, to) => supabase!
     .from('registrations')
     .select('id,event_id,participant_id,qr_token,certificate_code,checked_in_at,created_at')
     .order('created_at', { ascending: false })
-    .returns<InscripcionRow[]>();
-
-  if (error) throw error;
+    .order('id', { ascending: true }).range(from, to).returns<InscripcionRow[]>());
   return data.map((row) => ({
     id: row.id,
     eventId: row.event_id,

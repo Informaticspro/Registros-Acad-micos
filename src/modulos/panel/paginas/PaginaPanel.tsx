@@ -38,16 +38,25 @@ export function PaginaPanel() {
   const [registrations, setRegistrations] = useState<Inscripcion[]>([]);
   const [attendance, setAttendance] = useState<RegistroAsistencia[]>([]);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
     void Promise.all([listEvents(), listParticipantes(), listInscripcions(), listAttendance()]).then(
       ([eventsData, participantsData, registrationsData, attendanceData]) => {
+        if (cancelled) return;
         setEvents(eventsData);
         setParticipantes(participantsData);
         setRegistrations(registrationsData);
         setAttendance(attendanceData);
       },
-    );
-  }, []);
+    ).catch(() => { if (!cancelled) setError(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [attempt]);
 
   const activeEvents = events.filter(isOpenEvent);
   const upcomingEvents = events
@@ -100,6 +109,8 @@ export function PaginaPanel() {
     .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
     .slice(0, recentActivityLimit);
 
+  if (loading) return <p role="status">Cargando panel...</p>;
+  if (error) return <section className="panel"><p role="alert">No se pudo cargar el panel. No se muestran cifras incompletas.</p><button className="primary-button" onClick={() => setAttempt(attempt + 1)}>Reintentar</button></section>;
   return (
     <div className="page-stack dashboard-page">
       <PageEncabezado

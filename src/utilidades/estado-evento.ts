@@ -1,6 +1,6 @@
 import { EstadoEvento, EventoAcademico } from '@/tipos/dominio';
 
-const manualStatuses = new Set<EstadoEvento>(['draft', 'archived']);
+const manualStatuses = new Set<EstadoEvento>(['draft', 'archived', 'closed']);
 
 type EventoPermanenteContexto = Pick<EventoAcademico, 'status' | 'startsAt' | 'endsAt'> &
   Partial<Pick<EventoAcademico, 'title' | 'description' | 'eventType' | 'registrationFormType' | 'isPermanent'>>;
@@ -13,7 +13,7 @@ function normalizeText(value: string) {
 }
 
 export function isRegistroPermanenteEvento(event: Partial<EventoPermanenteContexto>) {
-  if (event.isPermanent) return true;
+  if (typeof event.isPermanent === 'boolean') return event.isPermanent;
   if (event.registrationFormType === 'educacion_continua') return true;
   if (event.eventType !== 'seminario') return false;
 
@@ -31,7 +31,7 @@ export function getEstadoEventoPorFecha(
   referenceDate = new Date(),
 ): EstadoEvento {
   if (manualStatuses.has(event.status)) return event.status;
-  if (isRegistroPermanenteEvento(event)) return event.status === 'closed' ? 'published' : event.status;
+  if (isRegistroPermanenteEvento(event)) return event.status;
 
   const startsAt = event.startsAt ? new Date(event.startsAt) : null;
   const endsAt = event.endsAt ? new Date(event.endsAt) : null;

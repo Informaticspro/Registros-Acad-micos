@@ -91,7 +91,7 @@ export type PublicCheckInInput = z.infer<typeof publicCheckInSchema>;
 export type PublicCheckInResult = {
   participantId: string;
   registrationId: string;
-  attendanceId: string;
+  attendanceId: string | null;
   certificateCode: string;
   qrToken: string;
   documentId: string;
@@ -130,7 +130,7 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     return {
       participantId: crypto.randomUUID(),
       registrationId: crypto.randomUUID(),
-      attendanceId: crypto.randomUUID(),
+      attendanceId: null,
       certificateCode: `CERT-DEMO-${parsed.documentId.replace(/\W/g, '').slice(-4)}`,
       qrToken: demoToken,
       documentId: parsed.documentId,
@@ -177,4 +177,3 @@ export async function registerPublicCheckIn(input: PublicCheckInInput): Promise<
     alreadyCheckedIn: result.result_already_checked_in,
   };
 }
-

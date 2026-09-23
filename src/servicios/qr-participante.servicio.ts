@@ -12,7 +12,7 @@ export type ParticipanteQrLookup = {
   certificateCode: string;
 };
 
-export async function lookupParticipanteQr(eventId: string, documentId: string): Promise<ParticipanteQrLookup | null> {
+export async function lookupParticipanteQr(eventId: string, documentId: string, certificateCode: string): Promise<ParticipanteQrLookup | null> {
   const normalizedDoc = documentId.trim();
   if (!normalizedDoc) return null;
 
@@ -20,7 +20,7 @@ export async function lookupParticipanteQr(eventId: string, documentId: string):
     const registration = mockInscripcions.find((item) => {
       if (item.eventId !== eventId) return false;
       const participant = mockParticipantes.find((p) => p.id === item.participantId);
-      return participant?.documentId === normalizedDoc;
+      return participant?.documentId === normalizedDoc && item.certificateCode === certificateCode.trim().toUpperCase();
     });
     if (!registration) return null;
     const participant = mockParticipantes.find((item) => item.id === registration.participantId);
@@ -40,6 +40,7 @@ export async function lookupParticipanteQr(eventId: string, documentId: string):
   const { data, error } = await supabase.rpc('lookup_participant_registration', {
     p_event_id: eventId,
     p_document_id: normalizedDoc,
+    p_certificate_code: certificateCode.trim().toUpperCase(),
   });
 
   if (error) throw error;

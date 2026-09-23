@@ -1,4 +1,5 @@
-﻿import { isDemoMode } from '@/infraestructura/entorno';
+import { fetchAllPages } from '@/infraestructura/paginacion';
+import { isDemoMode } from '@/infraestructura/entorno';
 import { supabase } from '@/infraestructura/supabase';
 import { utils, writeFile } from 'xlsx-js-style';
 import {
@@ -266,7 +267,7 @@ function buildImportEquipoIdentityKey(input: Pick<EquipoLaboratorioInput, 'codig
 }
 
 async function assertUniqueEquipoIdentity(input: EquipoLaboratorioInput, currentId?: string) {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const duplicate = findDuplicateEquipoIdentity(input, readState().equipos, currentId);
     if (duplicate) throw new Error(buildDuplicateEquipoMessage(duplicate));
     return;
@@ -316,7 +317,7 @@ function emptyState(): LaboratorioState {
   };
 }
 
-function useLocalStorageFallback() {
+function shouldUseLocalStorageFallback() {
   return !supabase && isDemoMode();
 }
 
@@ -598,7 +599,7 @@ function mapAsignacionComponente(row: {
 }
 
 export async function listLaboratorioData(): Promise<LaboratorioState> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     return {
       fichas: [...state.fichas].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)),
@@ -617,33 +618,28 @@ export async function listLaboratorioData(): Promise<LaboratorioState> {
 
   const client = requireSupabase();
   const [fichas, equipos, secciones, catalogos, bitacoras, prestamos, descartes, asignacionesComponentes] = await Promise.all([
-    client.from('laboratory_technical_sheets').select('*').order('updated_at', { ascending: false }),
-    client.from('laboratory_equipment').select('*').order('updated_at', { ascending: false }),
-    client.from('laboratory_sections').select('*').order('name', { ascending: true }),
-    client.from('laboratory_catalogs').select('*').order('name', { ascending: true }),
-    client.from('laboratory_logs').select('*').order('work_date', { ascending: false }),
-    client.from('laboratory_loans').select('*').order('loaned_at', { ascending: false }),
-    (client as any).from('laboratory_discards').select('*').order('discard_date', { ascending: false }),
-    (client as any).from('laboratory_component_assignments').select('*').order('assigned_at', { ascending: false }),
+    fetchAllPages((from, to) => client.from('laboratory_technical_sheets').select('*').order('updated_at', { ascending: false }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_equipment').select('*').order('updated_at', { ascending: false }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_sections').select('*').order('name', { ascending: true }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_catalogs').select('*').order('name', { ascending: true }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_logs').select('*').order('work_date', { ascending: false }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_loans').select('*').order('loaned_at', { ascending: false }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_discards').select('*').order('discard_date', { ascending: false }).order('id').range(from, to)).then(data => ({ data, error: null })),
+    fetchAllPages((from, to) => client.from('laboratory_component_assignments').select('*').order('assigned_at', { ascending: false }).order('id').range(from, to)).then(data => ({ data, error: null })),
   ]);
 
   if (fichas.error) throw fichas.error;
   if (equipos.error) throw equipos.error;
-  const seccionesData = secciones.error ? defaultSecciones() : (secciones.data ?? []).map(mapSeccion);
-  const catalogosData = catalogos.error ? [] : (catalogos.data ?? []).map(mapCatalogo);
+  if (secciones.error) throw secciones.error;
+  const seccionesData = (secciones.data ?? []).map(mapSeccion);
+  if (catalogos.error) throw catalogos.error;
+  const catalogosData = (catalogos.data ?? []).map(mapCatalogo);
   const categoriasEquipo = catalogosData.filter((item) => item.tipo === 'categoria_equipo');
   const estadosEquipo = catalogosData.filter((item) => item.tipo === 'estado_equipo');
   if (bitacoras.error) throw bitacoras.error;
   if (prestamos.error) throw prestamos.error;
-  if (descartes.error && !String(descartes.error.message).toLowerCase().includes('laboratory_discards')) {
-    throw descartes.error;
-  }
-  if (
-    asignacionesComponentes.error &&
-    !String(asignacionesComponentes.error.message).toLowerCase().includes('laboratory_component_assignments')
-  ) {
-    throw asignacionesComponentes.error;
-  }
+  if (descartes.error) throw descartes.error;
+  if (asignacionesComponentes.error) throw asignacionesComponentes.error;
 
   return {
     fichas: (fichas.data ?? []).map(mapFicha),
@@ -664,7 +660,7 @@ export async function createFichaTecnicaLaboratorio(
   input: FichaTecnicaLaboratorioInput,
   context: LaboratorioSaveContext,
 ): Promise<FichaTecnicaLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const now = new Date().toISOString();
     const ficha: FichaTecnicaLaboratorio = { ...input, id: createId('ficha'), createdAt: now, updatedAt: now };
@@ -702,7 +698,7 @@ export async function updateFichaTecnicaLaboratorio(
   id: string,
   input: FichaTecnicaLaboratorioInput,
 ): Promise<FichaTecnicaLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.fichas.find((ficha) => ficha.id === id);
     if (!current) throw new Error('No se encontro la ficha tecnica.');
@@ -737,7 +733,7 @@ export async function updateFichaTecnicaLaboratorio(
 }
 
 export async function deleteFichaTecnicaLaboratorio(id: string) {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     writeState({ ...state, fichas: state.fichas.filter((ficha) => ficha.id !== id) });
     return;
@@ -753,7 +749,7 @@ export async function createEquipoLaboratorio(
 ): Promise<EquipoLaboratorio> {
   await assertUniqueEquipoIdentity(input);
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const now = new Date().toISOString();
     const equipo: EquipoLaboratorio = { ...input, id: createId('equipo'), registradoPor: context.userId, createdAt: now, updatedAt: now };
@@ -786,7 +782,7 @@ export async function createEquipoLaboratorio(
 export async function updateEquipoLaboratorio(id: string, input: EquipoLaboratorioInput): Promise<EquipoLaboratorio> {
   await assertUniqueEquipoIdentity(input, id);
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.equipos.find((equipo) => equipo.id === id);
     if (!current) throw new Error('No se encontro el equipo.');
@@ -817,7 +813,7 @@ export async function updateEquipoLaboratorio(id: string, input: EquipoLaborator
 }
 
 export async function deleteEquipoLaboratorio(id: string) {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     writeState({ ...state, equipos: state.equipos.filter((equipo) => equipo.id !== id) });
     return;
@@ -834,7 +830,7 @@ export async function createSeccionLaboratorio(
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error('Ingrese el nombre de la seccion.');
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const exists = state.secciones.some((item) => item.nombre.trim().toLowerCase() === nombre.toLowerCase());
     if (exists) throw new Error('Ya existe una seccion con ese nombre.');
@@ -873,7 +869,7 @@ export async function updateSeccionLaboratorio(
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error('Ingrese el nombre de la seccion.');
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.secciones.find((seccion) => seccion.id === id);
     if (!current) throw new Error('No se encontro la seccion.');
@@ -914,7 +910,7 @@ export async function deleteSeccionLaboratorio(id: string) {
     throw new Error('Esta seccion base no se puede eliminar. Puede crear otra seccion personalizada.');
   }
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.secciones.find((seccion) => seccion.id === id);
     if (!current) throw new Error('No se encontro la seccion.');
@@ -951,7 +947,7 @@ export async function createCatalogoLaboratorio(
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error('Ingrese el nombre de la opcion.');
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const listKey = tipo === 'categoria_equipo' ? 'categoriasEquipo' : 'estadosEquipo';
     const exists = state[listKey].some((item) => item.nombre.trim().toLowerCase() === nombre.toLowerCase());
@@ -994,7 +990,7 @@ export async function updateCatalogoLaboratorio(
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error('Ingrese el nombre de la opcion.');
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const listKey = tipo === 'categoria_equipo' ? 'categoriasEquipo' : 'estadosEquipo';
     const current = state[listKey].find((item) => item.id === id);
@@ -1034,7 +1030,7 @@ export async function deleteCatalogoLaboratorio(id: string, tipo: CatalogoLabora
     throw new Error('Esta opcion base no se puede eliminar. Puede crear otra opcion personalizada.');
   }
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const listKey = tipo === 'categoria_equipo' ? 'categoriasEquipo' : 'estadosEquipo';
     const current = state[listKey].find((item) => item.id === id);
@@ -1081,7 +1077,7 @@ export async function importEquiposLaboratorio(
     ignored: inputs.length - validInputs.length,
   };
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const now = new Date().toISOString();
     const existingByIdentity = new Map(state.equipos.map((item) => [buildImportEquipoIdentityKey(item), item]));
@@ -1112,8 +1108,7 @@ export async function importEquiposLaboratorio(
 
   requireContext(context);
   const client = requireSupabase();
-  const { data: existingRows, error } = await client.from('laboratory_equipment').select('*');
-  if (error) throw error;
+  const existingRows = await fetchAllPages((from, to) => client.from('laboratory_equipment').select('*').order('id').range(from, to));
 
   const existingByIdentity = new Map(
     (existingRows ?? []).map((item) => [
@@ -1127,6 +1122,7 @@ export async function importEquiposLaboratorio(
     ]),
   );
 
+  try {
   for (const input of validInputs) {
     const key = buildImportEquipoIdentityKey(input);
     const current = existingByIdentity.get(key);
@@ -1156,6 +1152,9 @@ export async function importEquiposLaboratorio(
     result.created += 1;
   }
 
+  } catch (error) {
+    throw new Error(`Importación interrumpida: ${result.created} equipos creados y ${result.updated} actualizados. Los cambios ya guardados se conservan; revise el inventario antes de reintentar. Detalle: ${error instanceof Error ? error.message : 'Error de base de datos'}`);
+  }
   return result;
 }
 
@@ -1163,7 +1162,7 @@ export async function createBitacoraLaboratorio(
   input: BitacoraLaboratorioInput,
   context: LaboratorioSaveContext,
 ): Promise<BitacoraLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const bitacora: BitacoraLaboratorio = { ...input, id: createId('bitacora'), createdAt: new Date().toISOString() };
     writeState({ ...state, bitacoras: [bitacora, ...state.bitacoras] });
@@ -1203,7 +1202,7 @@ export async function createBitacoraLaboratorio(
 }
 
 export async function updateBitacoraLaboratorio(id: string, input: BitacoraLaboratorioInput): Promise<BitacoraLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.bitacoras.find((bitacora) => bitacora.id === id);
     if (!current) throw new Error('No se encontro la bitacora.');
@@ -1252,7 +1251,7 @@ export async function updateBitacoraLaboratorio(id: string, input: BitacoraLabor
 }
 
 export async function deleteBitacoraLaboratorio(id: string) {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     writeState({ ...state, bitacoras: state.bitacoras.filter((bitacora) => bitacora.id !== id) });
     return;
@@ -1266,7 +1265,7 @@ export async function createPrestamoLaboratorio(
   input: PrestamoLaboratorioInput,
   context: LaboratorioSaveContext,
 ): Promise<PrestamoLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const prestamo: PrestamoLaboratorio = { ...input, id: createId('prestamo'), createdAt: new Date().toISOString() };
     writeState({ ...state, prestamos: [prestamo, ...state.prestamos] });
@@ -1297,7 +1296,7 @@ export async function createPrestamoLaboratorio(
 }
 
 export async function updatePrestamoLaboratorio(id: string, input: PrestamoLaboratorioInput): Promise<PrestamoLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.prestamos.find((prestamo) => prestamo.id === id);
     if (!current) throw new Error('No se encontro el prestamo.');
@@ -1328,7 +1327,7 @@ export async function updatePrestamoLaboratorio(id: string, input: PrestamoLabor
 }
 
 export async function deletePrestamoLaboratorio(id: string) {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     writeState({ ...state, prestamos: state.prestamos.filter((prestamo) => prestamo.id !== id) });
     return;
@@ -1342,7 +1341,7 @@ export async function createDescarteLaboratorio(
   input: DescarteLaboratorioInput,
   context: LaboratorioSaveContext,
 ): Promise<DescarteLaboratorio> {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const descarte: DescarteLaboratorio = { ...input, id: createId('descarte'), createdAt: new Date().toISOString() };
     writeState({ ...state, descartes: [descarte, ...state.descartes] });
@@ -1350,7 +1349,7 @@ export async function createDescarteLaboratorio(
   }
 
   requireContext(context);
-  const { data, error } = await (requireSupabase() as any)
+  const { data, error } = await requireSupabase()
     .from('laboratory_discards')
     .insert({
       organization_id: context.organizationId,
@@ -1376,13 +1375,13 @@ export async function createDescarteLaboratorio(
 }
 
 export async function deleteDescarteLaboratorio(id: string) {
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     writeState({ ...state, descartes: state.descartes.filter((descarte) => descarte.id !== id) });
     return;
   }
 
-  const { error } = await (requireSupabase() as any).from('laboratory_discards').delete().eq('id', id);
+  const { error } = await requireSupabase().from('laboratory_discards').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -1394,7 +1393,7 @@ export async function createAsignacionComponenteLaboratorio(
     throw new Error('Un equipo no puede asignarse como componente de si mismo.');
   }
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const parent = state.equipos.find((item) => item.id === input.equipoPadreId);
     const component = state.equipos.find((item) => item.id === input.componenteId);
@@ -1422,7 +1421,7 @@ export async function createAsignacionComponenteLaboratorio(
   }
 
   requireContext(context);
-  const client = requireSupabase() as any;
+  const client = requireSupabase();
   const { data: parent, error: parentError } = await client
     .from('laboratory_equipment')
     .select('location')
@@ -1469,7 +1468,7 @@ export async function retirarAsignacionComponenteLaboratorio(
 ): Promise<AsignacionComponenteLaboratorio> {
   const now = new Date().toISOString();
 
-  if (useLocalStorageFallback()) {
+  if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.asignacionesComponentes.find((item) => item.id === id);
     if (!current) throw new Error('No se encontro la asignacion del componente.');
@@ -1486,11 +1485,11 @@ export async function retirarAsignacionComponenteLaboratorio(
   }
 
   requireContext(context);
-  const { data, error } = await (requireSupabase() as any)
+  const { data, error } = await requireSupabase()
     .from('laboratory_component_assignments')
     .update({ removed_at: now, updated_at: now })
     .eq('id', id)
-    .eq('organization_id', context.organizationId)
+    .eq('organization_id', context.organizationId!)
     .select('*')
     .single();
 
@@ -1641,8 +1640,8 @@ function getEstadoEquipoDisplay(value: string) {
 }
 
 function getMovimientoEstadoLaboratorio(item: BitacoraLaboratorio) {
-  const auditMatch = item.descripcion.match(/Auditoria de inventario:\s*([^-\n]+?)\s*->\s*([^\.\n]+)/i);
-  const automaticMatch = item.descripcion.match(/Cambio de estado tecnico:\s*([^-\n]+?)\s*->\s*([^\.\n]+)/i);
+  const auditMatch = item.descripcion.match(/Auditoria de inventario:\s*([^-\n]+?)\s*->\s*([^.\n]+)/i);
+  const automaticMatch = item.descripcion.match(/Cambio de estado tecnico:\s*([^-\n]+?)\s*->\s*([^.\n]+)/i);
   const isAutomaticStateChange = item.tipoTrabajo === 'Cambio de estado' || item.tipoTrabajo === 'Cierre de mantenimiento';
   const match = auditMatch ?? automaticMatch;
 

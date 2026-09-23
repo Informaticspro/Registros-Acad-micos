@@ -1,4 +1,5 @@
-﻿import { supabase } from '@/infraestructura/supabase';
+import { fetchAllPages } from '@/infraestructura/paginacion';
+import { supabase } from '@/infraestructura/supabase';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { mockAttendance, mockParticipantes, mockInscripcions } from '@/datos/datosPrueba';
 import { JornadaAsistencia, RegistroAsistencia } from '@/tipos/dominio';
@@ -18,8 +19,7 @@ type AttendanceRow = {
   id: string;
   event_id: string;
   registration_id: string;
-  scanned_by: string;
-  status: string;
+  scanned_by: string | null;
   checked_in_at: string;
 };
 
@@ -212,7 +212,7 @@ export async function listEventDailyAttendance(
   if (!supabase) return [];
 
   const { start, end } = getCurrentDayRange();
-  const { data, error } = await supabase
+  const data = await fetchAllPages<DailyLogRow>((from, to) => supabase!
     .from('attendance_daily_logs')
     .select(
       `
@@ -240,9 +240,7 @@ export async function listEventDailyAttendance(
     .gte('checked_in_at', start)
     .lt('checked_in_at', end)
     .order('checked_in_at', { ascending: false })
-    .returns<DailyLogRow[]>();
-
-  if (error) throw error;
+    .order('id').range(from, to).returns<DailyLogRow[]>());
 
   return data.map((row) => {
     const participant = row.registrations?.participants;
@@ -274,20 +272,17 @@ export async function listAttendance(): Promise<RegistroAsistencia[]> {
   if (!supabase && isDemoMode()) return mockAttendance;
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from('attendance_records')
-    .select('id,event_id,registration_id,scanned_by,status,checked_in_at')
+  const data = await fetchAllPages<AttendanceRow>((from, to) => supabase!
+    .from('attendance_daily_logs')
+    .select('id,event_id,registration_id,scanned_by,checked_in_at')
     .order('checked_in_at', { ascending: false })
-    .returns<AttendanceRow[]>();
-
-  if (error) throw error;
+    .order('id', { ascending: true }).range(from, to).returns<AttendanceRow[]>());
   return data.map((row) => ({
     id: row.id,
     eventId: row.event_id,
     registrationId: row.registration_id,
-    scannedBy: row.scanned_by,
-    status: row.status as RegistroAsistencia['status'],
+    scannedBy: row.scanned_by ?? '',
+    status: 'present',
     checkedInAt: row.checked_in_at,
   }));
 }
-

@@ -1,4 +1,5 @@
-﻿import { supabase } from '@/infraestructura/supabase';
+import { fetchAllPages } from '@/infraestructura/paginacion';
+import { supabase } from '@/infraestructura/supabase';
 import { isDemoMode } from '@/infraestructura/entorno';
 import { mockEvents } from '@/datos/datosPrueba';
 import { EventoAcademico, FormularioPersonalizado } from '@/tipos/dominio';
@@ -80,95 +81,30 @@ function isMissingOptionalEventColumn(error: { message?: string; code?: string }
   );
 }
 
-async function syncEventLifecycleStatuses() {
-  if (!supabase) return;
-
-  const now = new Date().toISOString();
-  await Promise.all([
-    supabase
-      .from('events')
-      .update({ status: 'closed', updated_at: now })
-      .lt('ends_at', now)
-      .not('ends_at', 'is', null)
-      .eq('is_permanent', false)
-      .not('status', 'in', '(draft,archived,closed)'),
-    supabase
-      .from('events')
-      .update({ status: 'active', updated_at: now })
-      .lte('starts_at', now)
-      .or(`ends_at.is.null,ends_at.gte.${now}`)
-      .eq('is_permanent', false)
-      .in('status', ['published']),
-    supabase
-      .from('events')
-      .update({ status: 'published', updated_at: now })
-      .gt('starts_at', now)
-      .eq('is_permanent', false)
-      .eq('status', 'active'),
-    supabase
-      .from('events')
-      .update({ status: 'published', updated_at: now })
-      .eq('is_permanent', true)
-      .eq('status', 'closed'),
-  ]);
-}
-
-export async function listEvents(): Promise<EventoAcademico[]> {
-  if (!supabase && isDemoMode()) return mockEvents;
-  if (!supabase) return [];
-
-  await syncEventLifecycleStatuses().catch(() => undefined);
-
-  let { data, error } = await supabase
-    .from('events')
-    .select(eventColumns)
-    .order('starts_at', { ascending: false })
-    .returns<EventRow[]>();
-
-  if (error && isMissingOptionalEventColumn(error)) {
-    const fallback = await supabase
-      .from('events')
-      .select(eventColumnsBase)
-      .order('starts_at', { ascending: false })
-      .returns<EventRow[]>();
-    data = fallback.data as typeof data;
-    error = fallback.error;
-  }
-
-  if (error) throw error;
-  return (data ?? []).map(mapEvent);
-}
-
-/** Eventos visibles sin login (publicados o activos). */
-export async function listPublicEvents(): Promise<EventoAcademico[]> {
+async function fetchEvents(publicOnly: boolean): Promise<EventoAcademico[]> {
   if (!supabase && isDemoMode()) {
-    return mockEvents
-      .map((event) => ({ ...event, status: getEstadoEventoPorFecha(event) }))
-      .filter((event) => event.status === 'published' || event.status === 'active');
+    const events = mockEvents.map((event) => ({ ...event, status: getEstadoEventoPorFecha(event) }));
+    return publicOnly ? events.filter((event) => event.status === 'published' || event.status === 'active') : events;
   }
   if (!supabase) return [];
-
-  let { data, error } = await supabase
-    .from('events')
-    .select(eventColumns)
-    .in('status', ['published', 'active'])
-    .order('starts_at', { ascending: false })
-    .returns<EventRow[]>();
-
-  if (error && isMissingOptionalEventColumn(error)) {
-    const fallback = await supabase
-      .from('events')
-      .select(eventColumnsBase)
-      .in('status', ['published', 'active'])
-      .order('starts_at', { ascending: false })
-      .returns<EventRow[]>();
-    data = fallback.data as typeof data;
-    error = fallback.error;
+  const fetch = (columns: string) => fetchAllPages<EventRow>((from, to) => {
+    let query = supabase!.from('events').select(columns);
+    if (publicOnly) query = query.in('status', ['published', 'active']);
+    return query.order('starts_at', { ascending: false }).order('id').range(from, to).returns<EventRow[]>();
+  });
+  let data: EventRow[];
+  try {
+    data = await fetch(eventColumns);
+  } catch (error) {
+    if (!error || typeof error !== 'object' || !isMissingOptionalEventColumn(error)) throw error;
+    data = await fetch(eventColumnsBase);
   }
-
-  if (error) throw error;
-  return (data ?? []).map(mapEvent).filter((event) => event.status === 'published' || event.status === 'active');
+  const events = data.map(mapEvent);
+  return publicOnly ? events.filter((event) => event.status === 'published' || event.status === 'active') : events;
 }
+
+export const listEvents = () => fetchEvents(false);
+export const listPublicEvents = () => fetchEvents(true);
 
 export async function getEvent(eventId: string): Promise<EventoAcademico | null> {
   if (!supabase && isDemoMode()) return mockEvents.find((event) => event.id === eventId) ?? null;

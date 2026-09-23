@@ -1,4 +1,4 @@
-﻿import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { Camera, CheckCircle2, IdCard, ScanLine, ShieldCheck, Volume2 } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
@@ -58,7 +58,7 @@ export function PaginaEscaner() {
     void listEvents().then((loaded) => {
       const congressEvents = loaded.filter(
         (event) =>
-          event.eventType === 'congreso' &&
+
           (event.status === 'published' || event.status === 'active' || event.status === 'closed'),
       );
       setEvents(congressEvents);
@@ -153,17 +153,17 @@ export function PaginaEscaner() {
   return (
     <div className="page-stack">
       <PageEncabezado
-        eyebrow="Control de congreso"
+        eyebrow="Control de asistencia"
         title="Escanear asistencia"
-        description="Registra entrada por jornada usando el QR personal generado al inscribirse al congreso."
+        description="Registra entrada por jornada usando el QR personal generado al inscribirse al evento."
       />
       <section className="scanner-grid">
         <article className="panel stack-form">
           <label>
-            Congreso
+            Evento
             <select value={eventId} onChange={(event) => setEventId(event.target.value)} required>
               <option value="" disabled>
-                Seleccione el congreso
+                Seleccione el evento
               </option>
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
@@ -184,7 +184,7 @@ export function PaginaEscaner() {
             <small>8:00 a. m. - 12:59 p. m. matutina / 1:00 p. m. - 6:00 p. m. vespertina</small>
           </div>
           {events.length === 0 ? (
-            <p className="form-hint">No hay congresos publicados o activos disponibles para escaneo.</p>
+            <p className="form-hint">No hay eventos publicados o activos disponibles para escaneo.</p>
           ) : null}
           <div className="scanner-preview">
             {isScanning ? (
@@ -272,4 +272,3 @@ export function PaginaEscaner() {
     </div>
   );
 }
-

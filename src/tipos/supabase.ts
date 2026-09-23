@@ -70,6 +70,7 @@ export type BaseDatos = {
           participant_id: string;
           qr_token: string;
           certificate_code: string;
+          registration_metadata: Json | null;
           checked_in_at: string | null;
           created_at: string;
         };
@@ -203,6 +204,14 @@ export type BaseDatos = {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      laboratory_discards: {
+        Row: { id: string; organization_id: string; equipment_id: string | null; discard_date: string; inventory_code: string; equipment: string; brand: string; model: string; serial_number: string; detail: string; location: string; responsible: string; evidence_title: string; evidence_url: string; created_by: string | null; created_at: string };
+        Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [];
+      };
+      laboratory_component_assignments: {
+        Row: { id: string; organization_id: string; parent_equipment_id: string; component_equipment_id: string; component_type: 'cpu' | 'monitor' | 'teclado' | 'mouse' | 'proyector' | 'otro'; assigned_at: string; removed_at: string | null; detail: string; responsible: string; created_by: string | null; created_at: string; updated_at: string };
+        Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [];
+      };
       laboratory_loans: {
         Row: {
           id: string;
@@ -238,7 +247,7 @@ export type BaseDatos = {
         Returns: {
           result_participant_id: string;
           result_registration_id: string;
-          result_attendance_id: string;
+          result_attendance_id: string | null;
           result_certificate_code: string;
           result_qr_token: string;
           result_already_checked_in: boolean;
@@ -261,6 +270,7 @@ export type BaseDatos = {
       };
       lookup_participant_registration: {
         Args: {
+          p_certificate_code: string;
           p_event_id: string;
           p_document_id: string;
         };
@@ -293,4 +303,3 @@ export type BaseDatos = {
     CompositeTypes: Record<string, never>;
   };
 };
-

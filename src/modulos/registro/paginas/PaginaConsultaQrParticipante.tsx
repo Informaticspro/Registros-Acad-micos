@@ -12,6 +12,7 @@ export function PaginaConsultaQrParticipante() {
   const [events, setEvents] = useState<EventoAcademico[]>([]);
   const [eventId, setEventId] = useState(eventIdParam ?? '');
   const [documentId, setDocumentId] = useState('');
+  const [certificateCode, setCertificateCode] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<EventoAcademico | null>(null);
   const [lookup, setLookup] = useState<ParticipanteQrLookup | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,8 @@ export function PaginaConsultaQrParticipante() {
       setSelectedEvent(null);
       return;
     }
-    void getEvent(eventId).then(setSelectedEvent);
+    setLookup(null);
+    void getEvent(eventId).then(setSelectedEvent).catch(() => setError('No se pudo cargar el evento.'));
   }, [eventId]);
 
   async function handleSubmit(formEvent: FormEvent<HTMLFormElement>) {
@@ -50,9 +52,9 @@ export function PaginaConsultaQrParticipante() {
     setIsLoading(true);
 
     try {
-      const result = await lookupParticipanteQr(eventId, documentId);
+      const result = await lookupParticipanteQr(eventId, documentId, certificateCode);
       if (!result) {
-        setError('No encontramos inscripcion con esa cedula en este evento. Revise el numero o registrese primero.');
+        setError('No se pudo verificar la inscripción. Revise el evento y ambos datos.');
         return;
       }
       setLookup(result);
@@ -72,7 +74,7 @@ export function PaginaConsultaQrParticipante() {
         <span className="eyebrow">Consulta de participante</span>
         <h1>Obtener mi codigo QR</h1>
         <p>
-          Si ya se registro en CESI, ingrese su cedula para ver y descargar el QR que presentara el dia del evento.
+          Ingrese su cédula y el código de recuperación entregado al inscribirse. Si perdió ambos códigos, contacte al organizador.
         </p>
         {selectedEvent ? (
           <p className="form-hint">
@@ -107,6 +109,7 @@ export function PaginaConsultaQrParticipante() {
             autoComplete="off"
           />
         </label>
+        <label>Código de recuperación<input value={certificateCode} onChange={(event) => setCertificateCode(event.target.value)} required autoComplete="off" /></label>
         {error ? <p className="form-error">{error}</p> : null}
         <button className="primary-button" type="submit" disabled={isLoading || !eventId}>
           <Search size={18} />

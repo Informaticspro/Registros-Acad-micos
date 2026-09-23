@@ -60,9 +60,9 @@ function getPublicRegisterCopy(event: EventoAcademico | null) {
   }
 
   return {
-    eyebrow: 'Registro de asistencia',
+    eyebrow: 'Inscripción al evento',
     description:
-      'Complete sus datos al llegar al salon. Su asistencia quedara guardada para emision de certificado.',
+      'Complete sus datos y guarde su QR. La asistencia se valida al llegar al evento.',
   };
 }
 
@@ -185,13 +185,10 @@ export function PaginaRegistroParticipante() {
     setShowSuccessNotice(true);
     const timeout = window.setTimeout(() => {
       setShowSuccessNotice(false);
-      if (fromAdmin) {
-        navigate('/dashboard', { replace: true });
-      }
     }, 2600);
 
     return () => window.clearTimeout(timeout);
-  }, [fromAdmin, navigate, result]);
+  }, [result]);
 
   const formKind = getInscripcionFormKind(event ?? undefined);
   const registrationOpen = event ? isPublicRegistrationOpen(event) : false;
@@ -231,7 +228,7 @@ export function PaginaRegistroParticipante() {
       setResult(response);
       formElement.reset();
     } catch (err) {
-      setError(getErrorMessage(err, 'No se pudo registrar la asistencia'));
+      setError(getErrorMessage(err, 'No se pudo guardar la inscripción'));
     } finally {
       setIsSubmitting(false);
     }
@@ -241,7 +238,6 @@ export function PaginaRegistroParticipante() {
 
   if (result && eventId && event) {
     const fullName = `${result.firstName} ${result.lastName}`.trim();
-    const shouldGenerateParticipantQr = event.eventType === 'congreso';
     return (
       <section className={shellClass}>
         <EncabezadoInstitucionalPublico />
@@ -251,13 +247,7 @@ export function PaginaRegistroParticipante() {
               <CheckCircle2 size={30} />
             </div>
             <strong>Registro exitoso</strong>
-            <span>
-              {fromAdmin
-                ? 'Volviendo al panel de control...'
-                : shouldGenerateParticipantQr
-                ? 'Su QR personal esta listo.'
-                : 'Gracias por completar su registro.'}
-            </span>
+            <span>Su QR personal está listo.            </span>
           </div>
         ) : null}
         {fromAdmin && eventId ? (
@@ -271,67 +261,18 @@ export function PaginaRegistroParticipante() {
             <CheckCircle2 size={28} />
           </div>
           <span className="eyebrow">Registro completado</span>
-          <h1>
-            {fromAdmin
-              ? result.alreadyCheckedIn
-                ? 'Asistencia ya registrada'
-                : 'Participante registrado'
-              : 'Gracias por inscribirse'}
-          </h1>
-          <p>
-            {!fromAdmin
-              ? shouldGenerateParticipantQr
-                ? 'Su registro fue recibido correctamente. Guarde el QR que aparece abajo y presentelo el dia del congreso.'
-                : 'Su registro fue recibido correctamente. No necesita realizar ninguna otra accion.'
-              : shouldGenerateParticipantQr
-              ? result.alreadyCheckedIn
-                ? 'Este participante ya tenia registro previo. Se muestra su QR para el control del evento.'
-                : 'Guarde o imprima el QR. Lo presentara el dia del congreso para validar su asistencia.'
-              : 'Su registro de asistencia quedo guardado. Para talleres y capacitaciones no se genera QR personal.'}
-          </p>
+          <h1>{fromAdmin ? 'Participante inscrito' : 'Gracias por inscribirse'}</h1>
+          <p>Guarde su QR y su código de recuperación. Presente el QR al llegar al evento para validar su asistencia.</p>
         </div>
         <div className="panel stack-form register-success-panel">
-          {shouldGenerateParticipantQr ? (
-            <>
-              <TarjetaQrParticipante
-                eventId={eventId}
-                qrToken={result.qrToken}
-                documentId={result.documentId}
-                fullName={fullName}
-                certificateCode={result.certificateCode}
-                showDownload
-              />
-            </>
-          ) : (
-            <>
-              {fromAdmin ? (
-                <dl className="definition-list compact">
-                  <div>
-                    <dt>Participante</dt>
-                    <dd>{fullName}</dd>
-                  </div>
-                  <div>
-                    <dt>Cedula</dt>
-                    <dd>{result.documentId}</dd>
-                  </div>
-                  <div>
-                    <dt>Evento</dt>
-                    <dd>{event.title}</dd>
-                  </div>
-                  <div>
-                    <dt>Estado</dt>
-                    <dd>{result.alreadyCheckedIn ? 'Asistencia ya registrada' : 'Asistencia registrada'}</dd>
-                  </div>
-                </dl>
-              ) : (
-                <div className="public-logo-success">
-                  <img src="/logo-registros-academicos.png" alt="Registros Academicos" />
-                  <strong>Registro realizado exitosamente</strong>
-                  <span>{event.title}</span>
-                </div>
-              )}
-            </>
-          )}
+          <TarjetaQrParticipante
+            eventId={eventId}
+            qrToken={result.qrToken}
+            documentId={result.documentId}
+            fullName={fullName}
+            certificateCode={result.certificateCode}
+            showDownload
+          />
           <div className="register-success-actions">
             {fromAdmin ? (
               <>
@@ -398,7 +339,7 @@ export function PaginaRegistroParticipante() {
           <CamposFormularioRegistro formKind={formKind} customFormSchema={event.customFormSchema} />
           {error ? <p className="form-error">{error}</p> : null}
           <button className="primary-button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Registrando...' : 'Registrar asistencia'}
+            {isSubmitting ? 'Registrando...' : 'Inscribirme al evento'}
           </button>
         </form>
       ) : null}

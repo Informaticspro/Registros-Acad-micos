@@ -1,4 +1,5 @@
 import { AlertTriangle, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 type ConfirmacionModalTone = 'danger' | 'warning' | 'info';
 
@@ -23,11 +24,31 @@ export function ConfirmacionModal({
   onCancel,
   onConfirm,
 }: ConfirmacionModalProps) {
+  const dialog = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const element = dialog.current;
+    element?.querySelector<HTMLButtonElement>('button')?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); onCancel(); }
+      if (event.key !== 'Tab') return;
+      const buttons = element?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+      if (!buttons?.length) return;
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); previous?.focus(); };
+  }, [isOpen, onCancel]);
   if (!isOpen) return null;
 
   return (
     <div className="modal-backdrop confirmation-backdrop" role="presentation" onClick={onCancel}>
       <section
+        ref={dialog}
         className={`modal-panel confirmation-modal confirmation-modal-${tone}`}
         role="dialog"
         aria-modal="true"

@@ -74,7 +74,7 @@ export function useInventarioLaboratorio(state: LaboratorioState) {
     }, {});
   }, [equiposComponentesAsignados, equiposInventarioPrincipales, ubicacionesInventario]);
 
-  const equiposInventarioFiltrados = useMemo(() => {
+  const equiposInventarioFiltrados = (() => {
     const filteredByLocation =
       selectedInventoryLocation === 'Todas'
         ? equiposInventarioPrincipales
@@ -89,7 +89,7 @@ export function useInventarioLaboratorio(state: LaboratorioState) {
       return normalizeExcelKey([calculado.marca, calculado.modelo, calculado.codigo, calculado.serie].join(' ')).includes(query);
     });
     return sortEquiposInventario(filtered, selectedInventoryLocation === 'Todas');
-  }, [equiposComponentesAsignados, equiposInventarioPrincipales, inventorySearch, selectedInventoryLocation]);
+  })();
 
   function matchesEquipoPorIdentificador(equipo: EquipoLaboratorio, value: string) {
     const equipoIdentifiers = getTechnicalIdentifiers(`${equipo.codigo} ${equipo.serie}`);

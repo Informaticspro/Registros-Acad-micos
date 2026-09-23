@@ -11,10 +11,10 @@ export function PaginaCertificados() {
     doc.setFontSize(30);
     doc.text('Certificado de Participacion', 421, 190, { align: 'center' });
     doc.setFontSize(18);
-    doc.text('Otorgado por asistencia registrada mediante QR', 421, 245, { align: 'center' });
+    doc.text('VISTA PREVIA — NO ACREDITA ASISTENCIA', 421, 245, { align: 'center' });
     doc.setFontSize(12);
-    doc.text('Codigo: CERT-2026-001', 421, 340, { align: 'center' });
-    doc.save('certificado-academico.pdf');
+    doc.text('Ejemplo sin código de verificación', 421, 340, { align: 'center' });
+    doc.save('ejemplo-certificado.pdf');
   }
 
   return (
@@ -22,7 +22,7 @@ export function PaginaCertificados() {
       <PageEncabezado
         eyebrow="PDF automatico"
         title="Certificados"
-        description="Generacion basada en asistencia confirmada y codigo verificable."
+        description="Vista previa de diseño. La emisión de certificados verificables aún no está habilitada."
       />
       <section className="panel certificate-panel">
         <Award size={42} />
@@ -32,7 +32,7 @@ export function PaginaCertificados() {
         </div>
         <button className="primary-button" onClick={generateCertificate} type="button">
           <Download size={18} />
-          Descargar PDF
+          Descargar ejemplo
         </button>
       </section>
     </div>

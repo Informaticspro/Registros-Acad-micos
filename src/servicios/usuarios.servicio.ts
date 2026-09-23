@@ -137,19 +137,11 @@ export async function updateStaffUser(input: ActualizarUsuarioInput): Promise<Us
   validarRol(input.role);
   if (!fullName) throw new Error('El nombre completo es obligatorio.');
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({
-      full_name: fullName,
-      email,
-      role: input.role,
-    })
-    .eq('id', input.id)
-    .select('id, full_name, email, role, created_at')
-    .single<PerfilRow>();
-
+  const { error } = await supabase.functions.invoke('admin-restablecer-contrasena', {
+    body: { action: 'update-profile', userId: input.id, fullName, email, role: input.role },
+  });
   if (error) throw error;
-  return mapUsuario(data);
+  return { id: input.id, fullName, email, role: input.role };
 }
 
 export async function deleteStaffUser(id: string): Promise<void> {

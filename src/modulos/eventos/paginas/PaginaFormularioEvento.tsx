@@ -227,7 +227,7 @@ export function PaginaFormularioEvento() {
     setSeminarDateOptionsText(getSchemaFieldOptions(sourceEvent, 'seminarDate', SEMINARIO_DATE_OPTIONS).join('\n'));
     setSeminarPurposeOptionsText(getSchemaFieldOptions(sourceEvent, 'seminarPurpose', SEMINARIO_PURPOSE_OPTIONS).join('\n'));
     setEducationContentForm(buildEducationContentForm(sourceEvent));
-  }, [initialValues.customFormSchema, initialValues.registrationFormType, initialValues.isPermanent]);
+  }, [initialValues.customFormSchema, initialValues.registrationFormType, initialValues.isPermanent, eventToEdit, duplicateFrom]);
 
   const isEducacionContinuaSelected =
     selectedEventType === 'seminario' && selectedRegistrationFormType === 'educacion_continua';

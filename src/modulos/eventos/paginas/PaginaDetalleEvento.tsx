@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Copy, Download, Edit, ExternalLink, Files, RefreshCw, Trash2, UserPlus } from 'lucide-react';
 import QRCode from 'qrcode';
@@ -122,8 +122,8 @@ export function PaginaDetalleEvento() {
     return () => window.clearInterval(intervalId);
   }, [useAutomaticPeriod]);
 
-  async function loadAttendance(showLoader = false) {
-    if (!eventId || event?.eventType !== 'congreso') return;
+  const loadAttendance = useCallback(async (showLoader = false) => {
+    if (!eventId || !event) return;
 
     setAttendanceError(null);
     if (showLoader) setIsAttendanceLoading(true);
@@ -132,14 +132,14 @@ export function PaginaDetalleEvento() {
       setAttendanceRows(rows);
       setLastAttendanceRefresh(new Date().toISOString());
     } catch (err) {
-      setAttendanceError(getErrorMessage(err, 'No se pudo cargar la asistencia del congreso'));
+      setAttendanceError(getErrorMessage(err, 'No se pudo cargar la asistencia del evento'));
     } finally {
       if (showLoader) setIsAttendanceLoading(false);
     }
-  }
+  }, [eventId, event, attendancePeriod]);
 
   useEffect(() => {
-    if (!eventId || event?.eventType !== 'congreso') return undefined;
+    if (!eventId || !event) return undefined;
 
     void loadAttendance(true);
     const intervalId = window.setInterval(() => {
@@ -147,7 +147,7 @@ export function PaginaDetalleEvento() {
     }, 8000);
 
     return () => window.clearInterval(intervalId);
-  }, [attendancePeriod, event?.eventType, eventId]);
+  }, [loadAttendance, event, eventId]);
 
   async function handleDelete() {
     if (!event) return;
@@ -260,7 +260,7 @@ export function PaginaDetalleEvento() {
       />
       {error ? <p className="form-error">{error}</p> : null}
       <section className="detail-grid">
-        {event.eventType === 'congreso' ? (
+        {
           <article className="panel congress-attendance-panel" id="asistencias-hoy">
             <div className="attendance-panel-header">
               <div>
@@ -309,7 +309,7 @@ export function PaginaDetalleEvento() {
                 <span>Total</span>
                 <strong>{attendanceSummary.total}</strong>
               </div>
-              {CONGRESO_CATEGORY_OPTIONS.map((category) => (
+              {event.eventType === 'congreso' && CONGRESO_CATEGORY_OPTIONS.map((category) => (
                 <div key={category}>
                   <span>{category}</span>
                   <strong>{attendanceSummary.categories[category] ?? 0}</strong>
@@ -355,7 +355,7 @@ export function PaginaDetalleEvento() {
               <p className="form-hint">Todavia no hay marcajes para esta jornada de hoy.</p>
             ) : null}
           </article>
-        ) : null}
+        }
 
         <article className="panel">
           <h2>Informacion</h2>
