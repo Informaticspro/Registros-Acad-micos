@@ -108,3 +108,16 @@ test('organization guard prevents reads across tenants and profile reassignment'
   assert.equal((await db.query('select organization_id from profiles where id=$1',[scanner])).rows[0].organization_id,orgA);
   assert.ok(row.result_registration_id);
 });
+
+test('missing laboratory catalog can be repaired twice without duplicating entries or leaking organizations', async () => {
+  const migration = fs.readFileSync('supabase/migration-v25-reparar-catalogos-laboratorio.sql', 'utf8').replace(/^\uFEFF/, '');
+  await db.exec(migration);
+  await db.exec(migration);
+  assert.equal((await db.query('select count(*)::int as total from laboratory_catalogs')).rows[0].total, 26);
+  await session(support);
+  const own = await db.query('select distinct organization_id from laboratory_catalogs');
+  assert.deepEqual(own.rows, [{ organization_id: orgA }]);
+  await assert.rejects(db.query("insert into laboratory_catalogs(organization_id,catalog_type,name) values ($1,'categoria_equipo','Intrusion')", [orgB]), /row-level security/);
+  await db.exec('reset role; set role anon');
+  await assert.rejects(db.query('select * from laboratory_catalogs'), /permission denied/);
+});

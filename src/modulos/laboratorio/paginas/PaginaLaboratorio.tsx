@@ -63,6 +63,7 @@ export function PaginaLaboratorio() {
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<TemaVisual>(getInitialTheme);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailure, setLoadFailure] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showInventoryScanner, setShowInventoryScanner] = useState(false);
   const { confirmacionModal, confirmar } = useConfirmacion();
@@ -311,10 +312,12 @@ export function PaginaLaboratorio() {
 
   async function refresh() {
     setIsLoading(true);
+    setLoadFailure(false);
     setError(null);
     try {
       setState(await listLaboratorioData());
     } catch (loadError) {
+      setLoadFailure(true);
       setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la informacion del laboratorio.');
     } finally {
       setIsLoading(false);
@@ -430,6 +433,23 @@ export function PaginaLaboratorio() {
     closeEquipoDetalle();
     openFichaForEquipoBase(equipo);
     setActiveTab('fichas');
+  }
+
+  if (isLoading || loadFailure) {
+    return (
+      <div className="lab-workspace">
+        <section className="panel stack-form" aria-busy={isLoading}>
+          <h1>Mantenimiento técnico</h1>
+          {isLoading ? <p role="status">Cargando información del laboratorio…</p> : (
+            <>
+              <p role="alert">No se pudo cargar la información. Los datos no están disponibles en esta vista; esto no significa que se hayan eliminado.</p>
+              <button className="primary-button" type="button" onClick={() => void refresh()}>Reintentar carga</button>
+            </>
+          )}
+          <button className="secondary-button" type="button" onClick={() => navigate('/dashboard')}>Volver al sistema</button>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -695,4 +715,3 @@ export function PaginaLaboratorio() {
     </div>
   );
 }
-
