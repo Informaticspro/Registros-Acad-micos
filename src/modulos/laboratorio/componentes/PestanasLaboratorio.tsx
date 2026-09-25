@@ -12,7 +12,7 @@ export function PestanasLaboratorio({ activeTab, onChange }: PestanasLaboratorio
       {labTabOrder.map((tab) => (
         <button
           type="button"
-          className={`lab-tab-${tab}${activeTab === tab ? ' active' : ''}`}
+          className={`lab-tab-${tab}${(activeTab === tab || (activeTab === 'fichas' && tab === 'inventario')) ? ' active' : ''}`}
           key={tab}
           onClick={() => onChange(tab)}
           title={tabLabels[tab]}

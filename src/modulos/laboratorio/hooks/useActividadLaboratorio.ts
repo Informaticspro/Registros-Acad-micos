@@ -80,7 +80,7 @@ function useActividadLaboratorio({ estadoEquipoNombre, profile, state }: UseActi
     const fichas = state.fichas.map((item) => ({
       id: `ficha-${item.id}`,
       fecha: item.updatedAt,
-      tipo: 'Ficha tecnica',
+      tipo: 'Detalles técnicos',
       titulo: item.pc,
       detalle: `${item.ubicacion || 'Sin ubicacion'} | ${item.responsable || 'Sin responsable'}`,
       tab: 'fichas' as LabTab,

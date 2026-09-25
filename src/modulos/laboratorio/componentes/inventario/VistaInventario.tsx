@@ -39,6 +39,7 @@ type VistaInventarioProps = {
   onFilterLocation: (ubicacion: string) => void;
   onInventarioExcelUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onNewEquipo: () => void;
+  onOpenTechnicalArchive: () => void;
   onOpenEquipo: (equipo: EquipoLaboratorio) => void;
   onQuickEstadoEquipo: (equipo: EquipoLaboratorio, estado: EstadoEquipoLaboratorio) => void;
   onSearchChange: (value: string) => void;
@@ -65,6 +66,7 @@ export function VistaInventario({
   onFilterLocation,
   onInventarioExcelUpload,
   onNewEquipo,
+  onOpenTechnicalArchive,
   onOpenEquipo,
   onQuickEstadoEquipo,
   onSearchChange,
@@ -75,7 +77,7 @@ export function VistaInventario({
         <div>
           <span className="eyebrow">Inventario tecnico</span>
           <h2>Inventario de la facultad</h2>
-          <p>Consulte, filtre, edite y registre equipos desde una vista concentrada para trabajar comodo en PC y celular.</p>
+          <p>Abra un equipo para ver sus detalles técnicos, componentes e historial de trabajos.</p>
         </div>
         <div className="lab-inventory-hero-actions">
           <strong>{equipos.length}</strong>
@@ -88,6 +90,9 @@ export function VistaInventario({
           <button className="primary-button" type="button" onClick={onNewEquipo}>
             <Save size={18} />
             Nuevo equipo
+          </button>
+          <button className="secondary-button" type="button" onClick={onOpenTechnicalArchive}>
+            Archivo de detalles técnicos
           </button>
           <label className="secondary-button lab-file-button">
             <Upload size={18} />

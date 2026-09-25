@@ -5,7 +5,6 @@ import { formatDateTime } from '@/utilidades/formato';
 import {
   aplicacionesBase,
   caracteristicasBase,
-  inventarioBase,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import { localDateTimeValue } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
@@ -17,6 +16,8 @@ type VistaFichasTecnicasProps = {
   selectedEquipoFicha: EquipoLaboratorio | null | undefined;
   selectedEquipoFichaId: string;
   selectedFicha: FichaTecnicaLaboratorio | null;
+  onBack: () => void;
+  onOpenWork: () => void;
   onCancelEdit: () => void;
   onDeleteFicha: (ficha: FichaTecnicaLaboratorio) => void;
   onSelectedEquipoFichaChange: (id: string) => void;
@@ -33,6 +34,8 @@ export function VistaFichasTecnicas({
   selectedEquipoFicha,
   selectedEquipoFichaId,
   selectedFicha,
+  onBack,
+  onOpenWork,
   onCancelEdit,
   onDeleteFicha,
   onSelectedEquipoFichaChange,
@@ -41,11 +44,17 @@ export function VistaFichasTecnicas({
   onSubmit,
 }: VistaFichasTecnicasProps) {
   return (
-    <div className="lab-grid lab-grid-wide">
-      <form className="stack-form lab-form lab-sheet-form" onSubmit={onSubmit}>
+    <div className="lab-technical-page">
+      <div className="page-actions">
+        <button className="secondary-button" type="button" onClick={onBack}>← Volver al inventario</button>
+      </div>
+      <h2>Detalles técnicos{selectedEquipoFicha ? ` · ${selectedEquipoFicha.nombre}` : ''}</h2>
+      <p>Guarde las características y los programas del equipo. Para documentar una instalación o reparación, use Registrar trabajo.</p>
+      <div className="lab-grid lab-grid-wide">
+      <form key={editingFicha?.id ?? selectedEquipoFichaId ?? 'new'} className="stack-form lab-form lab-sheet-form" onSubmit={onSubmit}>
         <div className="lab-sheet-title">
           <span>Universidad Autonoma de Chiriqui</span>
-          <strong>Registro tecnico de equipo y control de mantenimiento</strong>
+          <strong>Características y configuración del equipo</strong>
         </div>
         <label>
           Equipo del inventario
@@ -53,8 +62,9 @@ export function VistaFichasTecnicas({
             value={selectedEquipoFichaId}
             onChange={(event) => onSelectedEquipoFichaChange(event.target.value)}
             disabled={Boolean(editingFicha)}
+            required={!editingFicha}
           >
-            <option value="">Seleccionar equipo registrado o llenar manualmente</option>
+            <option value="">Seleccione un equipo del inventario</option>
             {equipos.map((equipo) => (
               <option value={equipo.id} key={equipo.id}>
                 {equipo.codigo} - {equipo.nombre} - {equipo.ubicacion}
@@ -78,6 +88,7 @@ export function VistaFichasTecnicas({
             <input
               name="pc"
               required
+              readOnly={Boolean(selectedEquipoFicha)}
               placeholder="Ej. PC Lab 1-08"
               defaultValue={editingFicha?.pc ?? selectedEquipoFicha?.nombre}
               key={`pc-${editingFicha?.id ?? selectedEquipoFicha?.id ?? 'new'}`}
@@ -94,6 +105,7 @@ export function VistaFichasTecnicas({
             <input
               name="ubicacion"
               required
+              readOnly={Boolean(selectedEquipoFicha)}
               placeholder="Laboratorio 1, reparacion..."
               defaultValue={editingFicha?.ubicacion ?? selectedEquipoFicha?.ubicacion}
               key={`ubicacion-${editingFicha?.id ?? selectedEquipoFicha?.id ?? 'new'}`}
@@ -157,44 +169,15 @@ export function VistaFichasTecnicas({
             </div>
           </fieldset>
 
-          <fieldset className="lab-sheet-box">
-            <legend>Inventario</legend>
-            <div className="lab-simple-list">
-              {inventarioBase.map((item) => {
-                const current = editingFicha?.inventario.find((field) => field.equipo === item);
-                return (
-                  <label key={item}>
-                    {item}
-                    <input name={`inventario-${item}`} placeholder="N. inventario / serie" defaultValue={current?.numero} />
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+
         </div>
 
-        <fieldset className="lab-sheet-box">
-          <legend>Acciones realizadas</legend>
-          <div className="lab-actions-table">
-            <div className="lab-actions-head">
-              <span>Fecha</span>
-              <span>Accion realizada</span>
-              <span>Observacion</span>
-              <span>Responsable</span>
-            </div>
-            {Array.from({ length: 6 }, (_, index) => {
-              const current = editingFicha?.acciones[index];
-              return (
-                <div className="lab-actions-row" key={index}>
-                  <input name={`accionFecha-${index}`} placeholder="dd/mm/aaaa" defaultValue={current?.fecha} />
-                  <input name={`accion-${index}`} placeholder="Diagnostico, cambio, limpieza..." defaultValue={current?.accion} />
-                  <input name={`accionObs-${index}`} placeholder="Resultado u observacion" defaultValue={current?.observacion} />
-                  <input name={`accionResponsable-${index}`} placeholder="Responsable" defaultValue={current?.responsable} />
-                </div>
-              );
-            })}
-          </div>
-        </fieldset>
+        <section className="lab-sheet-box">
+          <h3>Historial de trabajos</h3>
+          <p>Consulte el historial en el expediente del equipo. Los trabajos nuevos se registran una sola vez en Trabajos de soporte.</p>
+          <button className="secondary-button" type="button" onClick={onOpenWork}>Registrar trabajo</button>
+          {editingFicha?.acciones.length ? <p>Este registro conserva {editingFicha.acciones.length} acciones anteriores. Puede consultarlas en Ver detalle.</p> : null}
+        </section>
 
         <label>
           Observacion general
@@ -204,7 +187,7 @@ export function VistaFichasTecnicas({
         <div className="page-actions">
           <button className="primary-button" type="submit" disabled={isSaving}>
             <Save size={18} />
-            {editingFicha ? 'Actualizar ficha' : 'Guardar ficha tecnica'}
+            {editingFicha ? 'Guardar cambios' : 'Guardar detalles técnicos'}
           </button>
           {editingFicha ? (
             <button className="secondary-button" type="button" onClick={onCancelEdit}>
@@ -215,13 +198,13 @@ export function VistaFichasTecnicas({
       </form>
 
       <div className="lab-list">
-        <h2>Fichas guardadas</h2>
-        {fichas.length === 0 ? <p className="form-hint">Todavia no hay fichas tecnicas registradas.</p> : null}
+        <h2>Registros técnicos guardados</h2>
+        {fichas.length === 0 ? <p className="form-hint">Todavía no hay detalles técnicos registrados.</p> : null}
         {fichas.map((item) => (
           <article className="lab-record compact" key={item.id}>
             <div className="lab-record-header">
               <div>
-                <span className="status-pill equipment-operativo">Ficha tecnica</span>
+                <span className="status-pill equipment-operativo">Detalles técnicos</span>
                 <h3>{item.pc}</h3>
                 <small>{formatDateTime(item.fecha)} | {item.ubicacion}</small>
               </div>
@@ -262,7 +245,7 @@ export function VistaFichasTecnicas({
               <div>
                 <p>Universidad Autonoma de Chiriqui</p>
                 <p>Facultad de Economia</p>
-                <strong id="lab-sheet-detail-title">Registro tecnico de equipo y control de mantenimiento</strong>
+                <strong id="lab-sheet-detail-title">Características y configuración del equipo</strong>
               </div>
               <button className="secondary-button" type="button" onClick={() => onSelectedFichaChange(null)}>
                 Cerrar detalle
@@ -329,7 +312,7 @@ export function VistaFichasTecnicas({
             </div>
 
             <section>
-              <h3>Acciones realizadas</h3>
+              <h3>Acciones de fichas anteriores</h3>
               <div className="lab-sheet-table scrollable">
                 <div className="lab-sheet-table-head four-cols">
                   <span>Fecha</span>
@@ -364,6 +347,7 @@ export function VistaFichasTecnicas({
           </article>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }

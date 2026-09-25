@@ -202,7 +202,7 @@ export function EtiquetaInventarioModal({ equipo, estadoNombre, onClose }: Etiqu
           </div>
           <div className="inventory-label-body">
             <div className="barcode-stack">
-              <span>Ficha tecnica</span>
+              <span>Detalles técnicos</span>
               <div className="barcode-box" dangerouslySetInnerHTML={{ __html: svgContent }} />
             </div>
             {qrDataUrl ? (

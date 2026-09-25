@@ -5,7 +5,6 @@ import type {
   AsignacionComponenteLaboratorio,
   BitacoraLaboratorio,
   EquipoLaboratorio,
-  FichaTecnicaLaboratorio,
 } from '@/tipos/dominio';
 import { filtroComponentesAsignados } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
@@ -184,11 +183,10 @@ export function useInventarioLaboratorio(state: LaboratorioState) {
     };
   }
 
-  function getUltimoMantenimientoEquipo(fichas: FichaTecnicaLaboratorio[], bitacoras: BitacoraLaboratorio[]) {
+  function getUltimoMantenimientoEquipo(bitacoras: BitacoraLaboratorio[]) {
     const fechas = [
-      ...fichas.map((item) => item.fecha),
       ...bitacoras
-        .filter((item) => item.clase === 'mantenimiento' || item.tipoTrabajo.toLowerCase().includes('mantenimiento'))
+        .filter((item) => (item.estado === 'resuelto' || item.estado === 'cerrado') && (item.clase === 'mantenimiento' || item.tipoTrabajo.toLowerCase().includes('mantenimiento')))
         .map((item) => item.fecha),
     ].filter(Boolean);
     return fechas.sort((first, second) => second.localeCompare(first))[0] ?? null;

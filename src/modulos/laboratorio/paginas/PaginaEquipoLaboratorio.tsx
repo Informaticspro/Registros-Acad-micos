@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, Cpu, Package, Wrench } from 'lucide-react';
 
 import { listLaboratorioData, type LaboratorioState } from '@/servicios/laboratorio.servicio';
-import type { AsignacionComponenteLaboratorio, BitacoraLaboratorio, EquipoLaboratorio, FichaTecnicaLaboratorio } from '@/tipos/dominio';
+import type { AsignacionComponenteLaboratorio, BitacoraLaboratorio, EquipoLaboratorio } from '@/tipos/dominio';
 import { formatDateTime } from '@/utilidades/formato';
 import {
   appendUniqueInventoryValue,
@@ -77,11 +77,10 @@ function getInventarioCalculado(equipo: EquipoLaboratorio, componentes: Array<{ 
   };
 }
 
-function getUltimoMantenimiento(fichas: FichaTecnicaLaboratorio[], bitacoras: BitacoraLaboratorio[]) {
+function getUltimoMantenimiento(bitacoras: BitacoraLaboratorio[]) {
   const fechas = [
-    ...fichas.map((item) => item.fecha),
     ...bitacoras
-      .filter((item) => item.clase === 'mantenimiento' || item.tipoTrabajo.toLowerCase().includes('mantenimiento'))
+      .filter((item) => (item.estado === 'resuelto' || item.estado === 'cerrado') && (item.clase === 'mantenimiento' || item.tipoTrabajo.toLowerCase().includes('mantenimiento')))
       .map((item) => item.fecha),
   ].filter(Boolean);
 
@@ -134,7 +133,7 @@ export function PaginaEquipoLaboratorio() {
   const fichas = useMemo(() => (state && equipo ? getFichasEquipo(state, equipo) : []), [equipo, state]);
   const bitacoras = useMemo(() => (state && equipo ? getBitacorasEquipo(state, equipo) : []), [equipo, state]);
   const inventario = useMemo(() => (equipo ? getInventarioCalculado(equipo, componentes) : null), [componentes, equipo]);
-  const ultimoMantenimiento = useMemo(() => getUltimoMantenimiento(fichas, bitacoras), [bitacoras, fichas]);
+  const ultimoMantenimiento = useMemo(() => getUltimoMantenimiento(bitacoras), [bitacoras]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -202,7 +201,7 @@ export function PaginaEquipoLaboratorio() {
         </article>
         <article>
           <ClipboardList size={24} />
-          <span>Fichas tecnicas</span>
+          <span>Detalles técnicos</span>
           <strong>{fichas.length}</strong>
         </article>
         <article>
@@ -255,8 +254,8 @@ export function PaginaEquipoLaboratorio() {
       </section>
 
       <section className="lab-equipment-detail-section lab-qr-section">
-        <h2>Fichas tecnicas</h2>
-        {fichas.length === 0 ? <p>Este equipo todavia no tiene fichas tecnicas relacionadas.</p> : null}
+        <h2>Detalles técnicos</h2>
+        {fichas.length === 0 ? <p>Este equipo todavia no tiene registros de detalles técnicos.</p> : null}
         {fichas.slice(0, 8).map((ficha) => (
           <article className="lab-qr-record" key={ficha.id}>
             <strong>{ficha.pc}</strong>
@@ -267,7 +266,7 @@ export function PaginaEquipoLaboratorio() {
       </section>
 
       <section className="lab-equipment-detail-section lab-qr-section">
-        <h2>Bitacoras e incidencias</h2>
+        <h2>Trabajos de soporte</h2>
         {bitacoras.length === 0 ? <p>Este equipo todavia no tiene bitacoras relacionadas.</p> : null}
         {bitacoras.slice(0, 10).map((bitacora) => (
           <article className="lab-qr-record" key={bitacora.id}>

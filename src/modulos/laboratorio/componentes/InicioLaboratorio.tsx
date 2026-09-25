@@ -1,4 +1,4 @@
-import { ClipboardList, HardDrive, Wrench } from 'lucide-react';
+import { HardDrive, Wrench } from 'lucide-react';
 
 import { formatDateTime } from '@/utilidades/formato';
 import type { LabTab } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
@@ -51,10 +51,6 @@ export function InicioLaboratorio({
             <Wrench size={18} />
             Registrar trabajo
           </button>
-          <button className="secondary-button" type="button" onClick={() => onChangeTab('fichas')}>
-            <ClipboardList size={18} />
-            Ficha tecnica
-          </button>
           <button className="secondary-button" type="button" onClick={() => onChangeTab('inventario')}>
             <HardDrive size={18} />
             Inventario
@@ -93,7 +89,7 @@ export function InicioLaboratorio({
           <small>Equipos retirados del inventario</small>
         </button>
         <button type="button" onClick={() => onChangeTab('fichas')}>
-          <span>Fichas tecnicas</span>
+          <span>Detalles técnicos</span>
           <strong>{cantidadFichas}</strong>
           <small>Características e historial del equipo</small>
         </button>

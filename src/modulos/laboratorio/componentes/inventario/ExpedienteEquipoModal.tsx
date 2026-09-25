@@ -32,7 +32,6 @@ type ExpedienteEquipoModalProps = {
   getEquiposDestinoComponente: (equipo: EquipoLaboratorio, componenteId: string) => EquipoLaboratorio[];
   getFichasEquipo: (equipo: EquipoLaboratorio) => FichaTecnicaLaboratorio[];
   getUltimoMantenimientoEquipo: (
-    fichas: FichaTecnicaLaboratorio[],
     bitacoras: BitacoraLaboratorio[],
   ) => string | null;
   handleAsignarComponente: (event: FormEvent<HTMLFormElement>, equipoPadre: EquipoLaboratorio) => void;
@@ -85,7 +84,7 @@ export function ExpedienteEquipoModal({
   const bitacorasEquipo = getBitacorasEquipo(selectedEquipoDetalle);
   const componentesActivos = getAsignacionesActivasEquipo(selectedEquipoDetalle);
   const componentesDisponibles = getComponentesDisponibles(selectedEquipoDetalle);
-  const ultimoMantenimiento = getUltimoMantenimientoEquipo(fichasEquipo, bitacorasEquipo);
+  const ultimoMantenimiento = getUltimoMantenimientoEquipo(bitacorasEquipo);
   const estadoDetalle =
     estadoEquipoNombre[selectedEquipoDetalle.estado] ?? getEstadoEquipoLabel(selectedEquipoDetalle.estado);
 
@@ -136,7 +135,7 @@ export function ExpedienteEquipoModal({
           </button>
           <button className="primary-button" type="button" onClick={() => onOpenFichaForEquipo(selectedEquipoDetalle)}>
             <ClipboardList size={18} />
-            Nueva ficha tecnica
+            Detalles técnicos
           </button>
           <button className="secondary-button" type="button" onClick={() => onDownloadHistorial(selectedEquipoDetalle)}>
             <Download size={18} />
@@ -213,7 +212,7 @@ export function ExpedienteEquipoModal({
                       </button>
                       <button className="secondary-button" type="button" onClick={() => onOpenFichaForEquipo(componente)}>
                         <ClipboardList size={16} />
-                        Ficha tecnica
+                        Detalles técnicos
                       </button>
                     </div>
                   ) : null}
@@ -352,11 +351,21 @@ export function ExpedienteEquipoModal({
         <section className="lab-equipment-detail-section">
           <div className="lab-home-section-header">
             <div>
-              <span className="eyebrow">Fichas tecnicas</span>
+              <span className="eyebrow">Detalles técnicos</span>
               <h3>{fichasEquipo.length} registros</h3>
             </div>
           </div>
-          {fichasEquipo.length === 0 ? <p className="form-hint">Este equipo todavia no tiene fichas tecnicas relacionadas.</p> : null}
+          {fichasEquipo[0] ? (
+            <dl className="lab-definition-grid">
+              {fichasEquipo[0].caracteristicas.filter((item) => item.valor).map((item) => (
+                <div key={item.nombre}><dt>{item.nombre}</dt><dd>{item.valor}</dd></div>
+              ))}
+              <div><dt>Dirección IP</dt><dd>{fichasEquipo[0].direccionIp || 'No indicada'}</dd></div>
+              <div><dt>Usuario asignado</dt><dd>{fichasEquipo[0].usuarioAsignado || 'No indicado'}</dd></div>
+              <div><dt>Programas instalados</dt><dd>{fichasEquipo[0].aplicaciones.filter((item) => item.instalada).map((item) => item.nombre).join(', ') || 'Sin registrar'}</dd></div>
+            </dl>
+          ) : null}
+          {fichasEquipo.length === 0 ? <p className="form-hint">Este equipo todavia no tiene registros de detalles técnicos.</p> : null}
           <div className="lab-equipment-detail-list">
             {fichasEquipo.map((ficha) => (
               <button key={ficha.id} type="button" onClick={() => onOpenFichaRecord(ficha)}>
@@ -371,7 +380,7 @@ export function ExpedienteEquipoModal({
         <section className="lab-equipment-detail-section">
           <div className="lab-home-section-header">
             <div>
-              <span className="eyebrow">Bitacoras e incidencias</span>
+              <span className="eyebrow">Trabajos de soporte</span>
               <h3>{bitacorasEquipo.length} movimientos</h3>
             </div>
           </div>

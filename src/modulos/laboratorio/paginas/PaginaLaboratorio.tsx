@@ -432,6 +432,8 @@ export function PaginaLaboratorio() {
   function openFichaForEquipo(equipo: EquipoLaboratorio) {
     closeEquipoDetalle();
     openFichaForEquipoBase(equipo);
+    setEditingFicha(getFichasEquipo(equipo)[0] ?? null);
+    setSelectedFicha(null);
     setActiveTab('fichas');
   }
 
@@ -502,16 +504,25 @@ export function PaginaLaboratorio() {
           <VistaFichasTecnicas
             editingFicha={editingFicha}
             equipos={state.equipos}
-            fichas={state.fichas}
+            fichas={selectedEquipoFicha ? getFichasEquipo(selectedEquipoFicha) : state.fichas}
+            onBack={() => setActiveTab('inventario')}
+            onOpenWork={() => setActiveTab('bitacoras')}
             isSaving={isSaving}
             selectedEquipoFicha={selectedEquipoFicha}
             selectedEquipoFichaId={selectedEquipoFichaId}
             selectedFicha={selectedFicha}
-            onCancelEdit={() => setEditingFicha(null)}
+            onCancelEdit={() => { setEditingFicha(null); setSelectedEquipoFichaId(''); setActiveTab('inventario'); }}
             onDeleteFicha={(item) => void handleDeleteFicha(item)}
-            onSelectedEquipoFichaChange={setSelectedEquipoFichaId}
+            onSelectedEquipoFichaChange={(id) => {
+              setSelectedEquipoFichaId(id);
+              const equipo = state.equipos.find((item) => item.id === id);
+              setEditingFicha(equipo ? getFichasEquipo(equipo)[0] ?? null : null);
+            }}
             onSelectedFichaChange={setSelectedFicha}
-            onSetEditingFicha={setEditingFicha}
+            onSetEditingFicha={(ficha) => {
+              setSelectedEquipoFichaId('');
+              setEditingFicha(ficha);
+            }}
             onSubmit={handleFichaSubmit}
           />
         ) : null}
@@ -554,6 +565,7 @@ export function PaginaLaboratorio() {
               onFilterLocation={handleInventoryLocationFilter}
               onInventarioExcelUpload={(event) => void handleInventarioExcelUpload(event)}
               onNewEquipo={openNuevoEquipoModal}
+              onOpenTechnicalArchive={() => { setSelectedEquipoFichaId(''); setEditingFicha(null); setSelectedFicha(null); setActiveTab('fichas'); }}
               onOpenEquipo={openEquipoDetalle}
               onQuickEstadoEquipo={(item, estado) => void handleQuickEstadoEquipo(item, estado)}
               onSearchChange={setInventorySearch}
@@ -591,6 +603,8 @@ export function PaginaLaboratorio() {
                 onOpenFichaRecord={(ficha) => {
                   closeEquipoDetalle();
                   setActiveTab("fichas");
+                  setSelectedEquipoFichaId('');
+                  setEditingFicha(ficha);
                   setSelectedFicha(ficha);
                 }}
               />

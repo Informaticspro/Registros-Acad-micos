@@ -48,6 +48,15 @@ function useFichasLaboratorio({
     event.preventDefault();
     const form = event.currentTarget;
     const input = buildFichaTecnicaInput(form);
+    // Historical actions and inventory snapshots are no longer edited in this form.
+    input.acciones = editingFicha?.acciones ?? [];
+    input.inventario = editingFicha?.inventario ?? (selectedEquipoFicha
+      ? [{ equipo: selectedEquipoFicha.nombre, numero: selectedEquipoFicha.codigo || selectedEquipoFicha.serie }]
+      : []);
+    if (!editingFicha && !selectedEquipoFicha) {
+      setError('Seleccione un equipo del inventario.');
+      return;
+    }
 
     setIsSaving(true);
     setError(null);
@@ -55,20 +64,20 @@ function useFichasLaboratorio({
     try {
       if (editingFicha) {
         const updated = await updateFichaTecnicaLaboratorio(editingFicha.id, input);
-        setEditingFicha(null);
+        setEditingFicha(updated);
         setSelectedFicha(updated);
-        setMessage('Ficha tecnica actualizada correctamente.');
+        setMessage('Detalles técnicos actualizados correctamente.');
       } else {
         const created = await createFichaTecnicaLaboratorio(input, saveContext);
         setSelectedFicha(created);
-        setSelectedEquipoFichaId('');
-        setMessage('Ficha tecnica guardada correctamente.');
+        setEditingFicha(created);
+        setMessage('Detalles técnicos guardados correctamente.');
         form.reset();
       }
 
       await refresh();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la ficha tecnica.');
+      setError(saveError instanceof Error ? saveError.message : 'No se pudieron guardar los detalles técnicos.');
     } finally {
       setIsSaving(false);
     }
@@ -76,14 +85,15 @@ function useFichasLaboratorio({
 
   async function handleDeleteFicha(item: FichaTecnicaLaboratorio) {
     const confirmed = await confirmar({
-      title: 'Eliminar ficha tecnica',
-      message: `Desea eliminar la ficha tecnica de "${item.pc}"?`,
-      confirmLabel: 'Eliminar ficha',
+      title: 'Eliminar detalles técnicos',
+      message: `Desea eliminar los detalles técnicos de "${item.pc}"?`,
+      confirmLabel: 'Eliminar registro',
     });
     if (!confirmed) return;
 
     await deleteFichaTecnicaLaboratorio(item.id);
     if (selectedFicha?.id === item.id) setSelectedFicha(null);
+    if (editingFicha?.id === item.id) setEditingFicha(null);
     await refresh();
   }
 
