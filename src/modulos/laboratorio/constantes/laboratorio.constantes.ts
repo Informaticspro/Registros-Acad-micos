@@ -25,7 +25,7 @@ const tabLabels: Record<LabTab, string> = {
   informes: 'Informes',
 };
 
-const labTabOrder: LabTab[] = ['inicio', 'inventario', 'fichas', 'bitacoras', 'descartes', 'prestamos', 'informes', 'mapa'];
+const labTabOrder: LabTab[] = ['inicio', 'inventario', 'bitacoras', 'fichas', 'descartes', 'prestamos', 'informes', 'mapa'];
 
 const aplicacionesBase = [
   'Windows',
