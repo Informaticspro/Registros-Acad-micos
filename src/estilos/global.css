@@ -1,13 +1,13 @@
 :root {
   color-scheme: dark;
-  --bg: #0b0f14;
-  --surface: #121821;
-  --surface-soft: #1a2430;
-  --surface-deep: #0f151d;
-  --surface-hover: #1b2932;
-  --surface-raised: #22303e;
-  --line: #415269;
-  --text: #f5f8ef;
+  --bg: #080d13;
+  --surface: #18212c;
+  --surface-soft: #202d3a;
+  --surface-deep: #101720;
+  --surface-hover: #243445;
+  --surface-raised: #243445;
+  --line: #354559;
+  --text: #edf2f7;
   --muted: #c1cad5;
   --accent: #79b735;
   --accent-strong: #0b5f33;
@@ -7273,7 +7273,7 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible,
 .lab-tabs button.active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
 .lab-workspace, .lab-home-hero { background: var(--bg); }
 .lab-home-panel, .lab-home-metrics button { background: var(--surface); }
-.lab-inventory-filter button:not(.active):not(:hover) {
+.lab-workspace .lab-inventory-filter button:not(.active):not(:hover) {
   background: var(--surface);
   color: var(--text);
   border-color: var(--control-line);
@@ -7325,4 +7325,54 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible,
 }
 @media (max-width: 380px) {
   .lab-workspace .lab-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Dark theme: separate the page, working panels, records and inset fields. */
+:root:not([data-theme='light']) .lab-workspace .lab-shell { background: var(--surface-deep); }
+:root:not([data-theme='light']) .lab-workspace :is(.lab-form, .lab-list, .lab-report-card, .lab-workspace-header) {
+  background: var(--surface);
+}
+:root:not([data-theme='light']) .lab-workspace :is(.lab-record, .lab-home-metrics button) {
+  background: var(--surface-raised);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 12%);
+}
+:root:not([data-theme='light']) .lab-workspace .lab-definition-grid div { background: var(--surface-soft); }
+:root:not([data-theme='light']) .lab-workspace :is(input, select, textarea) {
+  font-weight: 400;
+}
+:root:not([data-theme='light']) .lab-workspace :is(input, textarea)::placeholder { font-weight: 400; }
+:root:not([data-theme='light']) .lab-workspace :is(label, .lab-definition-grid dt, .lab-quick-stats span) {
+  font-weight: 600;
+}
+:root:not([data-theme='light']) .lab-workspace :is(.lab-record p, .lab-record small, .lab-definition-grid dd, .form-hint) {
+  font-weight: 400;
+}
+:root:not([data-theme='light']) .lab-workspace .lab-tabs button { font-weight: 600; }
+:root:not([data-theme='light']) .lab-workspace .lab-tabs button.active { font-weight: 700; }
+
+.lab-workspace .inventory-cell-equipo { align-items: flex-start; text-align: left; }
+.lab-workspace .lab-shell { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.lab-workspace .lab-inventory-workspace { min-width: 0; }
+.lab-workspace .lab-inventory-table-wrap { min-width: 0; max-width: 100%; }
+.lab-workspace .inventory-cell-equipo small {
+  border-radius: 6px;
+  text-transform: none;
+  font-weight: 500;
+  overflow-wrap: normal;
+}
+.lab-workspace .inventory-status-select { max-width: none; width: 100%; text-transform: none; }
+:root:not([data-theme='light']) .lab-workspace .lab-inventory-row { background: var(--surface); }
+:root:not([data-theme='light']) .lab-workspace .lab-inventory-row:nth-child(odd) { background: var(--surface-soft); }
+:root:not([data-theme='light']) .lab-workspace .lab-inventory-head { background: var(--surface-raised); font-weight: 600; }
+@media (min-width: 761px) {
+  .lab-workspace .lab-inventory-table { min-width: 1220px; }
+  .lab-workspace :is(.lab-inventory-head, .lab-inventory-row:not(.lab-inventory-empty-row)) {
+    grid-template-columns: 48px minmax(200px, 1.5fr) minmax(90px, .7fr) minmax(120px, 1fr) 100px minmax(130px, 1fr) minmax(125px, 1fr) 175px 105px;
+  }
+}
+@media (max-width: 760px) {
+  .lab-workspace .lab-inventory-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; }
+  .lab-workspace .lab-inventory-hero-actions > :is(button, label, small) { width: 100%; min-width: 0; }
+  .lab-workspace .lab-inventory-hero-actions > :is(button, label) { white-space: normal; min-height: 44px; }
+  .lab-workspace .lab-inventory-hero-actions > span { white-space: normal; overflow: visible; }
 }

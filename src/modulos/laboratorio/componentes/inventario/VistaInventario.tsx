@@ -3,6 +3,7 @@ import { ClipboardList, Save, Search, Trash2, Upload } from 'lucide-react';
 
 import { AsignacionComponenteLaboratorio, EquipoLaboratorio, EstadoEquipoLaboratorio } from '@/tipos/dominio';
 import {
+  splitMarcaModelo,
   getEstadoEquipoClass,
   getEstadoEquipoLabel,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
@@ -169,6 +170,7 @@ export function VistaInventario({
                 </div>
               ) : null}
               {equiposFiltrados.map((item, index) => {
+                const { marca, modelo } = splitMarcaModelo(item.marcaModelo);
                 const inventarioCalculado = getInventarioCalculadoEquipo(item);
                 const asignacionComoComponente = getAsignacionActivaComoComponente(item);
                 const equipoPadreComponente = asignacionComoComponente ? getEquipoById(asignacionComoComponente.equipoPadreId) : null;
@@ -188,7 +190,7 @@ export function VistaInventario({
                     title="Abrir expediente tecnico del equipo"
                     onClick={() => onOpenEquipo(item)}
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
+                      if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
                         event.preventDefault();
                         onOpenEquipo(item);
                       }
@@ -205,33 +207,22 @@ export function VistaInventario({
                       {inventarioCalculado.componentes.length > 0 ? (
                         <small className="inventory-role-badge linked">
                           {inventarioCalculado.componentes.length}{' '}
-                          {inventarioCalculado.componentes.length === 1 ? 'componente enlazado' : 'componentes enlazados'}
+                          {inventarioCalculado.componentes.length === 1 ? 'componente · ver detalle' : 'componentes · ver detalle'}
                         </small>
                       ) : null}
-                      {inventarioCalculado.componentes.length > 0 ? (
-                        <em className="inventory-component-list">
-                          {inventarioCalculado.componentes.map(({ asignacion, componente }) => (
-                            <i key={asignacion.id}>
-                              <b>{asignacion.tipo}</b>
-                              <span>{componente.nombre}</span>
-                              <small>Inv. {componente.codigo || 'S/N'}</small>
-                              <small>Serie {componente.serie || 'S/N'}</small>
-                            </i>
-                          ))}
-                        </em>
-                      ) : null}
+
                     </strong>
                     <span className="inventory-cell-marca" title={componentSummary || undefined}>
-                      {inventarioCalculado.marca}
+                      {marca}
                     </span>
                     <span className="inventory-cell-modelo" title={componentSummary || undefined}>
-                      {inventarioCalculado.modelo}
+                      {modelo}
                     </span>
                     <span className="inventory-cell-codigo" title={componentSummary || undefined}>
-                      {inventarioCalculado.codigo}
+                      {item.codigo || 'S/N'}
                     </span>
                     <span className="inventory-cell-serie" title={componentSummary || undefined}>
-                      {inventarioCalculado.serie}
+                      {item.serie || 'S/N'}
                     </span>
                     <span className="inventory-cell-ubicacion">{item.ubicacion || 'Sin ubicacion'}</span>
                     <span className="inventory-cell-estado">
