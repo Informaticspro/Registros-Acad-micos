@@ -69,10 +69,10 @@ function useBitacorasLaboratorio({
       if (editingBitacora) {
         await updateBitacoraLaboratorio(editingBitacora.id, input);
         setEditingBitacora(null);
-        setMessage('Bitacora actualizada correctamente.');
+        setMessage('Trabajo actualizado correctamente.');
       } else {
         await createBitacoraLaboratorio(input, saveContext);
-        setMessage('Bitacora registrada correctamente.');
+        setMessage('Trabajo registrado correctamente.');
         form.reset();
       }
 
@@ -91,7 +91,7 @@ function useBitacorasLaboratorio({
 
       await refresh();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la bitacora.');
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el trabajo.');
     } finally {
       setIsSaving(false);
     }
@@ -120,9 +120,9 @@ function useBitacorasLaboratorio({
 
   async function handleDeleteBitacora(item: BitacoraLaboratorio) {
     const confirmed = await confirmar({
-      title: 'Eliminar bitacora',
-      message: `Desea eliminar la bitacora "${item.titulo}"?`,
-      confirmLabel: 'Eliminar bitacora',
+      title: 'Eliminar trabajo',
+      message: `Desea eliminar el trabajo "${item.titulo}"?`,
+      confirmLabel: 'Eliminar trabajo',
     });
     if (!confirmed) return;
 

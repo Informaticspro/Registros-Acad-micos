@@ -44,12 +44,12 @@ export function InicioLaboratorio({
         <div>
           <span className="eyebrow">Inicio tecnico</span>
           <h2>Centro de operaciones del laboratorio</h2>
-          <p>Revise el movimiento reciente y elija la tarea que desea realizar sin entrar directo a un formulario.</p>
+          <p>¿Instaló un cable, reparó un equipo o atendió una falla? Empiece en Registrar trabajo.</p>
         </div>
         <div className="lab-home-actions">
           <button className="primary-button" type="button" onClick={() => onChangeTab('bitacoras')}>
             <Wrench size={18} />
-            Nueva bitacora
+            Registrar trabajo
           </button>
           <button className="secondary-button" type="button" onClick={() => onChangeTab('fichas')}>
             <ClipboardList size={18} />
@@ -75,7 +75,7 @@ export function InicioLaboratorio({
         <button type="button" onClick={() => onChangeTab('bitacoras')}>
           <span>Trabajos abiertos</span>
           <strong>{indicadores.trabajosAbiertos}</strong>
-          <small>Bitacoras pendientes o en proceso</small>
+          <small>Trabajos que aún no se han cerrado</small>
         </button>
         <button type="button" onClick={() => onChangeTab('inventario')}>
           <span>Equipos registrados</span>
@@ -95,7 +95,7 @@ export function InicioLaboratorio({
         <button type="button" onClick={() => onChangeTab('fichas')}>
           <span>Fichas tecnicas</span>
           <strong>{cantidadFichas}</strong>
-          <small>Registros de mantenimiento</small>
+          <small>Características e historial del equipo</small>
         </button>
       </section>
 

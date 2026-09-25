@@ -47,7 +47,7 @@ export function ConfirmacionOperativoModal({
             Si, devolver a operativo
           </button>
           <button className="secondary-button" type="button" disabled={isSaving} onClick={() => onConfirm(false)}>
-            No, solo guardar bitacora
+            No, solo guardar el trabajo
           </button>
         </div>
       </article>

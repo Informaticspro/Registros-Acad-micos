@@ -18,7 +18,7 @@ export function PestanasLaboratorio({ activeTab, onChange }: PestanasLaboratorio
           title={tabLabels[tab]}
         >
           <span className="lab-tab-label-full">{tabLabels[tab]}</span>
-          <span className="lab-tab-label-short">{tab === 'bitacoras' ? 'Mant. e incid.' : tabLabels[tab]}</span>
+          <span className="lab-tab-label-short">{tab === 'bitacoras' ? 'Trabajos de soporte' : tabLabels[tab]}</span>
         </button>
       ))}
     </div>

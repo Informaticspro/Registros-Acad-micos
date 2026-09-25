@@ -72,7 +72,7 @@ function useActividadLaboratorio({ estadoEquipoNombre, profile, state }: UseActi
     const bitacoras = state.bitacoras.map((item) => ({
       id: `bitacora-${item.id}`,
       fecha: item.fecha,
-      tipo: 'Bitacora',
+      tipo: 'Trabajo de soporte',
       titulo: item.titulo,
       detalle: `${item.responsable || 'Sin responsable'} | ${estadoTrabajoLabels[item.estado]}`,
       tab: 'bitacoras' as LabTab,

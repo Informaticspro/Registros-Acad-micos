@@ -41,13 +41,13 @@ export function VistaBitacoras({
 
   return (
     <div className="lab-grid">
-      <form className="stack-form lab-form" onSubmit={onSubmit}>
-        <h2>{editingBitacora ? 'Editar registro' : 'Registrar mantenimiento o incidencia'}</h2>
+      <form key={editingBitacora?.id ?? "new"} className="stack-form lab-form" onSubmit={onSubmit}>
+        <h2>{editingBitacora ? 'Editar trabajo' : 'Registrar trabajo'}</h2>
         <p className="form-hint">
-          Los mantenimientos y las incidencias se registran por separado mediante su tipo y quedan asociados al equipo seleccionado.
+          Registre instalaciones, reemplazos de cables, reparaciones y fallas. Los campos con * son obligatorios.
         </p>
         <label>
-          Fecha y hora
+          Fecha y hora *
           <input
             name="fecha"
             type="datetime-local"
@@ -58,20 +58,21 @@ export function VistaBitacoras({
         </label>
         <div className="form-grid compact-form-grid">
           <label>
-            Tipo de trabajo
-            <select name="tipoTrabajo" defaultValue={editingBitacora?.tipoTrabajo ?? 'Reparacion'} required>
+            ¿Qué necesita registrar? *
+            <select name="tipoTrabajo" defaultValue={editingBitacora?.tipoTrabajo ?? ''} required>
+              <option value="" disabled>Seleccione el tipo de trabajo</option>
               <option value="Mantenimiento preventivo">Mantenimiento preventivo</option>
               <option value="Mantenimiento correctivo">Mantenimiento correctivo</option>
-              <option value="Incidencia">Dano o incidencia</option>
-              <option>Reparacion</option>
-              <option>Cambio de pieza</option>
-              <option>Diagnostico</option>
-              <option>Instalacion</option>
+              <option value="Incidencia">Reportar una falla</option>
+              <option value="Reparacion">Reparación</option>
+              <option value="Cambio de pieza">Reemplazo de cable o pieza</option>
+              <option value="Diagnostico">Diagnóstico / revisión</option>
+              <option value="Instalacion">Instalación de cable, equipo o programa</option>
               <option>Soporte a usuario</option>
             </select>
           </label>
           <label>
-            Prioridad
+            Prioridad *
             <select name="prioridad" defaultValue={editingBitacora?.prioridad ?? 'media'} required>
               <option value="baja">Baja</option>
               <option value="media">Media</option>
@@ -81,52 +82,29 @@ export function VistaBitacoras({
           </label>
         </div>
         <label>
-          Titulo
+          Resumen del trabajo *
           <input
             name="titulo"
             required
-            placeholder="Ej. Reemplazo de pantalla en equipo del Laboratorio 1"
+            placeholder="Ej. Reemplazo de cable HDMI del proyector del salón 3"
             defaultValue={editingBitacora?.titulo}
             key={`titulo-${editingBitacora?.id ?? 'new'}`}
           />
         </label>
         <label>
-          Descripcion del trabajo o incidencia
+          Detalle del trabajo o de la falla *
           <textarea
             name="descripcion"
             required
             rows={5}
-            placeholder="Detalle que ocurrio, que equipo se reviso, sintomas detectados, acciones tomadas o pendiente por revisar."
+            placeholder="Ej. Se reemplazó el cable HDMI dañado y se comprobó la imagen. Indique también lo que quedó pendiente."
             defaultValue={editingBitacora?.descripcion}
             key={`descripcion-${editingBitacora?.id ?? 'new'}`}
           />
         </label>
         <div className="form-grid compact-form-grid">
           <label>
-            Equipo origen / pieza usada opcional
-            <select name="equipoOrigenInventario" defaultValue="">
-              <option value="">Seleccione equipo origen si aplica</option>
-              {equipos.map((equipo) => (
-                <option value={`${equipo.codigo || 'S/N'} - ${equipo.nombre} (${equipo.ubicacion})`} key={equipo.id}>
-                  {equipo.codigo || 'S/N'} - {equipo.nombre} ({equipo.ubicacion}) -{' '}
-                  {estadoEquipoNombre[equipo.estado] ?? getEstadoEquipoLabel(equipo.estado)}
-                </option>
-              ))}
-            </select>
-            <small>Use esto cuando una pantalla, memoria, disco u otra pieza sale de un equipo registrado.</small>
-          </label>
-          <label>
-            Origen manual opcional
-            <input
-              name="equipoOrigen"
-              placeholder="Ej. pantalla de equipo descartado, pieza suelta o referencia fisica"
-              defaultValue={editingBitacora?.equipoOrigen}
-            />
-          </label>
-        </div>
-        <div className="form-grid compact-form-grid">
-          <label>
-            Equipo atendido
+            Equipo atendido *
             <select name="equipoId" defaultValue={editingBitacora?.equipoId ?? ''} required>
               <option value="">Seleccione un equipo</option>
               {equipos.map((equipo) => (
@@ -139,7 +117,7 @@ export function VistaBitacoras({
         </div>
         <div className="form-grid compact-form-grid">
           <label>
-            Responsable
+            Responsable *
             <input name="responsable" required readOnly value={responsableSesion} />
           </label>
           <label>
@@ -149,12 +127,12 @@ export function VistaBitacoras({
         </div>
         <div className="form-grid compact-form-grid">
           <label>
-            Estado
+            Estado del trabajo *
             <select name="estado" defaultValue={editingBitacora?.estado ?? 'en_proceso'} required>
               <option value="pendiente">Pendiente</option>
               <option value="en_proceso">En proceso</option>
-              <option value="resuelto">Resuelto</option>
-              <option value="cerrado">Cerrado</option>
+              <option value="resuelto">Resuelto, pendiente de cierre</option>
+              <option value="cerrado">Cerrado / finalizado</option>
             </select>
           </label>
           <label>
@@ -166,10 +144,36 @@ export function VistaBitacoras({
           Enlace o referencia de evidencia
           <input name="evidenciaUrl" placeholder="URL, carpeta, nombre del archivo o referencia fisica" defaultValue={editingBitacora?.evidenciaUrl} />
         </label>
+        <details>
+          <summary>Materiales o piezas utilizadas (opcional)</summary>
+        <div className="form-grid compact-form-grid">
+          <label>
+            Equipo del que se tomó la pieza (opcional)
+            <select name="equipoOrigenInventario" defaultValue="">
+              <option value="">Seleccione equipo origen si aplica</option>
+              {equipos.map((equipo) => (
+                <option value={`${equipo.codigo || 'S/N'} - ${equipo.nombre} (${equipo.ubicacion})`} key={equipo.id}>
+                  {equipo.codigo || 'S/N'} - {equipo.nombre} ({equipo.ubicacion}) -{' '}
+                  {estadoEquipoNombre[equipo.estado] ?? getEstadoEquipoLabel(equipo.estado)}
+                </option>
+              ))}
+            </select>
+            <small>Use esto cuando una pantalla, memoria, disco u otra pieza sale de un equipo registrado.</small>
+          </label>
+          <label>
+            Material utilizado u otro origen (opcional)
+            <input
+              name="equipoOrigen"
+              placeholder="Ej. Cable HDMI nuevo de 3 metros, tomado del almacén"
+              defaultValue={editingBitacora?.equipoOrigen}
+            />
+          </label>
+        </div>
+        </details>
         <div className="page-actions">
           <button className="primary-button" type="submit" disabled={isSaving}>
             <Save size={18} />
-            {editingBitacora ? 'Actualizar bitacora' : 'Guardar bitacora'}
+            {isSaving ? 'Guardando…' : editingBitacora ? 'Guardar cambios' : 'Guardar trabajo'}
           </button>
           {editingBitacora ? (
             <button className="secondary-button" type="button" onClick={onCancelEdit}>
@@ -180,8 +184,8 @@ export function VistaBitacoras({
       </form>
 
       <div className="lab-list">
-        <h2>Mantenimientos registrados</h2>
-        {mantenimientos.length === 0 ? <p className="form-hint">Todavia no hay mantenimientos registrados.</p> : null}
+        <h2>Trabajos registrados</h2>
+        {mantenimientos.length === 0 ? <p className="form-hint">Todavía no hay trabajos registrados. Agregue el primero usando el formulario.</p> : null}
         {mantenimientos.map((item) => (
           <article className="lab-record" key={item.id}>
             <div className="lab-record-header">
@@ -211,7 +215,7 @@ export function VistaBitacoras({
           </article>
         ))}
 
-        <h2>Danos e incidencias por equipo</h2>
+        <h2>Fallas reportadas</h2>
         {incidencias.length === 0 ? <p className="form-hint">No hay incidencias registradas.</p> : null}
         {incidencias.map((item) => (
           <article className="lab-record" key={item.id}>

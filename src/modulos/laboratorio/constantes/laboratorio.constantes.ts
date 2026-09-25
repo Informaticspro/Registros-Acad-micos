@@ -18,7 +18,7 @@ const tabLabels: Record<LabTab, string> = {
   inicio: 'Inicio',
   mapa: 'Mapa',
   fichas: 'Ficha tecnica',
-  bitacoras: 'Mantenimientos e incidencias',
+  bitacoras: 'Trabajos de soporte',
   inventario: 'Inventario',
   descartes: 'Descartes',
   prestamos: 'Prestamos',
