@@ -76,6 +76,8 @@ function useBitacorasLaboratorio({
         form.reset();
       }
 
+      window.dispatchEvent(new Event('laboratorio-actualizado'));
+
       if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
         await updateEquipoLaboratorio(equipoAtendido.id, {
           codigo: equipoAtendido.codigo,

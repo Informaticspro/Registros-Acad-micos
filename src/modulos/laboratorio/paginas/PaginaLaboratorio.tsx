@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LaboratorioState,
   deleteEquipoLaboratorio,
@@ -52,7 +52,11 @@ import {
 export function PaginaLaboratorio() {
   const navigate = useNavigate();
   const { profile } = useAutenticacion();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<LabTab>('inicio');
+  useEffect(() => {
+    if (location.hash === '#trabajos') setActiveTab('bitacoras');
+  }, [location.hash, location.key]);
   const [state, setState] = useState<LaboratorioState>(emptyState);
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().slice(0, 10));

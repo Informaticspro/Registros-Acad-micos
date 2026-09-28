@@ -69,6 +69,7 @@ export function MenuNotificaciones() {
 
   useEffect(() => {
     let isMounted = true;
+    let loading = false;
 
     async function loadNotifications() {
       if (!profile) {
@@ -76,6 +77,8 @@ export function MenuNotificaciones() {
         return;
       }
 
+      if (loading) return;
+      loading = true;
       try {
         const [eventsData, labData] = await Promise.all([
           canSeeEventAlerts ? listEvents() : Promise.resolve([] as EventoAcademico[]),
@@ -102,14 +105,13 @@ export function MenuNotificaciones() {
         const labNotifications: AvisoEncabezado[] = labData
           ? [
               ...labData.bitacoras
-                .filter((item) => item.estado === 'pendiente' || item.estado === 'en_proceso')
-                .slice(0, 2)
+                .slice(0, 8)
                 .map((item) => ({
-                  id: `trabajo-${item.id}-${item.estado}`,
+                  id: `trabajo-${item.id}-${item.estado}-${item.createdAt}`,
                   kind: 'laboratorio' as const,
-                  title: item.estado === 'pendiente' ? 'Trabajo pendiente' : 'Trabajo en proceso',
+                  title: item.estado === 'cerrado' ? 'Trabajo finalizado' : item.estado === 'resuelto' ? 'Trabajo resuelto' : item.estado === 'pendiente' ? 'Trabajo pendiente' : 'Trabajo en proceso',
                   description: `${item.titulo || item.tipoTrabajo} | ${item.ubicacion || 'Sin ubicacion'}`,
-                  to: '/laboratorio',
+                  to: '/laboratorio#trabajos',
                 })),
               ...labData.prestamos
                 .filter((item) => item.estado === 'vencido' || item.estado === 'activo')
@@ -124,21 +126,28 @@ export function MenuNotificaciones() {
             ]
           : [];
 
-        setNotifications([...labNotifications, ...eventNotifications].slice(0, 6));
+        setNotifications([...labNotifications, ...eventNotifications]);
         setNotificationsError(null);
       } catch (error) {
         if (!isMounted) return;
         setNotifications([]);
         setNotificationsError(getErrorMessage(error, 'No se pudieron cargar las notificaciones'));
+      } finally {
+        loading = false;
       }
     }
 
+    const reload = () => { void loadNotifications(); };
+    window.addEventListener('laboratorio-actualizado', reload);
+    window.addEventListener('focus', reload);
     void loadNotifications();
     const timer = window.setInterval(() => void loadNotifications(), 60_000);
 
     return () => {
       isMounted = false;
       window.clearInterval(timer);
+      window.removeEventListener('laboratorio-actualizado', reload);
+      window.removeEventListener('focus', reload);
     };
   }, [canAccessLab, canSeeEventAlerts, profile]);
 
@@ -159,11 +168,8 @@ export function MenuNotificaciones() {
   }
 
   function toggleNotifications() {
-    setIsNotificationsOpen((current) => {
-      const nextValue = !current;
-      if (nextValue) markNotificationsAsRead(notifications);
-      return nextValue;
-    });
+    if (!isNotificationsOpen) window.dispatchEvent(new Event('laboratorio-actualizado'));
+    setIsNotificationsOpen(!isNotificationsOpen);
   }
 
   function openNotification(notification: AvisoEncabezado) {
