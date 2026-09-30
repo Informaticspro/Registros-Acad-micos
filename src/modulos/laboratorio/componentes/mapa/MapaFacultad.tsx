@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Building2, Copy, DoorOpen, Maximize2, Minimize2, MapPinned, Route, Users } from 'lucide-react';
+import type { BitacoraLaboratorio } from '@/tipos/dominio';
+import { formatDateTime } from '@/utilidades/formato';
+import { estadoTrabajoLabels } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 
 import {
   getEstadoEquipoClass,
@@ -7,6 +10,8 @@ import {
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
 type MapaFacultadProps = {
+  trabajos: BitacoraLaboratorio[];
+  onOpenWorks: () => void;
   defaultFullView?: boolean;
   estadoEquipoNombre: Record<string, string>;
   estadosAlertaPorUbicacion: Record<string, string[]>;
@@ -25,9 +30,9 @@ type MapaZona = {
 
 const zonas: MapaZona[][] = [
   [
-    { etiqueta: 'Salon 3A', ubicacion: '3A', lado: 'left', icono: 'aula' },
+    { etiqueta: 'Salón 3A', ubicacion: '3A', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: 'Salon 3H', ubicacion: '3H', lado: 'right', icono: 'aula' },
+    { etiqueta: 'Salón 3H', ubicacion: '3H', lado: 'right', icono: 'aula' },
   ],
   [
     { etiqueta: 'Escalera', lado: 'left', icono: 'escalera', muted: true },
@@ -35,32 +40,32 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Copiadora', lado: 'right', icono: 'copiadora', muted: true },
   ],
   [
-    { etiqueta: 'Maestria', ubicacion: 'maestría', lado: 'left', icono: 'servicio' },
+    { etiqueta: 'Maestría', ubicacion: 'maestría', lado: 'left', icono: 'servicio' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: 'Banos mujeres', lado: 'right', icono: 'servicio', muted: true },
+    { etiqueta: 'Baños mujeres', lado: 'right', icono: 'servicio', muted: true },
   ],
   [
-    { etiqueta: 'Salon 3B', ubicacion: '3B', lado: 'left', icono: 'aula' },
+    { etiqueta: 'Salón 3B', ubicacion: '3B', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: 'Salon 3G', ubicacion: '3G', lado: 'right', icono: 'aula' },
+    { etiqueta: 'Salón 3G', ubicacion: '3G', lado: 'right', icono: 'aula' },
   ],
   [
-    { etiqueta: 'Salon 3C', ubicacion: '3C', lado: 'left', icono: 'aula' },
+    { etiqueta: 'Salón 3C', ubicacion: '3C', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
     { etiqueta: 'Biblioteca', ubicacion: 'Biblioteca', lado: 'right', icono: 'biblioteca' },
   ],
   [
-    { etiqueta: 'Salon 3D', ubicacion: '3D', lado: 'left', icono: 'aula' },
+    { etiqueta: 'Salón 3D', ubicacion: '3D', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
-    { etiqueta: 'Salon de estudiantes', lado: 'right', icono: 'servicio', muted: true },
+    { etiqueta: 'Salón de estudiantes', lado: 'right', icono: 'servicio', muted: true },
   ],
   [
-    { etiqueta: 'Salon 3E', ubicacion: '3E', lado: 'left', icono: 'aula' },
+    { etiqueta: 'Salón 3E', ubicacion: '3E', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
     { etiqueta: 'Laboratorio 2', ubicacion: 'Laboratorio 2', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: 'Salon 3F', ubicacion: '3F', lado: 'left', icono: 'aula' },
+    { etiqueta: 'Salón 3F', ubicacion: '3F', lado: 'left', icono: 'aula' },
     { etiqueta: 'Pasillo central', lado: 'center', muted: true },
     { etiqueta: 'Laboratorio 1', ubicacion: 'Laboratorio 1', lado: 'right', icono: 'laboratorio' },
   ],
@@ -70,7 +75,7 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Oficina laboratorio', ubicacion: 'Seccion de Tecnologia', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: 'Banos hombres', lado: 'left', icono: 'servicio', muted: true },
+    { etiqueta: 'Baños hombres', lado: 'left', icono: 'servicio', muted: true },
     { etiqueta: 'Acceso principal', lado: 'center', icono: 'servicio', muted: true },
     { etiqueta: 'Escalera', lado: 'right', icono: 'escalera', muted: true },
   ],
@@ -90,6 +95,8 @@ function getSideZones(lado: MapaZona['lado']) {
 }
 
 export function MapaFacultad({
+  trabajos,
+  onOpenWorks,
   defaultFullView = false,
   estadoEquipoNombre,
   estadosAlertaPorUbicacion,
@@ -97,6 +104,12 @@ export function MapaFacultad({
   onSelectLocation,
 }: MapaFacultadProps) {
   const [isFullView, setIsFullView] = useState(defaultFullView);
+  const [showWorks, setShowWorks] = useState(false);
+  const [area, setArea] = useState('');
+  const areas = Array.from(new Set(trabajos.map((item) => item.ubicacion).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
+  const recientes = trabajos.filter((item) => !area || item.ubicacion === area)
+    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime() || b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 6);
   const zonasIzquierda = getSideZones('left');
   const zonasDerecha = getSideZones('right');
   const zonasCentrales = getSideZones('center').filter((zona) => zona.ubicacion);
@@ -144,13 +157,14 @@ export function MapaFacultad({
           </small>
         ) : null}
         {alertas.length ? (
-          <span className="faculty-map-alerts" aria-label="Estados con atencion">
+          <span className="faculty-map-alerts" aria-label="Estados que requieren atención">
             {alertas.map((estado) => (
-              <i
+              <span
                 className={`equipment-${getEstadoEquipoClass(estado)}`}
                 key={estado}
-                title={estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
-              />
+              >
+                {estadoEquipoNombre[estado] ?? getEstadoEquipoLabel(estado)}
+              </span>
             ))}
           </span>
         ) : null}
@@ -163,9 +177,13 @@ export function MapaFacultad({
       <div className="faculty-map-heading">
         <div>
           <span className="eyebrow">Mapa interactivo</span>
-          <h2>Facultad de Economia</h2>
-          <p>Toque un salon, laboratorio o area para ver sus equipos en el inventario.</p>
+          <h2>Facultad de Economía</h2>
+          <p>Seleccione un área para consultar sus equipos. Los espacios sin contador son referencias del edificio.</p>
         </div>
+        <div className="faculty-map-heading-actions">
+        <button type="button" className="secondary-button" aria-expanded={showWorks} aria-controls="map-recent-works" onClick={() => setShowWorks((value) => !value)}>
+          {showWorks ? 'Cerrar trabajos recientes' : 'Trabajos recientes'}
+        </button>
         <button
           className="secondary-button faculty-map-fullscreen-button"
           type="button"
@@ -175,8 +193,33 @@ export function MapaFacultad({
           {isFullView ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
           {isFullView ? 'Salir de vista completa' : 'Vista completa'}
         </button>
+        </div>
       </div>
 
+      <div className="faculty-map-content">
+      {showWorks ? <aside id="map-recent-works" className="faculty-map-activity" aria-label="Trabajos recientes">
+        <div className="faculty-map-activity-heading">
+          <div><span className="eyebrow">Actividad de soporte</span><h3>Trabajos recientes</h3></div>
+          <button type="button" className="secondary-button" onClick={() => setShowWorks(false)}>Cerrar panel</button>
+          <button type="button" className="secondary-button" onClick={onOpenWorks}>Ver todos los trabajos</button>
+        </div>
+        <label htmlFor="map-work-area">Filtrar trabajos por área</label>
+        <select id="map-work-area" value={area} onChange={(event) => setArea(event.target.value)}>
+          <option value="">Todas las áreas</option>
+          {areas.map((ubicacion) => <option key={ubicacion} value={ubicacion}>{ubicacion}</option>)}
+        </select>
+        <p className="faculty-map-activity-note">Últimos 6 por fecha del trabajo, incluidos los finalizados.</p>
+        {recientes.length ? <ol className="faculty-map-work-list">
+          {recientes.map((item) => <li key={item.id}>
+            <span className="faculty-map-work-status">{estadoTrabajoLabels[item.estado]}</span>
+            <h4>{item.titulo}</h4>
+            <p>{item.responsable || 'Sin responsable'}</p>
+            <time dateTime={item.fecha}>{formatDateTime(item.fecha)}</time>
+            {item.ubicacion ? <button className="faculty-map-work-location" type="button" onClick={() => onSelectLocation(item.ubicacion)}><MapPinned size={16} />{item.ubicacion} · Ver equipos</button> : <p>Sin ubicación registrada</p>}
+            <details><summary>Detalle del trabajo</summary><p>{item.descripcion || 'Sin descripción adicional.'}</p></details>
+          </li>)}
+        </ol> : <p>No hay trabajos registrados en esta área.</p>}
+      </aside> : null}
       <div className="faculty-map" aria-label="Plano interactivo de ubicaciones">
         <div className="faculty-map-graphic">
           <div className="faculty-map-wing faculty-map-wing-left">
@@ -185,20 +228,7 @@ export function MapaFacultad({
           </div>
 
           <div className="faculty-map-perspective" aria-hidden="true">
-            <div className="faculty-map-ceiling">
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="faculty-map-vanishing-point" />
-            <div className="faculty-map-floor">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
+            <Route size={24} />
             <strong>Pasillo central</strong>
           </div>
 
@@ -213,6 +243,7 @@ export function MapaFacultad({
             {zonasCentrales.map((zona, index) => renderZona(zona, index))}
           </div>
         ) : null}
+      </div>
       </div>
     </section>
   );

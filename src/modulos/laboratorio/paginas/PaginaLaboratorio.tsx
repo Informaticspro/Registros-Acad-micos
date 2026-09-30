@@ -493,6 +493,8 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'mapa' ? (
           <MapaFacultad
+            trabajos={state.bitacoras}
+            onOpenWorks={() => setActiveTab('bitacoras')}
             defaultFullView
             estadoEquipoNombre={estadoEquipoNombre}
             estadosAlertaPorUbicacion={estadosAlertaPorUbicacion}
