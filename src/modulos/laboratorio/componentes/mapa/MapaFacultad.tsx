@@ -94,6 +94,10 @@ function getSideZones(lado: MapaZona['lado']) {
   return zonas.map((fila) => fila.find((zona) => zona.lado === lado)).filter((zona): zona is MapaZona => Boolean(zona));
 }
 
+function areaKey(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/^salon\s+/, '').replace(/\s+/g, ' ');
+}
+
 export function MapaFacultad({
   trabajos,
   onOpenWorks,
@@ -106,10 +110,11 @@ export function MapaFacultad({
   const [isFullView, setIsFullView] = useState(defaultFullView);
   const [showWorks, setShowWorks] = useState(false);
   const [area, setArea] = useState('');
-  const areas = Array.from(new Set(trabajos.map((item) => item.ubicacion).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
-  const recientes = trabajos.filter((item) => !area || item.ubicacion === area)
+  const areas = Array.from(new Set([...zonas.flat().flatMap((zona) => zona.ubicacion ? [zona.ubicacion] : []), ...trabajos.map((item) => item.ubicacion).filter(Boolean)])).sort((a, b) => a.localeCompare(b, 'es'));
+  const recientes = trabajos.filter((item) => !area || areaKey(item.ubicacion) === areaKey(area))
     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime() || b.createdAt.localeCompare(a.createdAt))
     .slice(0, 6);
+  const nombreArea = zonas.flat().find((zona) => zona.ubicacion === area)?.etiqueta || area;
   const zonasIzquierda = getSideZones('left');
   const zonasDerecha = getSideZones('right');
   const zonasCentrales = getSideZones('center').filter((zona) => zona.ubicacion);
@@ -118,7 +123,10 @@ export function MapaFacultad({
     if (!isFullView) return undefined;
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setIsFullView(false);
+      if (event.key === 'Escape') {
+        if (showWorks) setShowWorks(false);
+        else setIsFullView(false);
+      }
     }
 
     document.body.classList.add('body-map-full-view');
@@ -128,7 +136,7 @@ export function MapaFacultad({
       document.body.classList.remove('body-map-full-view');
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isFullView]);
+  }, [isFullView, showWorks]);
 
   function renderZona(zona: MapaZona, index: number) {
     if (zona.hidden) {
@@ -143,11 +151,12 @@ export function MapaFacultad({
       <button
         className={`faculty-map-zone faculty-map-zone-${zona.lado} faculty-map-zone-${
           zona.icono ?? 'aula'
-        }${zona.muted ? ' muted' : ''}${isClickable ? ' clickable' : ''}`}
+        }${zona.muted ? ' muted' : ''}${isClickable ? ' clickable' : ''}${showWorks && zona.ubicacion === area ? ' selected' : ''}`}
+        aria-pressed={isClickable ? showWorks && zona.ubicacion === area : undefined}
         disabled={!isClickable}
         key={`${zona.etiqueta}-${zona.lado}-${index}`}
         type="button"
-        onClick={() => zona.ubicacion && onSelectLocation(zona.ubicacion)}
+        onClick={() => { if (zona.ubicacion) { setArea(zona.ubicacion); setShowWorks(true); } }}
       >
         <span className="faculty-map-zone-icon">{getIcon(zona.icono)}</span>
         <strong>{zona.etiqueta}</strong>
@@ -178,7 +187,7 @@ export function MapaFacultad({
         <div>
           <span className="eyebrow">Mapa interactivo</span>
           <h2>Facultad de Economía</h2>
-          <p>Seleccione un área para consultar sus equipos. Los espacios sin contador son referencias del edificio.</p>
+          <p>Toque un salón para ver sus trabajos recientes. Plano esquemático · no está a escala.</p>
         </div>
         <div className="faculty-map-heading-actions">
         <button type="button" className="secondary-button" aria-expanded={showWorks} aria-controls="map-recent-works" onClick={() => setShowWorks((value) => !value)}>
@@ -199,10 +208,11 @@ export function MapaFacultad({
       <div className="faculty-map-content">
       {showWorks ? <aside id="map-recent-works" className="faculty-map-activity" aria-label="Trabajos recientes">
         <div className="faculty-map-activity-heading">
-          <div><span className="eyebrow">Actividad de soporte</span><h3>Trabajos recientes</h3></div>
+          <div><span className="eyebrow">Actividad de soporte</span><h3>{nombreArea || 'Trabajos recientes'}</h3></div>
           <button type="button" className="secondary-button" onClick={() => setShowWorks(false)}>Cerrar panel</button>
           <button type="button" className="secondary-button" onClick={onOpenWorks}>Ver todos los trabajos</button>
         </div>
+        {area ? <button type="button" className="secondary-button" onClick={() => onSelectLocation(area)}>Ver equipos de {nombreArea}</button> : null}
         <label htmlFor="map-work-area">Filtrar trabajos por área</label>
         <select id="map-work-area" value={area} onChange={(event) => setArea(event.target.value)}>
           <option value="">Todas las áreas</option>
@@ -229,7 +239,7 @@ export function MapaFacultad({
 
           <div className="faculty-map-perspective" aria-hidden="true">
             <Route size={24} />
-            <strong>Pasillo central</strong>
+            <strong>Pasillo central</strong><span>Acceso principal ↓</span>
           </div>
 
           <div className="faculty-map-wing faculty-map-wing-right">

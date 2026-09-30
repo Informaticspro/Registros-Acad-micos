@@ -6764,3 +6764,40 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible,
 .faculty-map-work-location svg { flex-shrink: 0; }
 .faculty-map-work-list summary { padding: 10px 0; cursor: pointer; font-size: .85rem; }
 .faculty-map-work-list details p { white-space: pre-wrap; }
+/* Architectural plan: aligned rooms opening toward a tiled central corridor. */
+.faculty-map { background: var(--surface-deep); border: 3px solid var(--line); padding: 20px; }
+.faculty-map-graphic { grid-template-columns: minmax(0, 1fr) minmax(100px, 18%) minmax(0, 1fr); gap: 0; max-width: 1120px; margin-inline: auto; }
+.faculty-map-wing { grid-template-rows: 30px repeat(10, minmax(88px, auto)); gap: 0; }
+.faculty-map-wing-left { padding-right: 0; }
+.faculty-map-wing-right { padding-left: 0; }
+.faculty-map-side-label { padding-inline: 12px; }
+.faculty-map-zone { position: relative; border: 3px solid var(--line); border-radius: 2px; padding: 12px 16px; background: var(--surface-soft); align-content: center; }
+.faculty-map-zone-left::after, .faculty-map-zone-right::after { content: ''; position: absolute; width: 22px; height: 30px; top: 50%; background: var(--surface-deep); border: 2px solid var(--muted); transform: translateY(-50%); pointer-events: none; }
+.faculty-map-zone-left::after { right: -3px; border-right: 0; border-radius: 24px 0 0 0; }
+.faculty-map-zone-right::after { left: -3px; border-left: 0; border-radius: 0 24px 0 0; }
+.faculty-map-zone-left { padding-right: 30px; }
+.faculty-map-zone-right { padding-left: 30px; }
+.faculty-map-zone.selected { border-color: var(--accent); background: var(--surface-hover); outline: 2px solid var(--accent); outline-offset: -6px; }
+.faculty-map-zone.muted { border-style: solid; background: var(--surface); }
+.faculty-map-perspective { margin-top: 30px; border: 0; background-color: var(--surface-deep); background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 32px 32px; }
+.faculty-map-perspective strong, .faculty-map-perspective > span { padding: 8px; background: var(--surface-deep); border: 1px solid var(--line); border-radius: 6px; font-size: .8rem; }
+.faculty-map-center-zones { max-width: 1120px; margin: 0 auto; padding: 0; border: 0; }
+.faculty-map-center-zones .faculty-map-zone { min-height: 80px; border-top: 4px double var(--muted); }
+.faculty-map-activity > .secondary-button { margin-bottom: 16px; }
+@media (max-width: 700px) {
+  .faculty-map { padding: 8px; }
+  .faculty-map-graphic { grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); gap: 0; }
+  .faculty-map-wing { grid-template-rows: 40px repeat(10, minmax(132px, auto)); }
+  .faculty-map-side-label { font-size: .65rem; padding-inline: 4px; }
+  .faculty-map-zone { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 6px; }
+  .faculty-map-zone strong { font-size: .85rem; }
+  .faculty-map-zone small { grid-column: 1; font-size: .7rem; padding: 3px; }
+  .faculty-map-zone-icon { display: none; }
+  .faculty-map-alerts { grid-column: 1; }
+  .faculty-map-alerts span { font-size: .65rem; }
+  .faculty-map-zone-left::after, .faculty-map-zone-right::after { width: 8px; height: 22px; }
+  .faculty-map-zone-placeholder { display: block; }
+  .faculty-map-perspective { display: flex; margin-top: 40px; padding: 4px; }
+  .faculty-map-perspective strong { writing-mode: vertical-rl; white-space: nowrap; }
+  .faculty-map-perspective > span { display: none; }
+}

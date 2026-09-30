@@ -24,3 +24,20 @@ test('recent work panel starts closed, includes completed work and filters by lo
   fireEvent.click(screen.getByRole('button', { name: 'Cerrar panel' }));
   expect(screen.queryByText('Cambio de cable HDMI')).toBeNull();
 });
+test('selecting a room shows only its work and leaves inventory navigation explicit', () => {
+  const onSelectLocation = vi.fn();
+  const trabajos = [
+    { id: 'h', titulo: 'HDMI del salón H', ubicacion: 'Salón 3H', fecha: '2026-09-28T18:00:00Z', createdAt: '2026-09-28T18:00:00Z', estado: 'cerrado' },
+    { id: 'a', titulo: 'Trabajo del salón A', ubicacion: '3A', fecha: '2026-09-28T18:00:00Z', createdAt: '2026-09-28T18:00:00Z', estado: 'cerrado' },
+  ] as BitacoraLaboratorio[];
+  render(<MapaFacultad trabajos={trabajos} onOpenWorks={vi.fn()} estadoEquipoNombre={{}} estadosAlertaPorUbicacion={{}} getFilterCount={() => 1} onSelectLocation={onSelectLocation} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Salón 3H 1 equipo' }));
+  expect(screen.getByText('HDMI del salón H')).toBeTruthy();
+  expect(screen.queryByText('Trabajo del salón A')).toBeNull();
+  expect(onSelectLocation).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Ver equipos de Salón 3H' }));
+  expect(onSelectLocation).toHaveBeenCalledWith('3H');
+  fireEvent.click(screen.getByRole('button', { name: 'Salón 3B 1 equipo' }));
+  expect(screen.getByText('No hay trabajos registrados en esta área.')).toBeTruthy();
+  expect(screen.queryByText('HDMI del salón H')).toBeNull();
+});
