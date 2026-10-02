@@ -6801,3 +6801,19 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible,
   .faculty-map-perspective strong { writing-mode: vertical-rl; white-space: nowrap; }
   .faculty-map-perspective > span { display: none; }
 }
+
+/* Decanato extends into the last room of the left wing, joining the rear office. */
+.faculty-map-zone-extension {
+  border-bottom: 0;
+  z-index: 1;
+}
+.faculty-map-zone-extension::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -4px;
+  left: 0;
+  height: 8px;
+  background: inherit;
+  pointer-events: none;
+}

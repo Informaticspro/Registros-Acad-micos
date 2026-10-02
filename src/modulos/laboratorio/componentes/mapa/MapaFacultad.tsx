@@ -25,6 +25,7 @@ type MapaZona = {
   lado: 'left' | 'right' | 'center';
   icono?: 'aula' | 'laboratorio' | 'biblioteca' | 'servicio' | 'escalera' | 'copiadora';
   hidden?: boolean;
+  extension?: boolean;
   muted?: boolean;
 };
 
@@ -70,12 +71,12 @@ const zonas: MapaZona[][] = [
     { etiqueta: 'Laboratorio 1', ubicacion: 'Laboratorio 1', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: '', lado: 'left', hidden: true, muted: true },
+    { etiqueta: 'Baños hombres', lado: 'left', icono: 'servicio', muted: true },
     { etiqueta: 'Decanato', ubicacion: 'Decanato', lado: 'center', icono: 'servicio' },
     { etiqueta: 'Oficina laboratorio', ubicacion: 'Seccion de Tecnologia', lado: 'right', icono: 'laboratorio' },
   ],
   [
-    { etiqueta: 'Baños hombres', lado: 'left', icono: 'servicio', muted: true },
+    { etiqueta: 'Decanato', ubicacion: 'Decanato', lado: 'left', icono: 'servicio', extension: true },
     { etiqueta: 'Acceso principal', lado: 'center', icono: 'servicio', muted: true },
     { etiqueta: 'Escalera', lado: 'right', icono: 'escalera', muted: true },
   ],
@@ -151,7 +152,7 @@ export function MapaFacultad({
       <button
         className={`faculty-map-zone faculty-map-zone-${zona.lado} faculty-map-zone-${
           zona.icono ?? 'aula'
-        }${zona.muted ? ' muted' : ''}${isClickable ? ' clickable' : ''}${showWorks && zona.ubicacion === area ? ' selected' : ''}`}
+        }${zona.muted ? ' muted' : ''}${zona.extension ? ' faculty-map-zone-extension' : ''}${isClickable ? ' clickable' : ''}${showWorks && zona.ubicacion === area ? ' selected' : ''}`}
         aria-pressed={isClickable ? showWorks && zona.ubicacion === area : undefined}
         disabled={!isClickable}
         key={`${zona.etiqueta}-${zona.lado}-${index}`}
@@ -160,12 +161,12 @@ export function MapaFacultad({
       >
         <span className="faculty-map-zone-icon">{getIcon(zona.icono)}</span>
         <strong>{zona.etiqueta}</strong>
-        {zona.ubicacion ? (
+        {zona.ubicacion && !zona.extension ? (
           <small>
             {count} {count === 1 ? 'equipo' : 'equipos'}
           </small>
         ) : null}
-        {alertas.length ? (
+        {alertas.length && !zona.extension ? (
           <span className="faculty-map-alerts" aria-label="Estados que requieren atención">
             {alertas.map((estado) => (
               <span
