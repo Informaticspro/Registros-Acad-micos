@@ -154,13 +154,16 @@ export function MapaFacultad({
           zona.icono ?? 'aula'
         }${zona.muted ? ' muted' : ''}${zona.extension ? ' faculty-map-zone-extension' : ''}${isClickable ? ' clickable' : ''}${showWorks && zona.ubicacion === area ? ' selected' : ''}`}
         aria-pressed={isClickable ? showWorks && zona.ubicacion === area : undefined}
+        aria-label={zona.extension ? `${zona.etiqueta}: ver trabajos recientes` : undefined}
         disabled={!isClickable}
         key={`${zona.etiqueta}-${zona.lado}-${index}`}
         type="button"
         onClick={() => { if (zona.ubicacion) { setArea(zona.ubicacion); setShowWorks(true); } }}
       >
-        <span className="faculty-map-zone-icon">{getIcon(zona.icono)}</span>
-        <strong>{zona.etiqueta}</strong>
+        {!zona.extension ? <>
+          <span className="faculty-map-zone-icon">{getIcon(zona.icono)}</span>
+          <strong>{zona.etiqueta}</strong>
+        </> : null}
         {zona.ubicacion && !zona.extension ? (
           <small>
             {count} {count === 1 ? 'equipo' : 'equipos'}
