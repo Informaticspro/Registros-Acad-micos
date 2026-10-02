@@ -481,6 +481,11 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'inicio' ? (
           <InicioLaboratorio
+            equipos={state.equipos}
+            trabajos={state.bitacoras}
+            estadoEquipoNombre={estadoEquipoNombre}
+            onOpenEquipo={(equipo) => { setActiveTab('inventario'); openEquipoDetalle(equipo); }}
+            onOpenTrabajo={(trabajo) => { setEditingBitacora(trabajo); setActiveTab('bitacoras'); }}
             actividadReciente={actividadReciente}
             cantidadEquipos={state.equipos.length}
             cantidadFichas={state.fichas.length}

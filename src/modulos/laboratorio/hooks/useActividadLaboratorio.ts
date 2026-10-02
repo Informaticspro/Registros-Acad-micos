@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { esTrabajoAbierto } from '@/modulos/laboratorio/utilidades/atencion';
 import type { LaboratorioState } from '@/servicios/laboratorio.servicio';
 import { supabase } from '@/infraestructura/supabase';
 import { estadoTrabajoLabels } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
@@ -58,7 +59,7 @@ function useActividadLaboratorio({ estadoEquipoNombre, profile, state }: UseActi
   }, [profile?.fullName, profile?.id, profileNamesById, state.equipos]);
 
   const indicadores = useMemo(() => {
-    const trabajosAbiertos = state.bitacoras.filter((item) => item.estado !== 'cerrado').length;
+    const trabajosAbiertos = state.bitacoras.filter(esTrabajoAbierto).length;
     const equiposMantenimiento = state.equipos.filter((item) => item.estado === 'mantenimiento').length;
     const equiposPendientes = state.equipos.filter((item) => item.estado !== 'operativo').length;
     const prestamosActivos = state.prestamos.filter((item) => item.estado === 'activo').length;
