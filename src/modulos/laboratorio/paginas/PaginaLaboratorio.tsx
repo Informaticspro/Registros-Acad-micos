@@ -26,6 +26,7 @@ import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaI
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
 import { MapaFacultad } from '@/modulos/laboratorio/componentes/mapa/MapaFacultad';
 import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
+import { useActualizacionInicio } from '@/modulos/laboratorio/hooks/useActualizacionInicio';
 import { useBitacorasLaboratorio } from '@/modulos/laboratorio/hooks/useBitacorasLaboratorio';
 import { useCatalogosLaboratorio } from '@/modulos/laboratorio/hooks/useCatalogosLaboratorio';
 import { useComponentesLaboratorio } from '@/modulos/laboratorio/hooks/useComponentesLaboratorio';
@@ -69,6 +70,7 @@ export function PaginaLaboratorio() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadFailure, setLoadFailure] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const inicioDesactualizado = useActualizacionInicio(activeTab === 'inicio' && !isLoading && !loadFailure && !isSaving, setState);
   const [showInventoryScanner, setShowInventoryScanner] = useState(false);
   const { confirmacionModal, confirmar } = useConfirmacion();
 
@@ -481,6 +483,7 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'inicio' ? (
           <InicioLaboratorio
+            desactualizado={inicioDesactualizado}
             equipos={state.equipos}
             trabajos={state.bitacoras}
             estadoEquipoNombre={estadoEquipoNombre}

@@ -25,6 +25,7 @@ type ActividadRecienteLaboratorio = {
 };
 
 type InicioLaboratorioProps = {
+  desactualizado?: boolean;
   equipos: EquipoLaboratorio[];
   trabajos: BitacoraLaboratorio[];
   estadoEquipoNombre: Record<string, string>;
@@ -40,6 +41,7 @@ type InicioLaboratorioProps = {
 };
 
 export function InicioLaboratorio({
+  desactualizado = false,
   equipos, trabajos, estadoEquipoNombre, onOpenEquipo, onOpenTrabajo,
   actividadReciente,
   cantidadEquipos,
@@ -66,6 +68,9 @@ export function InicioLaboratorio({
   }
   return (
     <div className="lab-home">
+      <p role="status" className="form-hint">{desactualizado
+        ? 'No se pudieron actualizar los datos. Se muestra la última información disponible; reintentaremos automáticamente.'
+        : 'Actualización automática cada 30 segundos mientras Inicio está visible.'}</p>
       <section className="lab-home-panel lab-home-hero">
         <div>
           <span className="eyebrow">Inicio tecnico</span>
