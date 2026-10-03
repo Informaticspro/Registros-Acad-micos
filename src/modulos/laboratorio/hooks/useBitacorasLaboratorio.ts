@@ -3,7 +3,7 @@ import {
   createBitacoraLaboratorio,
   deleteBitacoraLaboratorio,
   updateBitacoraLaboratorio,
-  updateEquipoLaboratorio,
+  updateEstadoEquipoLaboratorio,
 } from '@/servicios/laboratorio.servicio';
 import type { BitacoraLaboratorioInput } from '@/servicios/laboratorio.servicio';
 import type {
@@ -79,16 +79,7 @@ function useBitacorasLaboratorio({
       window.dispatchEvent(new Event('laboratorio-actualizado'));
 
       if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
-        await updateEquipoLaboratorio(equipoAtendido.id, {
-          codigo: equipoAtendido.codigo,
-          nombre: equipoAtendido.nombre,
-          categoria: equipoAtendido.categoria,
-          marcaModelo: equipoAtendido.marcaModelo,
-          serie: equipoAtendido.serie,
-          ubicacion: equipoAtendido.ubicacion,
-          estado: nextEquipoEstado,
-          observaciones: equipoAtendido.observaciones,
-        });
+        await updateEstadoEquipoLaboratorio(equipoAtendido.id, nextEquipoEstado);
       }
 
       await refresh();

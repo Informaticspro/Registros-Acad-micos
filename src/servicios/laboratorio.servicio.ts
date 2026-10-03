@@ -812,6 +812,27 @@ export async function updateEquipoLaboratorio(id: string, input: EquipoLaborator
   return mapEquipo(data);
 }
 
+// Work registration must not resend a potentially stale equipment form.
+export async function updateEstadoEquipoLaboratorio(id: string, estado: EstadoEquipoLaboratorio): Promise<EquipoLaboratorio> {
+  const updatedAt = new Date().toISOString();
+  if (shouldUseLocalStorageFallback()) {
+    const state = readState();
+    const current = state.equipos.find((equipo) => equipo.id === id);
+    if (!current) throw new Error('No se encontro el equipo.');
+    const updated = { ...current, estado, updatedAt };
+    writeState({ ...state, equipos: state.equipos.map((equipo) => equipo.id === id ? updated : equipo) });
+    return updated;
+  }
+  const { data, error } = await requireSupabase()
+    .from('laboratory_equipment')
+    .update({ status: estado, updated_at: updatedAt })
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return mapEquipo(data);
+}
+
 export async function deleteEquipoLaboratorio(id: string) {
   if (shouldUseLocalStorageFallback()) {
     const state = readState();
