@@ -1,4 +1,4 @@
-import { FormEvent } from 'react';
+import { FormEvent, useMemo } from 'react';
 import { Pencil, Save, Trash2 } from 'lucide-react';
 import { BitacoraLaboratorio, EquipoLaboratorio } from '@/tipos/dominio';
 import { formatDateTime } from '@/utilidades/formato';
@@ -36,6 +36,19 @@ export function VistaBitacoras({
   onSetEditingBitacora,
   onSubmit,
 }: VistaBitacorasProps) {
+  const equiposPorUbicacion = useMemo(() => {
+    const collator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+    const grupos = new Map<string, EquipoLaboratorio[]>();
+    for (const equipo of equipos) {
+      const ubicacion = equipo.ubicacion.trim() || 'Sin ubicación';
+      const lista = grupos.get(ubicacion) ?? [];
+      lista.push(equipo);
+      grupos.set(ubicacion, lista);
+    }
+    return [...grupos.entries()]
+      .sort(([a], [b]) => a === b ? 0 : a === 'Sin ubicación' ? 1 : b === 'Sin ubicación' ? -1 : collator.compare(a, b))
+      .map(([ubicacion, lista]) => ({ ubicacion, equipos: lista.sort((a, b) => collator.compare(a.nombre, b.nombre) || collator.compare(a.codigo, b.codigo)) }));
+  }, [equipos]);
   const mantenimientos = bitacoras.filter((item) => item.tipoTrabajo !== 'Incidencia');
   const incidencias = bitacoras.filter((item) => item.tipoTrabajo === 'Incidencia');
 
@@ -107,10 +120,14 @@ export function VistaBitacoras({
             Equipo atendido *
             <select name="equipoId" defaultValue={editingBitacora?.equipoId ?? ''} required>
               <option value="">Seleccione un equipo</option>
-              {equipos.map((equipo) => (
+              {equiposPorUbicacion.map((grupo) => (
+                <optgroup key={grupo.ubicacion} label={`${grupo.ubicacion} · ${grupo.equipos.length} equipos`}>
+                {grupo.equipos.map((equipo) => (
                 <option value={equipo.id} key={equipo.id}>
-                  {equipo.codigo} - {equipo.nombre} ({equipo.ubicacion})
+                  {equipo.nombre} — Inv. {equipo.codigo || 'Sin número'} ({grupo.ubicacion})
                 </option>
+                ))}
+                </optgroup>
               ))}
             </select>
           </label>
