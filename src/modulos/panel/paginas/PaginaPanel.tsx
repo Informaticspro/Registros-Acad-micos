@@ -74,6 +74,7 @@ export function PaginaPanel() {
       return new Date(first.startsAt ?? 0).getTime() - new Date(second.startsAt ?? 0).getTime();
     });
   const todayAttendance = attendance.filter((item) => isTodayInPanama(item.checkedInAt));
+  const featuredEvent = upcomingEvents.find((event) => !isRegistroPermanenteEvento(event));
   const congressEvent =
     events.find((event) => event.eventType === 'congreso' && event.status === 'active') ??
     events.find((event) => event.eventType === 'congreso' && event.status === 'published') ??
@@ -121,6 +122,18 @@ export function PaginaPanel() {
         description={`${new Intl.DateTimeFormat('es-PA', { timeZone: 'America/Panama', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}. Esto es lo que necesitas hoy.`}
         actions={<Link className="dashboard-create" to="/eventos/nuevo">+ Nuevo evento</Link>}
       />
+      {featuredEvent ? <section className="dashboard-event-hero" aria-label="Próximo evento">
+        <div>
+          <span>PRÓXIMO EVENTO</span>
+          <h2>{featuredEvent.title}</h2>
+          <p>{getEventDateLabel(featuredEvent)}{featuredEvent.location ? ` · ${featuredEvent.location}` : ''}</p>
+          <div className="dashboard-event-actions">
+            <Link to={`/eventos/${featuredEvent.id}`}>Ver evento</Link>
+            <Link to={`/eventos/${featuredEvent.id}/registro`}>Inscribir participante</Link>
+          </div>
+        </div>
+        <CalendarDays size={64} aria-hidden="true" />
+      </section> : null}
       <section className="dashboard-shortcuts" aria-label="Acciones frecuentes">
         <Link to="/asistencia/escanear" className="dashboard-shortcut featured"><ClipboardCheck size={22} /><strong>Tomar asistencia</strong><span>Escanea el QR de los participantes</span></Link>
         <Link to="/eventos" className="dashboard-shortcut"><Users size={22} /><strong>Inscribir participante</strong><span>Elige un evento y abre su formulario</span></Link>
