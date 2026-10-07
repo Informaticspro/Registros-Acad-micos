@@ -28,3 +28,28 @@ test('closed work is notified, opening does not mark it read, and a later update
   fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }));
   await waitFor(() => expect(screen.getByText('1 avisos nuevos')).toBeTruthy());
 });
+test('read status synchronizes between mounted menus and keeps older read IDs', async () => {
+  localStorage.setItem('acad-read-notifications-support', JSON.stringify(Array.from({ length: 90 }, (_, i) => `old-${i}`)));
+  vi.mocked(listLaboratorioAlerts).mockResolvedValue({ bitacoras: [{ id: 'new', estado: 'cerrado', titulo: 'Nuevo', tipoTrabajo: '', ubicacion: '', createdAt: '2026-10-07' }], prestamos: [] });
+  render(<MemoryRouter><MenuNotificaciones /><MenuNotificaciones /></MemoryRouter>);
+  await waitFor(() => expect(document.querySelectorAll('.notification-badge')).toHaveLength(2));
+  fireEvent.click(screen.getAllByRole('button', { name: 'Notificaciones' })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }));
+  await waitFor(() => expect(document.querySelectorAll('.notification-badge')).toHaveLength(0));
+  expect(JSON.parse(localStorage.getItem('acad-read-notifications-support')!)).toHaveLength(91);
+});
+
+test('revoking support access immediately hides loaded laboratory alerts and stops querying them', async () => {
+  vi.mocked(listLaboratorioAlerts).mockResolvedValue({ bitacoras: [{ id: 'secret', estado: 'pendiente', titulo: 'Equipo privado', tipoTrabajo: '', ubicacion: '', createdAt: '2026-10-07' }], prestamos: [] });
+  const { rerender } = render(<MemoryRouter><MenuNotificaciones /></MemoryRouter>);
+  fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }));
+  await screen.findByText(/Equipo privado/);
+  const calls = vi.mocked(listLaboratorioAlerts).mock.calls.length;
+  profile.role = 'asistente';
+  try {
+    rerender(<MemoryRouter><MenuNotificaciones /></MemoryRouter>);
+    expect(screen.queryByText(/Equipo privado/)).toBeNull();
+    fireEvent(window, new Event('focus'));
+    expect(listLaboratorioAlerts).toHaveBeenCalledTimes(calls);
+  } finally { profile.role = 'soporte'; }
+});

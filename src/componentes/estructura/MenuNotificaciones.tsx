@@ -22,7 +22,7 @@ function getReadNotificationIds(profileId?: string) {
   try {
     const stored = localStorage.getItem(`acad-read-notifications-${profileId}`);
     const values = stored ? (JSON.parse(stored) as string[]) : [];
-    return new Set(values);
+    return new Set(Array.isArray(values) ? values.filter((value) => typeof value === 'string') : []);
   } catch {
     return new Set<string>();
   }
@@ -30,7 +30,8 @@ function getReadNotificationIds(profileId?: string) {
 
 function saveReadNotificationIds(profileId: string, ids: Set<string>) {
   try {
-    localStorage.setItem(`acad-read-notifications-${profileId}`, JSON.stringify([...ids].slice(-80)));
+    localStorage.setItem(`acad-read-notifications-${profileId}`, JSON.stringify([...ids]));
+    window.dispatchEvent(new Event('notificaciones-leidas'));
   } catch {
     // Si el navegador bloquea localStorage, las notificaciones siguen funcionando sin contador persistente.
   }
@@ -43,6 +44,7 @@ export function MenuNotificaciones() {
   const notificationsRef = useRef<HTMLDivElement>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AvisoEncabezado[]>([]);
+  const [notificationsOwner, setNotificationsOwner] = useState<string>();
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => getReadNotificationIds(profile?.id));
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
 
@@ -51,7 +53,16 @@ export function MenuNotificaciones() {
     profile?.role === 'propietario' || profile?.role === 'admin' || profile?.role === 'organizador';
 
   useEffect(() => {
-    setReadNotificationIds(getReadNotificationIds(profile?.id));
+    const syncRead = () => setReadNotificationIds(getReadNotificationIds(profile?.id));
+    syncRead();
+    window.addEventListener('storage', syncRead);
+    window.addEventListener('focus', syncRead);
+    window.addEventListener('notificaciones-leidas', syncRead);
+    return () => {
+      window.removeEventListener('storage', syncRead);
+      window.removeEventListener('focus', syncRead);
+      window.removeEventListener('notificaciones-leidas', syncRead);
+    };
   }, [profile?.id]);
 
   useEffect(() => {
@@ -126,6 +137,7 @@ export function MenuNotificaciones() {
             ]
           : [];
 
+        setNotificationsOwner(profile.id);
         setNotifications([...labNotifications, ...eventNotifications]);
         setNotificationsError(null);
       } catch (error) {
@@ -151,9 +163,13 @@ export function MenuNotificaciones() {
     };
   }, [canAccessLab, canSeeEventAlerts, profile]);
 
+  const visibleNotifications = useMemo(
+    () => notificationsOwner === profile?.id ? notifications.filter((item) => item.kind === 'evento' ? canSeeEventAlerts : canAccessLab) : [],
+    [notifications, notificationsOwner, profile?.id, canSeeEventAlerts, canAccessLab],
+  );
   const unreadNotifications = useMemo(
-    () => notifications.filter((notification) => !readNotificationIds.has(notification.id)),
-    [notifications, readNotificationIds],
+    () => visibleNotifications.filter((notification) => !readNotificationIds.has(notification.id)),
+    [visibleNotifications, readNotificationIds],
   );
 
   const notificationCount = unreadNotifications.length;
@@ -161,7 +177,7 @@ export function MenuNotificaciones() {
   function markNotificationsAsRead(nextNotifications: AvisoEncabezado[]) {
     if (!profile?.id || nextNotifications.length === 0) return;
 
-    const nextReadIds = new Set(readNotificationIds);
+    const nextReadIds = getReadNotificationIds(profile.id);
     nextNotifications.forEach((notification) => nextReadIds.add(notification.id));
     setReadNotificationIds(nextReadIds);
     saveReadNotificationIds(profile.id, nextReadIds);
@@ -205,13 +221,14 @@ export function MenuNotificaciones() {
               <span>{notificationCount > 0 ? `${notificationCount} avisos nuevos` : 'Sin avisos nuevos'}</span>
             </div>
           </div>
+          {notificationCount > 0 ? <button className="secondary-button" type="button" onClick={() => markNotificationsAsRead(visibleNotifications)}>Marcar todas como leídas</button> : null}
           {notificationsError ? <p className="form-error">{notificationsError}</p> : null}
-          {!notificationsError && notifications.length === 0 ? (
+          {!notificationsError && visibleNotifications.length === 0 ? (
             <p className="notifications-empty">No hay avisos importantes en este momento.</p>
           ) : null}
-          {notifications.length > 0 ? (
+          {visibleNotifications.length > 0 ? (
             <div className="notifications-list">
-              {notifications.map((notification) => (
+              {visibleNotifications.map((notification) => (
                 <button
                   className={`notification-item ${notification.kind} ${
                     readNotificationIds.has(notification.id) ? 'is-read' : 'is-unread'
