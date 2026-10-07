@@ -1,0 +1,70 @@
+/* Tokens de diseño FADECO. Tema por atributo: data-theme="light" | "dark" */
+:root,
+[data-theme="light"] {
+  --fd-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --fd-bg: #F4F6F8;
+  --fd-surface: #FFFFFF;
+  --fd-border: #E3E8EE;
+  --fd-border-input: #D5DCE4;
+  --fd-text: #0B1F33;
+  --fd-muted: #5B6B7C;
+  --fd-nav: #3A4A5C;
+
+  --fd-accent: #0F8A5F;
+  --fd-accent-2: #17B27D;
+  --fd-accent-dark: #0A5C45;
+  --fd-accent-soft: #E5F5EE;
+  --fd-accent-text: #0B6B49;
+
+  --fd-warn-bg: #FFF4DB;
+  --fd-warn-bg-2: #FFE9B0;
+  --fd-warn-border: #F3DDA0;
+  --fd-warn-text: #7A5200;
+  --fd-warn-btn: #7A5200;
+
+  --fd-hero-btn-bg: #FFFFFF;
+  --fd-hero-btn-text: #0B6B49;
+  --fd-avatar-bg: linear-gradient(135deg, #0B1F33, #2B3A58);
+
+  --fd-shadow: 0 1px 2px rgba(11, 31, 51, .05), 0 10px 28px rgba(11, 31, 51, .07);
+  --fd-shadow-accent: 0 8px 18px rgba(15, 138, 95, .35);
+  --fd-shadow-logo: 0 6px 14px rgba(15, 138, 95, .35);
+  --fd-shadow-hero: 0 18px 40px rgba(15, 138, 95, .28);
+
+  --fd-grad-accent: linear-gradient(135deg, #17B27D, #0F8A5F);
+  --fd-grad-logo: linear-gradient(135deg, #17B27D, #0A5C45);
+  --fd-grad-hero: linear-gradient(120deg, #17B27D 0%, #0F8A5F 45%, #084C3A 100%);
+  --fd-grad-bar: linear-gradient(90deg, #17B27D, #0F8A5F);
+
+  --fd-radius-sm: 12px;
+  --fd-radius-md: 14px;
+  --fd-radius-lg: 20px;
+  --fd-radius-xl: 24px;
+  --fd-sidebar-w: 248px;
+  --fd-sidebar-w-rail: 76px;
+}
+
+[data-theme="dark"] {
+  --fd-bg: #0B1220;
+  --fd-surface: #131C2E;
+  --fd-border: #243049;
+  --fd-border-input: #2F3C57;
+  --fd-text: #E8EEF5;
+  --fd-muted: #93A3B8;
+  --fd-nav: #B4C2D4;
+
+  --fd-accent-soft: #123A2D;
+  --fd-accent-text: #5FD8A4;
+
+  --fd-warn-bg: #3A2D10;
+  --fd-warn-bg-2: #4A3812;
+  --fd-warn-border: #5A4513;
+  --fd-warn-text: #F5C86A;
+  --fd-warn-btn: #C98A12;
+
+  --fd-hero-btn-bg: #131C2E;
+  --fd-hero-btn-text: #5FD8A4;
+
+  --fd-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 28px rgba(0, 0, 0, .35);
+}

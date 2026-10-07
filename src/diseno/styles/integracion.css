@@ -1,0 +1,48 @@
+/* Adapter: original FADECO design with existing routes, forms and status semantics. */
+:root, .app-shell, :root[data-theme='light'] .app-shell, :root:not([data-theme='light']) .app-shell {
+  --bg: var(--fd-bg);
+  --surface: var(--fd-surface);
+  --surface-raised: var(--fd-surface);
+  --line: var(--fd-border);
+  --text: var(--fd-text);
+  --muted: var(--fd-muted);
+  --accent: var(--fd-accent-text);
+  --radius: var(--fd-radius-lg);
+  --radius-sm: var(--fd-radius-sm);
+  --modern-tint: var(--fd-accent-soft);
+  font-family: var(--fd-font);
+}
+body, button, input, select, textarea { font-family: var(--fd-font); }
+body { background: var(--fd-bg); color: var(--fd-text); }
+.app-shell .sidebar { background: var(--fd-surface); padding: 24px 16px; }
+.app-shell .nav-link { padding: 12px; gap: 12px; font-size: 16px; color: var(--fd-nav); border-radius: 12px; }
+.app-shell .nav-link.active { background: var(--fd-accent-soft); color: var(--fd-accent-text); font-weight: 600; }
+.app-shell .brand strong { font-weight: 800; }
+.app-shell .brand span { font-size: 12px; }
+:root :is(.panel, .event-card, .stat-card, .login-panel, .modal-panel, .lab-home-panel, .lab-form, .lab-list, .lab-workspace-header, .lab-inventory-workspace),
+:root[data-theme='light'] :is(.panel, .event-card, .stat-card, .login-panel, .modal-panel, .lab-home-panel, .lab-form, .lab-list, .lab-workspace-header, .lab-inventory-workspace),
+.dashboard-page .panel, .dashboard-page .stat-card {
+  background: var(--fd-surface); border-color: var(--fd-border); border-radius: var(--fd-radius-lg); box-shadow: var(--fd-shadow);
+}
+:root .primary-button, :root[data-theme='light'] .primary-button, .dashboard-create {
+  background: linear-gradient(135deg, #087f5b, #096c4d); color: #fff; border-color: transparent;
+  border-radius: var(--fd-radius-md); box-shadow: var(--fd-shadow-accent); font-weight: 600;
+}
+:root .secondary-button, :root[data-theme='light'] .secondary-button { border-radius: var(--fd-radius-md); background: var(--fd-surface); color: var(--fd-text); }
+.page-header h1, .dashboard-page .page-header h1 { font-weight: 800; letter-spacing: -.035em; }
+.dashboard-page { gap: 22px; }
+.dashboard-page .stats-grid { gap: 16px; }
+.dashboard-page .stat-card { flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 16px; min-height: 112px; padding: 20px; }
+.dashboard-page .stat-card strong { font-size: 32px; font-weight: 800; margin: 4px 0; }
+.dashboard-page .stat-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--fd-accent-soft); color: var(--fd-accent-text); flex-shrink: 0; }
+.dashboard-page .stat-card span { font-size: 14px; }
+.lab-home-attention-banner { border-radius: 22px; background: linear-gradient(120deg, var(--fd-warn-bg-2), var(--fd-warn-bg)); border-color: var(--fd-warn-border); color: var(--fd-warn-text); padding: 24px 28px; }
+.lab-home-metrics > button { border-radius: 20px; box-shadow: var(--fd-shadow); }
+.lab-home-metrics > button strong { font-weight: 800; font-size: 38px; }
+.fd-hero { background: linear-gradient(120deg, #087f5b 0%, #096c4d 45%, #084c3a 100%); }
+.fd-hero__title, .fd-hero__meta, .fd-hero__eyebrow, .fd-hero__count { color: #fff; }
+.fd-hero__meta, .fd-hero__eyebrow, .fd-hero__count-label { opacity: 1; }
+.fd-hero__btn { min-height: 44px; }
+.fd-hero__btn:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+@media (min-width: 1100px) { .app-shell:not(.sidebar-collapsed) { grid-template-columns: 248px minmax(0, 1fr); } }
+@media (max-width: 767px) { .fd-hero__body { min-width: 0; width: 100%; } .fd-hero__title { overflow-wrap: anywhere; } }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { NextEventHero } from '@/diseno/components/dashboard/NextEventHero';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { CalendarDays, ClipboardCheck, Users } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
@@ -36,6 +37,7 @@ function isOpenEvent(event: EventoAcademico) {
 
 export function PaginaPanel() {
   const { profile } = useAutenticacion();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<EventoAcademico[]>([]);
   const [participants, setParticipantes] = useState<Participante[]>([]);
   const [registrations, setRegistrations] = useState<Inscripcion[]>([]);
@@ -122,18 +124,11 @@ export function PaginaPanel() {
         description={`${new Intl.DateTimeFormat('es-PA', { timeZone: 'America/Panama', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}. Esto es lo que necesitas hoy.`}
         actions={<Link className="dashboard-create" to="/eventos/nuevo">+ Nuevo evento</Link>}
       />
-      {featuredEvent ? <section className="dashboard-event-hero" aria-label="Próximo evento">
-        <div>
-          <span>PRÓXIMO EVENTO</span>
-          <h2>{featuredEvent.title}</h2>
-          <p>{getEventDateLabel(featuredEvent)}{featuredEvent.location ? ` · ${featuredEvent.location}` : ''}</p>
-          <div className="dashboard-event-actions">
-            <Link to={`/eventos/${featuredEvent.id}`}>Ver evento</Link>
-            <Link to={`/eventos/${featuredEvent.id}/registro`}>Inscribir participante</Link>
-          </div>
-        </div>
-        <CalendarDays size={64} aria-hidden="true" />
-      </section> : null}
+      {featuredEvent ? <NextEventHero
+        event={{ title: featuredEvent.title, meta: getEventDateLabel(featuredEvent) + (featuredEvent.location ? ' · ' + featuredEvent.location : ''), daysLeft: Math.max(0, Math.round((Date.parse(new Date(featuredEvent.startsAt!).toLocaleDateString('en-CA', { timeZone: 'America/Panama' })) - Date.parse(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Panama' }))) / 86400000)) }}
+        onView={() => navigate('/eventos/' + featuredEvent.id)}
+        onEnroll={() => navigate('/eventos/' + featuredEvent.id + '/registro')}
+      /> : null}
       <section className="dashboard-shortcuts" aria-label="Acciones frecuentes">
         <Link to="/asistencia/escanear" className="dashboard-shortcut featured"><ClipboardCheck size={22} /><strong>Tomar asistencia</strong><span>Escanea el QR de los participantes</span></Link>
         <Link to="/eventos" className="dashboard-shortcut"><Users size={22} /><strong>Inscribir participante</strong><span>Elige un evento y abre su formulario</span></Link>
