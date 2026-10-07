@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { CalendarDays, ClipboardCheck, Users } from 'lucide-react';
 import { PageEncabezado } from '@/componentes/interfaz/EncabezadoPagina';
 import { TarjetaEstadistica } from '@/componentes/interfaz/TarjetaEstadistica';
@@ -33,6 +35,7 @@ function isOpenEvent(event: EventoAcademico) {
 }
 
 export function PaginaPanel() {
+  const { profile } = useAutenticacion();
   const [events, setEvents] = useState<EventoAcademico[]>([]);
   const [participants, setParticipantes] = useState<Participante[]>([]);
   const [registrations, setRegistrations] = useState<Inscripcion[]>([]);
@@ -114,10 +117,15 @@ export function PaginaPanel() {
   return (
     <div className="page-stack dashboard-page">
       <PageEncabezado
-        eyebrow="Panel administrativo"
-        title="Panel de control"
-        description="Vista ejecutiva de eventos, participantes, asistencia y certificados."
+        title={`Hola${profile?.fullName ? `, ${profile.fullName.trim().split(/\s+/)[0]}` : ''}`}
+        description={`${new Intl.DateTimeFormat('es-PA', { timeZone: 'America/Panama', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}. Esto es lo que necesitas hoy.`}
+        actions={<Link className="dashboard-create" to="/eventos/nuevo">+ Nuevo evento</Link>}
       />
+      <section className="dashboard-shortcuts" aria-label="Acciones frecuentes">
+        <Link to="/asistencia/escanear" className="dashboard-shortcut featured"><ClipboardCheck size={22} /><strong>Tomar asistencia</strong><span>Escanea el QR de los participantes</span></Link>
+        <Link to="/eventos" className="dashboard-shortcut"><Users size={22} /><strong>Inscribir participante</strong><span>Elige un evento y abre su formulario</span></Link>
+        <Link to="/certificados" className="dashboard-shortcut"><CalendarDays size={22} /><strong>Certificados</strong><span>Consulta la vista de ejemplo</span></Link>
+      </section>
       <section className="stats-grid">
         <TarjetaEstadistica
           label="Eventos activos"
@@ -149,13 +157,13 @@ export function PaginaPanel() {
           </div>
           <div className="table-list">
             {upcomingEvents.map((event) => (
-              <div className="table-row" key={event.id}>
+              <Link className="table-row" key={event.id} to={`/eventos/${event.id}`}>
                 <div className="event-summary">
                   <strong>{event.title}</strong>
                   {event.location ? <span>{event.location}</span> : null}
                 </div>
                 <small>{getEventDateLabel(event)}</small>
-              </div>
+              </Link>
             ))}
             {upcomingEvents.length === 0 ? <p className="form-hint">No hay próximos eventos ni registros permanentes abiertos.</p> : null}
           </div>
