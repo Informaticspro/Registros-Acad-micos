@@ -3,9 +3,15 @@ import { Check, Mouse, Projector, Radio } from 'lucide-react';
 
 export type SolicitudEquipo = { nombre: string; procedencia: string; equipo: string; aula: string; inicio: string; fin: string };
 type Props = { onSubmit: (solicitud: SolicitudEquipo) => Promise<void> };
+const lugaresFacultad = [
+  ...['3A', '3B', '3C', '3D', '3E', '3F', '3G', '3H'].map(aula => `Salón ${aula}`),
+  'Laboratorio 1', 'Laboratorio 2', 'Maestría', 'Biblioteca', 'Decanato',
+  'Oficina del laboratorio', 'Salón de estudiantes',
+];
 
 export function PortalSolicitudes({ onSubmit }: Props) {
   const [tipo, setTipo] = useState('Control multimedia');
+  const [lugar, setLugar] = useState('');
   const [etapa, setEtapa] = useState<'formulario' | 'confirmar' | 'enviado'>('formulario');
   const [solicitud, setSolicitud] = useState<SolicitudEquipo | null>(null);
   const [busy, setBusy] = useState(false);
@@ -15,6 +21,7 @@ export function PortalSolicitudes({ onSubmit }: Props) {
     const timer = window.setTimeout(() => {
       setSolicitud(null);
       setTipo('Control multimedia');
+      setLugar('');
       setError('');
       setEtapa('formulario');
       window.scrollTo(0, 0);
@@ -29,7 +36,9 @@ export function PortalSolicitudes({ onSubmit }: Props) {
     const fecha = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Panama', year: 'numeric', month: '2-digit', day: '2-digit' }).format(inicio);
     const fin = new Date(`${fecha}T${value('fin')}:00-05:00`);
     if (Number.isNaN(fin.getTime()) || fin <= inicio) { setError('La devolución debe ser posterior a la hora actual.'); return; }
-    setSolicitud({ nombre: value('nombre'), procedencia: value('procedencia'), equipo: tipo === 'Otro equipo' ? value('otroEquipo') : tipo, aula: value('aula'), inicio: inicio.toISOString(), fin: fin.toISOString() });
+    const aula = lugar === 'otro' ? value('otroLugar') : lugar;
+    if (!aula) { setError('Seleccione el aula o especifique el lugar de uso.'); return; }
+    setSolicitud({ nombre: value('nombre'), procedencia: value('procedencia'), equipo: tipo === 'Otro equipo' ? value('otroEquipo') : tipo, aula, inicio: inicio.toISOString(), fin: fin.toISOString() });
     setError(''); setEtapa('confirmar');
   }
   async function enviar() {
@@ -42,7 +51,7 @@ export function PortalSolicitudes({ onSubmit }: Props) {
   return <main className="borrow-portal">
     <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div><span className="borrow-public-label">Registro público de préstamos</span></header>
     {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><p>Esta pantalla volverá al inicio automáticamente en 8 segundos.</p></section> : <>
-      <span className="eyebrow">Sin cuenta · sin firmas</span><h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El personal confirmará la entrega.</p>
+      <h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El personal confirmará la entrega.</p>
       {etapa === 'formulario' ? <><div className="borrow-options" role="group" aria-label="Equipo solicitado">
         <button className={tipo === 'Control multimedia' ? 'selected' : ''} type="button" onClick={() => setTipo('Control multimedia')}><Radio size={30} /><strong>Control multimedia</strong><span>Para el proyector del salón</span></button>
         <button className={tipo === 'Data Show' ? 'selected' : ''} type="button" onClick={() => setTipo('Data Show')}><Projector size={30} /><strong>Data Show</strong><span>Proyector para su actividad</span></button>
@@ -50,8 +59,9 @@ export function PortalSolicitudes({ onSubmit }: Props) {
       </div><form className="borrow-form" onSubmit={revisar}><h2>Datos del préstamo</h2><div className="borrow-fields">
         <label>Nombre completo<input name="nombre" autoComplete="off" required maxLength={120} placeholder="Escriba su nombre" /></label>
         <label>Facultad o departamento de procedencia<input name="procedencia" autoComplete="off" required maxLength={120} placeholder="Ej. Facultad de Economía / Dirección de Extensión" /></label>
-        <label>Aula o lugar de uso<input name="aula" autoComplete="off" required maxLength={100} placeholder="Ej. Salón 3H" /></label>
+        <label>Aula o lugar de uso<select name="aula" required value={lugar} onChange={event => setLugar(event.target.value)}><option value="" disabled>Seleccione un aula o lugar</option>{lugaresFacultad.map(item => <option key={item} value={item}>{item}</option>)}<option value="otro">Otro lugar</option></select></label>
         <label>Hora prevista de devolución<input name="fin" type="time" required /></label>
+        {lugar === 'otro' ? <label>Departamento o lugar de uso<input name="otroLugar" autoComplete="off" required maxLength={100} placeholder="Ej. Auditorio de otra facultad o Departamento de Contabilidad" /></label> : null}
         {tipo === 'Otro equipo' ? <label>Equipo que necesita<input name="otroEquipo" required maxLength={120} placeholder="Ej. mouse o cable HDMI" /></label> : null}
       </div>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="borrow-form-footer"><small>La fecha y la hora de solicitud se registran automáticamente.</small><button className="primary-button" type="submit">Revisar solicitud</button></div></form></> : <section className="borrow-form"><h2>Confirme su solicitud</h2><p><strong>{solicitud?.equipo}</strong> · {solicitud?.aula}</p><p>{solicitud?.nombre} · {solicitud?.procedencia}</p><p>Devolución prevista: {solicitud ? new Date(solicitud.fin).toLocaleString('es-PA', { timeZone: 'America/Panama' }) : ''}</p>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="page-actions"><button className="secondary-button" type="button" disabled={busy} onClick={() => setEtapa('formulario')}>Corregir</button><button className="primary-button" type="button" disabled={busy} onClick={() => void enviar()}>{busy ? 'Registrando…' : 'Confirmar solicitud'}</button></div></section>}
     </>}
