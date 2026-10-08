@@ -235,6 +235,14 @@ export type BaseDatos = {
     };
     Views: Record<string, never>;
     Functions: {
+      submit_laboratory_request: {
+        Args: { p_org: string; p_receipt: string; p_data: Json };
+        Returns: string;
+      };
+      manage_laboratory_requests: {
+        Args: { p_action?: string; p_id?: string | null };
+        Returns: Json;
+      };
       public_event_check_in: {
         Args: {
           p_event_id: string;

@@ -1,0 +1,50 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { PGlite } from '@electric-sql/pglite';
+
+const orgA = '10000000-0000-0000-0000-000000000001';
+const orgB = '10000000-0000-0000-0000-000000000002';
+const support = '20000000-0000-0000-0000-000000000001';
+const outsider = '20000000-0000-0000-0000-000000000002';
+const receipt = '30000000-0000-4000-8000-000000000001';
+const request = { accepted: true, name: 'María López', affiliation: 'Facultad de Ingeniería', equipment: 'Control multimedia', room: 'Salón 3H', startsAt: new Date().toISOString(), endsAt: new Date(Date.now() + 60 * 60 * 1000).toISOString() };
+
+test('public request stays private; only same-organization support can deliver and return', async () => {
+  const db = new PGlite();
+  try {
+    await db.exec(`create role anon; create role authenticated; create schema auth;
+      create table auth.users(id uuid primary key);
+      create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+      create table public.organizations(id uuid primary key);
+      create table public.profiles(id uuid primary key references auth.users(id),organization_id uuid references organizations(id),full_name text,role text);
+      create table public.laboratory_loans(id uuid primary key default gen_random_uuid(),organization_id uuid references organizations(id),equipment text,delivered_to text,beneficiary_type text,delivered_by text,loaned_at timestamptz,returned_at timestamptz,status text,notes text,created_by uuid references auth.users(id));
+      create function public.current_profile_organization_id() returns uuid language sql stable as $$select organization_id from profiles where id=auth.uid()$$;
+      create function public.current_profile_role() returns text language sql stable as $$select role from profiles where id=auth.uid()$$;
+      insert into organizations values ('${orgA}'),('${orgB}');
+      insert into auth.users values ('${support}'),('${outsider}');
+      insert into profiles values ('${support}','${orgA}','Técnico','soporte'),('${outsider}','${orgB}','Otro','soporte');`);
+    await db.exec(fs.readFileSync('supabase/migration-v26-solicitudes-prestamos.sql', 'utf8'));
+    await db.exec('set role anon');
+    await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, receipt, JSON.stringify(request)]);
+    await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, receipt, JSON.stringify(request)]);
+    await assert.rejects(db.query('select * from laboratory_requests'), /permission denied/);
+    await assert.rejects(db.query("select manage_laboratory_requests('list')"), /permission denied/);
+    await db.exec('reset role');
+    assert.equal((await db.query('select count(*)::int as n from laboratory_requests')).rows[0].n, 1);
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [outsider]);
+    await db.exec('set role authenticated');
+    assert.equal((await db.query("select manage_laboratory_requests('list') as items")).rows[0].items.length, 0);
+    await db.exec('reset role');
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [support]);
+    await db.exec('set role authenticated');
+    const items = (await db.query("select manage_laboratory_requests('list') as items")).rows[0].items;
+    assert.equal(items[0].affiliation, 'Facultad de Ingeniería');
+    assert.equal(items[0].receipt, undefined);
+    await db.query("select manage_laboratory_requests('deliver',$1)", [items[0].id]);
+    await db.query("select manage_laboratory_requests('return',$1)", [items[0].id]);
+    await db.exec('reset role');
+    assert.equal((await db.query('select status from laboratory_requests')).rows[0].status, 'devuelto');
+    assert.equal((await db.query('select status from laboratory_loans')).rows[0].status, 'devuelto');
+  } finally { await db.close(); }
+});

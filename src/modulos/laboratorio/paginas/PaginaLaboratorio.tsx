@@ -24,6 +24,7 @@ import { VistaInventario } from '@/modulos/laboratorio/componentes/inventario/Vi
 import { ExpedienteEquipoModal } from '@/modulos/laboratorio/componentes/inventario/ExpedienteEquipoModal';
 import { VistaInformes } from '@/modulos/laboratorio/componentes/informes/VistaInformes';
 import { PrestamosLaboratorio } from '@/modulos/laboratorio/componentes/prestamos/VistaPrestamos';
+import { SolicitudesPrestamos } from '@/modulos/solicitudes/componentes/SolicitudesPrestamos';
 import { MapaFacultad } from '@/modulos/laboratorio/componentes/mapa/MapaFacultad';
 import { useActividadLaboratorio } from '@/modulos/laboratorio/hooks/useActividadLaboratorio';
 import { useActualizacionInicio } from '@/modulos/laboratorio/hooks/useActualizacionInicio';
@@ -663,8 +664,10 @@ export function PaginaLaboratorio() {
         ) : null}
 
         {activeTab === 'prestamos' ? (
+          <>
+          <SolicitudesPrestamos organizationId={profile?.organizationId ?? null} onChanged={refresh} />
           <PrestamosLaboratorio
-            prestamos={state.prestamos}
+            prestamos={state.prestamos.filter((prestamo) => !prestamo.observaciones.startsWith('Solicitud pública.'))}
             editingPrestamo={editingPrestamo}
             isSaving={isSaving}
             onSubmit={handlePrestamoSubmit}
@@ -672,6 +675,7 @@ export function PaginaLaboratorio() {
             onEdit={setEditingPrestamo}
             onDelete={(item) => void handleDeletePrestamo(item)}
           />
+          </>
         ) : null}
 
         {activeTab === 'informes' ? (

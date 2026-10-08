@@ -1,0 +1,15 @@
+# Préstamos públicos del laboratorio
+
+La pantalla pública se abre en `/prestamos/solicitar/<organizationId>`. El personal autorizado encuentra el enlace en **Soporte técnico → Préstamos**. Allí puede copiarlo o pulsar **Activar esta PC para préstamos**. Esta acción cierra la sesión de soporte en ese navegador antes de mostrar la pantalla pública.
+
+La persona solicita un control multimedia, Data Show u otro equipo e indica su nombre, facultad o departamento de procedencia, aula y hora prevista de devolución. La solicitud queda **por entregar**. Soporte confirma la entrega con un botón y después registra la devolución con otro. Cada movimiento queda en la base de datos; la persona no firma ni inicia sesión. La pantalla se limpia tras pulsar **Listo · siguiente persona**.
+
+## Activación de la base de datos
+
+Aplicar `supabase/migration-v26-solicitudes-prestamos.sql` en el proyecto de Supabase correspondiente antes de habilitar el enlace en producción. La migración crea solicitudes separadas de préstamos efectivos, limita las escrituras públicas y solo permite consultar o gestionar la lista al personal de la misma organización. No aplicar la migración deja la pantalla visible pero impide registrar solicitudes.
+
+## Computadora de recepción
+
+La aplicación puede cerrar la sesión del personal y mantener abierta la ruta pública, pero una página web no puede bloquear otras pestañas, direcciones ni aplicaciones de Windows. Para que en esa computadora solo se vea el formulario, configurar una cuenta de Windows dedicada con modo quiosco del navegador, abrir el enlace público como página inicial y restringir la salida del quiosco al personal de soporte. No usar una cuenta de soporte iniciada en ese perfil de Windows. Probar reinicio del equipo, conexión y salida del modo quiosco antes de ponerlo a disposición del público.
+
+El enlace es público para que no haya inicio de sesión. Cualquier persona que lo conozca puede abrirlo desde otro dispositivo; el modo quiosco solo limita la computadora física. La base de datos no expone el listado de solicitudes a visitantes.
