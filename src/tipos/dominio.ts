@@ -1,4 +1,4 @@
-export type RolAplicacion = 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte';
+export type RolAplicacion = 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte' | 'recepcion';
 
 export type EstadoEvento = 'draft' | 'published' | 'active' | 'closed' | 'archived';
 

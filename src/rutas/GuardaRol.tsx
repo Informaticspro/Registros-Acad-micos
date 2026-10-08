@@ -12,7 +12,7 @@ export function GuardaRol({ roles, children }: GuardaRolProps) {
 
   if (!profile || !roles.includes(profile.role)) {
     const target =
-      profile?.role === 'scanner' ? '/asistencia/escanear' : profile?.role === 'soporte' ? '/laboratorio' : '/dashboard';
+      profile?.role === 'recepcion' ? '/recepcion-prestamos' : profile?.role === 'scanner' ? '/asistencia/escanear' : profile?.role === 'soporte' ? '/laboratorio' : '/dashboard';
     return <Navigate to={target} replace />;
   }
 

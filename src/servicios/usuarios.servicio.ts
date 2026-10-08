@@ -40,7 +40,7 @@ type PerfilRow = {
 };
 
 function validarRol(role: RolAplicacion) {
-  if (!['admin', 'organizador', 'scanner', 'soporte'].includes(role)) throw new Error('Rol invalido.');
+  if (!['admin', 'organizador', 'scanner', 'soporte', 'recepcion'].includes(role)) throw new Error('Rol invalido.');
 }
 
 function validarCorreo(email: string) {

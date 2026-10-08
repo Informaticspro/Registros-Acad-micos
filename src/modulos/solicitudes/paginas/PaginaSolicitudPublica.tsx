@@ -7,6 +7,10 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 export function PaginaSolicitudPublica() {
   const { organizationId } = useParams();
+  return <FormularioPrestamosOrganizacion organizationId={organizationId} />;
+}
+
+export function FormularioPrestamosOrganizacion({ organizationId }: { organizationId?: string | null }) {
   const pendingReceipt = useRef<string | null>(null);
   if (!organizationId || !uuidPattern.test(organizationId)) return <main className="borrow-portal"><h1>Enlace de préstamos no válido</h1><p>Solicite al personal del laboratorio el enlace correcto.</p></main>;
   async function submit(solicitud: SolicitudEquipo) {

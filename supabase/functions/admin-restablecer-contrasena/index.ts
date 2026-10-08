@@ -77,7 +77,7 @@ Deno.serve(async (request) => {
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
     const role = typeof body.role === 'string' ? body.role : '';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !fullName || !['admin', 'organizador', 'scanner', 'soporte'].includes(role)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !fullName || !['admin', 'organizador', 'scanner', 'soporte', 'recepcion'].includes(role)) {
       return jsonResponse({ error: 'Datos de usuario inválidos.' }, 400);
     }
     const { data: targetAuth, error: targetError } = await adminClient.auth.admin.getUserById(userId);

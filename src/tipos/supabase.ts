@@ -1,4 +1,4 @@
-﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type BaseDatos = {
   public: {
@@ -8,7 +8,7 @@ export type BaseDatos = {
           id: string;
           full_name: string;
           email: string;
-          role: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte';
+          role: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte' | 'recepcion';
           organization_id: string | null;
           created_at: string;
         };
@@ -16,13 +16,13 @@ export type BaseDatos = {
           id: string;
           full_name: string;
           email: string;
-          role?: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte';
+          role?: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte' | 'recepcion';
           organization_id?: string | null;
         };
         Update: {
           full_name?: string;
           email?: string;
-          role?: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte';
+          role?: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte' | 'recepcion';
           organization_id?: string | null;
         };
         Relationships: [];
@@ -296,7 +296,7 @@ export type BaseDatos = {
           p_user_id: string;
           p_full_name: string;
           p_email: string;
-          p_role: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte';
+          p_role: 'propietario' | 'admin' | 'organizador' | 'scanner' | 'soporte' | 'recepcion';
         };
         Returns: undefined;
       };

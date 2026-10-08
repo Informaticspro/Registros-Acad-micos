@@ -25,8 +25,10 @@ const PaginaLaboratorio = lazy(() => import('@/modulos/laboratorio/paginas/Pagin
 const PaginaEquipoLaboratorio = lazy(() => import('@/modulos/laboratorio/paginas/PaginaEquipoLaboratorio').then(module => ({ default: module.PaginaEquipoLaboratorio })));
 const PaginaNoEncontrada = lazy(() => import('@/paginas/PaginaNoEncontrada').then(module => ({ default: module.PaginaNoEncontrada })));
 const PaginaSolicitudPublica = lazy(() => import('@/modulos/solicitudes/paginas/PaginaSolicitudPublica').then(module => ({ default: module.PaginaSolicitudPublica })));
+const PaginaRecepcionPrestamos = lazy(() => import('@/modulos/solicitudes/paginas/PaginaRecepcionPrestamos').then(module => ({ default: module.PaginaRecepcionPrestamos })));
 
 export const enrutador = createBrowserRouter([
+  { path: '/recepcion-prestamos', element: <RutaProtegida><GuardaRol roles={['propietario', 'admin', 'soporte', 'recepcion']}><Suspense fallback={<p role="status">Cargando préstamos...</p>}><PaginaRecepcionPrestamos /></Suspense></GuardaRol></RutaProtegida> },
   { path: '/prestamos/solicitar/:organizationId', element: <Suspense fallback={<p role="status">Cargando página...</p>}><PaginaSolicitudPublica /></Suspense> },
   {
     element: <LayoutAutenticacion />,

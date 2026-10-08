@@ -58,6 +58,7 @@ export function PaginaLaboratorio() {
   const [activeTab, setActiveTab] = useState<LabTab>('inicio');
   useEffect(() => {
     if (location.hash === '#trabajos') setActiveTab('bitacoras');
+    if (location.hash === '#prestamos') setActiveTab('prestamos');
   }, [location.hash, location.key]);
   const [state, setState] = useState<LaboratorioState>(emptyState);
   const [selectedReportMonth, setSelectedReportMonth] = useState(() => new Date().toISOString().slice(0, 7));

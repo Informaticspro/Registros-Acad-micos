@@ -47,6 +47,17 @@ beforeEach(async()=> {
       values ('${event}','${orgA}','${admin}','Evento','congreso','A',2,'active',now()-interval '1 hour',now()+interval '1 day');`);
 });
 after(async()=>db?.close());
+test('reception can load its own profile but cannot read internal data or administer users', async () => {
+  await db.exec(fs.readFileSync('supabase/migration-v27-rol-recepcion.sql', 'utf8'));
+  await db.query("update profiles set role='recepcion' where id=$1", [scanner]);
+  await session(scanner);
+  assert.equal((await db.query('select id from profiles')).rows.length, 1);
+  assert.equal((await db.query('select id from events')).rows.length, 0);
+  assert.equal((await db.query('select id from participants')).rows.length, 0);
+  await assert.rejects(db.query('select admin_assign_staff_profile($1,$2,$3,$4)', [support, 'Support', 'support@example.test', 'admin']), /administradores/);
+  await session(admin);
+  assert.equal((await db.query('select id from events')).rows.length, 1);
+});
 const register=async(doc='DOC-001',email='participant@example.test') => (await db.query(`select * from public_event_check_in($1,'Nombre','Apellido',$2,$3,'{}')`,[event,doc,email])).rows[0];
 const session=async(user)=> {
   await db.exec('reset role');

@@ -1,5 +1,11 @@
 # Préstamos públicos del laboratorio
 
+## Cuenta de recepción
+
+En Usuarios, elegir **Recepción de préstamos (solo solicitudes)**. Al iniciar sesión, esa cuenta abre `/recepcion-prestamos` sin menú administrativo. Cualquier intento de abrir una ruta interna protegida regresa al formulario. Las políticas de la base de datos bloquean la lectura y modificación de datos internos para este rol; solo puede leer su propio perfil para recuperar la organización. Las entregas y devoluciones siguen siendo exclusivas del personal autorizado.
+
+Aplicar `supabase/migration-v27-rol-recepcion.sql` y publicar `admin-restablecer-contrasena` para habilitar también la edición de perfiles con este rol. La cuenta de recepción no sustituye el modo quiosco del equipo.
+
 La pantalla pública se abre en `/prestamos/solicitar/<organizationId>`. El personal autorizado encuentra el enlace en **Soporte técnico → Préstamos**. Allí puede copiarlo o pulsar **Activar esta PC para préstamos**. Esta acción cierra la sesión de soporte en ese navegador antes de mostrar la pantalla pública.
 
 La persona solicita un control multimedia, Data Show u otro equipo e indica su nombre, facultad o departamento de procedencia, aula y hora prevista de devolución. La solicitud queda **por entregar**. Soporte confirma la entrega con un botón y después registra la devolución con otro. Cada movimiento queda en la base de datos; la persona no firma ni inicia sesión. La pantalla se limpia tras pulsar **Listo · siguiente persona**.

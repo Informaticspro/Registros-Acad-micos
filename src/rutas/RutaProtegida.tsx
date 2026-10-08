@@ -4,7 +4,7 @@ import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion
 
 export function RutaProtegida({ children }: PropsWithChildren) {
   const location = useLocation();
-  const { isAuthenticated, isLoading } = useAutenticacion();
+  const { isAuthenticated, isLoading, profile } = useAutenticacion();
 
   if (isLoading) {
     return <div className="screen-loader">Validando sesion...</div>;
@@ -14,6 +14,9 @@ export function RutaProtegida({ children }: PropsWithChildren) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  if (profile?.role === 'recepcion' && location.pathname !== '/recepcion-prestamos') {
+    return <Navigate to="/recepcion-prestamos" replace />;
+  }
   return children;
 }
 
