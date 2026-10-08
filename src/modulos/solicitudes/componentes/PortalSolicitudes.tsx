@@ -1,15 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Mouse, Projector, Radio } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export type SolicitudEquipo = { nombre: string; procedencia: string; equipo: string; aula: string; inicio: string; fin: string };
-type Props = { onSubmit: (solicitud: SolicitudEquipo) => Promise<void> };
+type Props = { onSubmit: (solicitud: SolicitudEquipo) => Promise<void>; puedeVolver?: boolean };
 const lugaresFacultad = [
   ...['3A', '3B', '3C', '3D', '3E', '3F', '3G', '3H'].map(aula => `Salón ${aula}`),
   'Laboratorio 1', 'Laboratorio 2', 'Maestría', 'Biblioteca', 'Decanato',
   'Oficina del laboratorio', 'Salón de estudiantes',
 ];
 
-export function PortalSolicitudes({ onSubmit }: Props) {
+export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
   const [tipo, setTipo] = useState('Control multimedia');
   const [lugar, setLugar] = useState('');
   const [etapa, setEtapa] = useState<'formulario' | 'confirmar' | 'enviado'>('formulario');
@@ -49,7 +50,7 @@ export function PortalSolicitudes({ onSubmit }: Props) {
     finally { setBusy(false); }
   }
   return <main className="borrow-portal">
-    <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div><span className="borrow-public-label">Registro público de préstamos</span></header>
+    <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div>{puedeVolver ? <Link className="secondary-button" to="/laboratorio#prestamos">← Volver atrás · Préstamos</Link> : <span className="borrow-public-label">Registro público de préstamos</span>}</header>
     {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><p>Esta pantalla volverá al inicio automáticamente en 8 segundos.</p></section> : <>
       <h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El personal confirmará la entrega.</p>
       {etapa === 'formulario' ? <><div className="borrow-options" role="group" aria-label="Equipo solicitado">

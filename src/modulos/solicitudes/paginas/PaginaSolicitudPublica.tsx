@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { PortalSolicitudes, type SolicitudEquipo } from '../componentes/PortalSolicitudes';
 import { registrarSolicitud } from '../solicitudes.servicio';
+import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -11,6 +12,8 @@ export function PaginaSolicitudPublica() {
 }
 
 export function FormularioPrestamosOrganizacion({ organizationId }: { organizationId?: string | null }) {
+  const { profile } = useAutenticacion();
+  const puedeVolver = profile?.organizationId === organizationId && ['propietario', 'admin', 'soporte'].includes(profile?.role ?? '');
   const pendingReceipt = useRef<string | null>(null);
   if (!organizationId || !uuidPattern.test(organizationId)) return <main className="borrow-portal"><h1>Enlace de préstamos no válido</h1><p>Solicite al personal del laboratorio el enlace correcto.</p></main>;
   async function submit(solicitud: SolicitudEquipo) {
@@ -19,5 +22,5 @@ export function FormularioPrestamosOrganizacion({ organizationId }: { organizati
     await registrarSolicitud(organizationId, solicitud, pendingReceipt.current);
     pendingReceipt.current = null;
   }
-  return <div className="borrow-page" data-theme="light"><PortalSolicitudes onSubmit={submit} /></div>;
+  return <div className="borrow-page" data-theme="light"><PortalSolicitudes onSubmit={submit} puedeVolver={puedeVolver} /></div>;
 }
