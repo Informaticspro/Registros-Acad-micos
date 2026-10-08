@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
+
 import { formatDateTime } from '@/utilidades/formato';
 import { gestionarSolicitud, listarSolicitudes, type SolicitudPrestamo } from '../solicitudes.servicio';
 
 type Props = { organizationId: string | null; onChanged: () => Promise<void> };
 
 export function SolicitudesPrestamos({ organizationId, onChanged }: Props) {
-  const { signOut } = useAutenticacion();
+
   const [items, setItems] = useState<SolicitudPrestamo[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -33,17 +33,11 @@ export function SolicitudesPrestamos({ organizationId, onChanged }: Props) {
     finally { setBusyId(null); }
   }
 
-  async function activarPc() {
-    if (!url) return;
-    try { await signOut(); window.location.assign(url); }
-    catch { setError('No se pudo cerrar la sesión en esta computadora.'); }
-  }
-
   const active = items.filter(item => item.status === 'pendiente' || item.status === 'entregado');
   const history = items.filter(item => item.status === 'devuelto' || item.status === 'cancelado');
   return <div className="borrow-staff">
     <div className="page-actions"><Link className="secondary-button" to="/recepcion-prestamos">Abrir módulo de recepción</Link></div>
-    <section className="borrow-staff-setup"><div><h2>Pantalla pública de préstamos</h2><p>Abra este enlace en la computadora de recepción. Al activar esta PC, se cerrará la sesión del personal y quedará abierta la solicitud pública.</p>{url ? <code>{url}</code> : <p>Su perfil todavía no tiene organización asignada.</p>}</div><div className="page-actions"><button type="button" className="secondary-button" disabled={!url} onClick={() => { void navigator.clipboard.writeText(url).then(() => setNotice('Enlace copiado.')).catch(() => setError('No se pudo copiar el enlace.')); }}>Copiar enlace</button><button type="button" className="primary-button" disabled={!url} onClick={() => void activarPc()}>Activar esta PC para préstamos</button></div></section>
+    <section className="borrow-staff-setup"><div><h2>Pantalla pública de préstamos</h2><p>Para revisar el formulario, abra la pantalla conservando su sesión. En la computadora de atención al público, inicie sesión con una cuenta de Recepción de préstamos.</p>{url ? <code>{url}</code> : <p>Su perfil todavía no tiene organización asignada.</p>}</div><div className="page-actions"><button type="button" className="secondary-button" disabled={!url} onClick={() => { void navigator.clipboard.writeText(url).then(() => setNotice('Enlace copiado.')).catch(() => setError('No se pudo copiar el enlace.')); }}>Copiar enlace</button><Link className="primary-button" to="/recepcion-prestamos">Abrir pantalla de préstamos</Link></div></section>
     {notice ? <p role="status">{notice}</p> : null}{error ? <p role="alert" className="form-error">{error}</p> : null}
     <div className="borrow-staff-heading"><h2>Por entregar o devolver <span>{active.length}</span></h2><button className="secondary-button" type="button" onClick={() => void refresh()}>Actualizar</button></div>
     {loading ? <p>Cargando solicitudes…</p> : null}
