@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Mouse, Projector, Radio } from 'lucide-react';
 
 export type SolicitudEquipo = { nombre: string; procedencia: string; equipo: string; aula: string; inicio: string; fin: string };
@@ -10,6 +10,17 @@ export function PortalSolicitudes({ onSubmit }: Props) {
   const [solicitud, setSolicitud] = useState<SolicitudEquipo | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    if (etapa !== 'enviado') return;
+    const timer = window.setTimeout(() => {
+      setSolicitud(null);
+      setTipo('Control multimedia');
+      setError('');
+      setEtapa('formulario');
+      window.scrollTo(0, 0);
+    }, 8000);
+    return () => window.clearTimeout(timer);
+  }, [etapa]);
   function revisar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -28,10 +39,9 @@ export function PortalSolicitudes({ onSubmit }: Props) {
     catch { setError('No se pudo registrar la solicitud. Reintente o avise al personal.'); }
     finally { setBusy(false); }
   }
-  function finalizar() { setSolicitud(null); setTipo('Control multimedia'); setError(''); setEtapa('formulario'); }
   return <main className="borrow-portal">
     <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div><span className="borrow-public-label">Registro público de préstamos</span></header>
-    {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><button className="primary-button" type="button" onClick={finalizar}>Listo · siguiente persona</button></section> : <>
+    {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><p>Esta pantalla volverá al inicio automáticamente en 8 segundos.</p></section> : <>
       <span className="eyebrow">Sin cuenta · sin firmas</span><h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El personal confirmará la entrega.</p>
       {etapa === 'formulario' ? <><div className="borrow-options" role="group" aria-label="Equipo solicitado">
         <button className={tipo === 'Control multimedia' ? 'selected' : ''} type="button" onClick={() => setTipo('Control multimedia')}><Radio size={30} /><strong>Control multimedia</strong><span>Para el proyector del salón</span></button>
