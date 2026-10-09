@@ -38,7 +38,7 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
       setLugar('');
       setError('');
       setEtapa('formulario');
-    }, 8000);
+    }, 3000);
     return () => window.clearTimeout(timer);
   }, [etapa]);
   function revisar(event: FormEvent<HTMLFormElement>) {
@@ -63,7 +63,7 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
   }
   return <main ref={portalRef} className="borrow-portal" style={{ transform: `scale(${escala})` }}>
     <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div>{puedeVolver ? <Link className="secondary-button" to="/laboratorio#prestamos">← Volver atrás · Préstamos</Link> : <span className="borrow-public-label">Registro público de préstamos</span>}</header>
-    {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><p>Esta pantalla volverá al inicio automáticamente en 8 segundos.</p></section> : <>
+    {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><p>Esta pantalla volverá al inicio automáticamente en 3 segundos.</p></section> : <>
       <h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El personal confirmará la entrega.</p>
       {etapa === 'formulario' ? <><div className="borrow-options" role="group" aria-label="Equipo solicitado">
         <button className={tipo === 'Control multimedia' ? 'selected' : ''} type="button" onClick={() => setTipo('Control multimedia')}><Radio size={30} /><strong>Control multimedia</strong><span>Para el proyector del salón</span></button>
