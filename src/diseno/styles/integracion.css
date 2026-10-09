@@ -165,6 +165,32 @@ body { background: var(--fd-bg); color: var(--fd-text); }
 .borrow-page .borrow-fields :is(input, select) { padding: 10px 12px; }
 .borrow-page .borrow-form-footer { margin-top: 14px; gap: 12px; }
 .borrow-page .borrow-result { margin-top: 24px; }
+.borrow-page:has(.borrow-returns) .borrow-options { margin: 10px 0; }
+.borrow-page:has(.borrow-returns) .borrow-options button { grid-template-columns: 24px 1fr; padding: 10px 14px; }
+.borrow-page:has(.borrow-returns) .borrow-options button svg { grid-row: span 2; align-self: center; }
+.borrow-page:has(.borrow-returns) .borrow-form { padding: 14px 18px; }
+.borrow-page:has(.borrow-returns) .borrow-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.borrow-returns { margin-top: 14px; padding: 16px 18px; border: 1px solid var(--fd-border); border-radius: 20px; background: var(--fd-surface); box-shadow: var(--fd-shadow); }
+.borrow-returns-heading { display: flex; align-items: center; gap: 14px; justify-content: space-between; }
+.borrow-returns-heading h2 { margin: 0; white-space: nowrap; }
+.borrow-returns-heading h2 span { margin-left: 6px; padding: 2px 8px; border-radius: 12px; color: var(--fd-accent); background: var(--fd-accent-soft); }
+.borrow-returns-search { font-size: 0; }
+.borrow-returns-search input { font: 14px var(--fd-font); width: 180px; padding: 9px 12px; border: 1px solid var(--fd-border-input); border-radius: 10px; color: var(--fd-text); background: var(--fd-surface); }
+.borrow-return-hint { margin: 8px 0 12px; font-size: .8rem; color: var(--fd-muted); }
+.borrow-return-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.borrow-return-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--fd-border); border-radius: 14px; }
+.borrow-return-card > div { min-width: 0; }
+.borrow-return-card strong, .borrow-return-card span { display: block; overflow-wrap: anywhere; }
+.borrow-return-card span { margin-top: 4px; font-size: .75rem; color: var(--fd-muted); }
+.borrow-return-card button { padding: 8px 10px; white-space: nowrap; }
+.borrow-return-card .page-actions { gap: 5px; }
+.borrow-return-confirm small { display: block; margin-bottom: 5px; }
+.borrow-return-success { padding: 8px; border-radius: 10px; background: var(--fd-accent-soft); color: var(--fd-accent); }
+@media (max-width: 767px) {
+  .borrow-returns-heading { flex-wrap: wrap; gap: 8px; }
+  .borrow-return-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .borrow-return-card { flex-direction: column; align-items: stretch; }
+}
 @media (max-width: 767px) {
   .borrow-page .borrow-header { flex-direction: row; align-items: center; }
   .borrow-page .borrow-brand { gap: 8px; font-size: .85rem; }

@@ -14,6 +14,7 @@ export function PaginaSolicitudPublica() {
 export function FormularioPrestamosOrganizacion({ organizationId }: { organizationId?: string | null }) {
   const { profile } = useAutenticacion();
   const puedeVolver = profile?.organizationId === organizationId && ['propietario', 'admin', 'soporte'].includes(profile?.role ?? '');
+  const puedeDevolver = profile?.organizationId === organizationId && ['propietario', 'admin', 'soporte', 'recepcion'].includes(profile?.role ?? '');
   const pendingReceipt = useRef<string | null>(null);
   if (!organizationId || !uuidPattern.test(organizationId)) return <main className="borrow-portal"><h1>Enlace de préstamos no válido</h1><p>Solicite al personal del laboratorio el enlace correcto.</p></main>;
   async function submit(solicitud: SolicitudEquipo) {
@@ -22,5 +23,5 @@ export function FormularioPrestamosOrganizacion({ organizationId }: { organizati
     await registrarSolicitud(organizationId, solicitud, pendingReceipt.current);
     pendingReceipt.current = null;
   }
-  return <div className="borrow-page" data-theme="light"><PortalSolicitudes onSubmit={submit} puedeVolver={puedeVolver} /></div>;
+  return <div className="borrow-page" data-theme="light"><PortalSolicitudes onSubmit={submit} puedeVolver={puedeVolver} puedeDevolver={puedeDevolver} /></div>;
 }

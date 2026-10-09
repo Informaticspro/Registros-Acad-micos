@@ -194,7 +194,7 @@ export function PaginaUsuarios() {
             <option value="organizador">Organizador</option>
             <option value="scanner">Escaner</option>
             <option value="soporte">Soporte laboratorio</option>
-            <option value="recepcion">Recepción de préstamos (solo solicitudes)</option>
+            <option value="recepcion">Recepción de préstamos (solicitudes y devoluciones)</option>
           </select>
         </label>
         <p className="form-hint full-field">
@@ -225,7 +225,7 @@ export function PaginaUsuarios() {
                   <option value="organizador">Organizador</option>
                   <option value="scanner">Escaner</option>
                   <option value="soporte">Soporte laboratorio</option>
-                  <option value="recepcion">Recepción de préstamos (solo solicitudes)</option>
+                  <option value="recepcion">Recepción de préstamos (solicitudes y devoluciones)</option>
                 </select>
                 <button className="icon-button" type="submit" aria-label="Guardar usuario" disabled={isSaving}>
                   <Save size={18} />

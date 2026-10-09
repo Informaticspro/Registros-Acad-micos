@@ -8,7 +8,7 @@ export type SolicitudPrestamo = {
   equipment: string;
   room: string;
   starts_at: string;
-  ends_at: string;
+  ends_at: string | null;
   status: 'pendiente' | 'entregado' | 'devuelto' | 'cancelado';
   created_at: string;
   delivered_at: string | null;
@@ -35,4 +35,12 @@ export async function gestionarSolicitud(action: 'deliver' | 'return' | 'cancel'
   if (!supabase) throw new Error('El servicio no está disponible.');
   const { error } = await supabase.rpc('manage_laboratory_requests', { p_action: action, p_id: id });
   if (error) throw error;
+}
+
+export type PrestamoRecepcion = Pick<SolicitudPrestamo, 'id' | 'applicant' | 'equipment' | 'room' | 'delivered_at'>;
+export async function prestamosRecepcion(action: 'list' | 'return' = 'list', id?: string): Promise<PrestamoRecepcion[]> {
+  if (!supabase) throw new Error('El servicio no está disponible.');
+  const { data, error } = await supabase.rpc('reception_laboratory_returns', { p_action: action, p_id: id });
+  if (error) throw error;
+  return Array.isArray(data) ? data as PrestamoRecepcion[] : [];
 }
