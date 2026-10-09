@@ -147,3 +147,32 @@ body { background: var(--fd-bg); color: var(--fd-text); }
 .borrow-staff-record h3 { margin: 8px 0 4px; }
 .borrow-staff-record p { margin: 0 0 5px; }
 @media (max-width: 767px) { .borrow-options { grid-template-columns: 1fr; } .borrow-fields { grid-template-columns: 1fr; } .borrow-header,.borrow-staff-setup,.borrow-staff-record,.borrow-form-footer { flex-direction: column; align-items: stretch; } .borrow-portal { padding: 18px 16px 40px; } .borrow-options button { min-height: 95px; } }
+
+/* La recepción ocupa una pantalla; se ajusta al espacio disponible sin scroll. */
+.borrow-page { position: fixed; inset: 0; height: 100dvh; min-height: 0; overflow: hidden; }
+.borrow-page .borrow-portal { box-sizing: border-box; padding: clamp(10px, 2vh, 22px) clamp(12px, 2vw, 24px); transform-origin: top center; }
+.borrow-page .borrow-header { padding: 0 0 14px; margin-bottom: 14px; gap: 12px; }
+.borrow-page .borrow-brand img { width: 44px; height: 44px; }
+.borrow-page .borrow-portal h1 { font-size: clamp(1.45rem, 2.7vw, 2rem); margin: 4px 0; }
+.borrow-page .borrow-intro { margin: 4px 0 0; }
+.borrow-page .borrow-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.borrow-page .borrow-options button { min-height: 0; padding: 14px 18px; gap: 5px; }
+.borrow-page .borrow-options button svg { width: 24px; height: 24px; }
+.borrow-page .borrow-form, .borrow-page .borrow-result { padding: 18px 22px; }
+.borrow-page .borrow-form h2 { margin: 0 0 12px; }
+.borrow-page .borrow-fields { gap: 12px 16px; }
+.borrow-page .borrow-fields label { min-width: 0; gap: 5px; }
+.borrow-page .borrow-fields :is(input, select) { padding: 10px 12px; }
+.borrow-page .borrow-form-footer { margin-top: 14px; gap: 12px; }
+.borrow-page .borrow-result { margin-top: 24px; }
+@media (max-width: 767px) {
+  .borrow-page .borrow-header { flex-direction: row; align-items: center; }
+  .borrow-page .borrow-brand { gap: 8px; font-size: .85rem; }
+  .borrow-page .borrow-public-label { display: none; }
+  .borrow-page .borrow-options { gap: 8px; }
+  .borrow-page .borrow-options button { padding: 10px; }
+  .borrow-page .borrow-options button strong { font-size: .9rem; }
+  .borrow-page .borrow-options button span { font-size: .8rem; }
+  .borrow-page .borrow-form { padding: 14px; }
+  .borrow-page .borrow-form-footer { flex-direction: row; align-items: center; }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { Check, Mouse, Projector, Radio } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -11,12 +11,25 @@ const lugaresFacultad = [
 ];
 
 export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
+  const portalRef = useRef<HTMLElement>(null);
+  const [escala, setEscala] = useState(1);
   const [tipo, setTipo] = useState('Control multimedia');
   const [lugar, setLugar] = useState('');
   const [etapa, setEtapa] = useState<'formulario' | 'confirmar' | 'enviado'>('formulario');
   const [solicitud, setSolicitud] = useState<SolicitudEquipo | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  useLayoutEffect(() => {
+    const portal = portalRef.current;
+    const page = portal?.parentElement;
+    if (!portal || !page) return;
+    const ajustar = () => setEscala(Math.min(1, page.clientHeight / Math.max(portal.offsetHeight, 1), page.clientWidth / Math.max(portal.scrollWidth, 1)));
+    const observer = new ResizeObserver(ajustar);
+    observer.observe(portal);
+    observer.observe(page);
+    ajustar();
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     if (etapa !== 'enviado') return;
     const timer = window.setTimeout(() => {
@@ -25,7 +38,6 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
       setLugar('');
       setError('');
       setEtapa('formulario');
-      window.scrollTo(0, 0);
     }, 8000);
     return () => window.clearTimeout(timer);
   }, [etapa]);
@@ -49,7 +61,7 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
     catch { setError('No se pudo registrar la solicitud. Reintente o avise al personal.'); }
     finally { setBusy(false); }
   }
-  return <main className="borrow-portal">
+  return <main ref={portalRef} className="borrow-portal" style={{ transform: `scale(${escala})` }}>
     <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div>{puedeVolver ? <Link className="secondary-button" to="/laboratorio#prestamos">← Volver atrás · Préstamos</Link> : <span className="borrow-public-label">Registro público de préstamos</span>}</header>
     {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Solicitud registrada!</h1><p>Acérquese al personal para retirar el equipo. La entrega se confirma cuando se lo proporcionen.</p><p>Esta pantalla volverá al inicio automáticamente en 8 segundos.</p></section> : <>
       <h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El personal confirmará la entrega.</p>
