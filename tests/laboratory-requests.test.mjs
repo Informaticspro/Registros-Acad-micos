@@ -10,7 +10,7 @@ const outsider = '20000000-0000-0000-0000-000000000002';
 const receipt = '30000000-0000-4000-8000-000000000001';
 const request = { accepted: true, name: 'María López', affiliation: 'Facultad de Ingeniería', equipment: 'Control multimedia', room: 'Salón 3H', startsAt: new Date().toISOString(), endsAt: null };
 
-test('public request stays private; only same-organization support can deliver and return', async () => {
+test('request automatically creates one active loan and allows return from reception or support', async () => {
   const db = new PGlite();
   try {
     await db.exec(`create role anon; create role authenticated; create schema auth;
@@ -26,6 +26,7 @@ test('public request stays private; only same-organization support can deliver a
       insert into profiles values ('${support}','${orgA}','Técnico','soporte'),('${outsider}','${orgB}','Otro','soporte');`);
     await db.exec(fs.readFileSync('supabase/migration-v26-solicitudes-prestamos.sql', 'utf8'));
     await db.exec(fs.readFileSync('supabase/migration-v28-devoluciones-recepcion.sql', 'utf8'));
+    await db.exec(fs.readFileSync('supabase/migration-v29-prestamo-automatico.sql', 'utf8'));
     await db.exec('set role anon');
     await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, receipt, JSON.stringify(request)]);
     await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, receipt, JSON.stringify(request)]);
@@ -34,6 +35,7 @@ test('public request stays private; only same-organization support can deliver a
     await assert.rejects(db.query("select reception_laboratory_returns('list')"), /permission denied/);
     await db.exec('reset role');
     assert.equal((await db.query('select count(*)::int as n from laboratory_requests')).rows[0].n, 1);
+    assert.equal((await db.query('select count(*)::int as n from laboratory_loans')).rows[0].n, 1);
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [outsider]);
     await db.exec('set role authenticated');
     assert.equal((await db.query("select manage_laboratory_requests('list') as items")).rows[0].items.length, 0);
@@ -43,7 +45,8 @@ test('public request stays private; only same-organization support can deliver a
     const items = (await db.query("select manage_laboratory_requests('list') as items")).rows[0].items;
     assert.equal(items[0].affiliation, 'Facultad de Ingeniería');
     assert.equal(items[0].receipt, undefined);
-    await db.query("select manage_laboratory_requests('deliver',$1)", [items[0].id]);
+    assert.equal(items[0].status, 'entregado');
+    assert.equal((await db.query("select reception_laboratory_returns('list') as items")).rows[0].items.length, 1);
     await db.exec('reset role');
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [outsider]);
     await db.exec('set role authenticated');
@@ -64,5 +67,11 @@ test('public request stays private; only same-organization support can deliver a
     assert.equal((await db.query('select status from laboratory_loans')).rows[0].status, 'devuelto');
     const saved = (await db.query('select r.ends_at, r.returned_at=l.returned_at as same_time, r.returned_at is not null as recorded from laboratory_requests r join laboratory_loans l on l.id=r.loan_id')).rows[0];
     assert.equal(saved.ends_at, null); assert.equal(saved.same_time,true); assert.equal(saved.recorded,true);
+    await db.query("update profiles set role='soporte' where id=$1", [support]);
+    await db.exec('set role authenticated');
+    await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, '30000000-0000-4000-8000-000000000002', JSON.stringify(request)]);
+    const active = (await db.query("select reception_laboratory_returns('list') as items")).rows[0].items;
+    await db.query("select manage_laboratory_requests('return',$1)", [active[0].id]);
+    assert.equal((await db.query("select reception_laboratory_returns('list') as items")).rows[0].items.length,0);
   } finally { await db.close(); }
 });
