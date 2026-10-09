@@ -39,7 +39,7 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
     if (Number.isNaN(fin.getTime()) || fin <= inicio) { setError('La devolución debe ser posterior a la hora actual.'); return; }
     const aula = lugar === 'otro' ? value('otroLugar') : lugar;
     if (!aula) { setError('Seleccione el aula o especifique el lugar de uso.'); return; }
-    setSolicitud({ nombre: value('nombre'), procedencia: value('procedencia'), equipo: tipo === 'Otro equipo' ? value('otroEquipo') : tipo, aula, inicio: inicio.toISOString(), fin: fin.toISOString() });
+    setSolicitud({ nombre: value('nombre'), procedencia: lugar === 'otro' ? value('procedencia') : 'Facultad de Economía', equipo: tipo === 'Otro equipo' ? value('otroEquipo') : tipo, aula, inicio: inicio.toISOString(), fin: fin.toISOString() });
     setError(''); setEtapa('confirmar');
   }
   async function enviar() {
@@ -59,9 +59,9 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false }: Props) {
         <button className={tipo === 'Otro equipo' ? 'selected' : ''} type="button" onClick={() => setTipo('Otro equipo')}><Mouse size={30} /><strong>Otros equipos</strong><span>Mouse, cables y accesorios</span></button>
       </div><form className="borrow-form" onSubmit={revisar}><h2>Datos del préstamo</h2><div className="borrow-fields">
         <label>Nombre completo<input name="nombre" autoComplete="off" required maxLength={120} placeholder="Escriba su nombre" /></label>
-        <label>Facultad o departamento de procedencia<input name="procedencia" autoComplete="off" required maxLength={120} placeholder="Ej. Facultad de Economía / Dirección de Extensión" /></label>
         <label>Aula o lugar de uso<select name="aula" required value={lugar} onChange={event => setLugar(event.target.value)}><option value="" disabled>Seleccione un aula o lugar</option>{lugaresFacultad.map(item => <option key={item} value={item}>{item}</option>)}<option value="otro">Otro lugar</option></select></label>
         <label>Hora prevista de devolución<input name="fin" type="time" required /></label>
+        {lugar === 'otro' ? <label>Facultad o departamento de procedencia<input name="procedencia" autoComplete="off" required maxLength={120} placeholder="Ej. Facultad de Economía / Dirección de Extensión" /></label> : null}
         {lugar === 'otro' ? <label>Departamento o lugar de uso<input name="otroLugar" autoComplete="off" required maxLength={100} placeholder="Ej. Auditorio de otra facultad o Departamento de Contabilidad" /></label> : null}
         {tipo === 'Otro equipo' ? <label>Equipo que necesita<input name="otroEquipo" required maxLength={120} placeholder="Ej. mouse o cable HDMI" /></label> : null}
       </div>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="borrow-form-footer"><small>La fecha y la hora de solicitud se registran automáticamente.</small><button className="primary-button" type="submit">Revisar solicitud</button></div></form></> : <section className="borrow-form"><h2>Confirme su solicitud</h2><p><strong>{solicitud?.equipo}</strong> · {solicitud?.aula}</p><p>{solicitud?.nombre} · {solicitud?.procedencia}</p><p>Devolución prevista: {solicitud ? new Date(solicitud.fin).toLocaleString('es-PA', { timeZone: 'America/Panama' }) : ''}</p>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="page-actions"><button className="secondary-button" type="button" disabled={busy} onClick={() => setEtapa('formulario')}>Corregir</button><button className="primary-button" type="button" disabled={busy} onClick={() => void enviar()}>{busy ? 'Registrando…' : 'Confirmar solicitud'}</button></div></section>}
