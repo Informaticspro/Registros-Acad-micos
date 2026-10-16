@@ -16,6 +16,7 @@ import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLabor
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
 import { ConfirmacionOperativoModal } from '@/modulos/laboratorio/componentes/bitacoras/ConfirmacionOperativoModal';
 import { VistaBitacoras } from '@/modulos/laboratorio/componentes/bitacoras/VistaBitacoras';
+import { InstalacionesPantalla } from '@/modulos/laboratorio/componentes/bitacoras/InstalacionesPantalla';
 import { GestorCatalogosModal } from '@/modulos/laboratorio/componentes/catalogos/GestorCatalogosModal';
 import { VistaDescartes } from '@/modulos/laboratorio/componentes/descartes/VistaDescartes';
 import { VistaFichasTecnicas } from '@/modulos/laboratorio/componentes/fichas/VistaFichasTecnicas';
@@ -56,6 +57,7 @@ export function PaginaLaboratorio() {
   const { profile } = useAutenticacion();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<LabTab>('inicio');
+  const [showInstalacionesPantalla, setShowInstalacionesPantalla] = useState(false);
   useEffect(() => {
     if (location.hash === '#trabajos') setActiveTab('bitacoras');
     if (location.hash === '#prestamos') setActiveTab('prestamos');
@@ -473,7 +475,7 @@ export function PaginaLaboratorio() {
       />
 
       <section className={`panel lab-shell${activeTab === 'mapa' ? ' lab-shell-map' : ''}`}>
-        <PestanasLaboratorio activeTab={activeTab} onChange={setActiveTab} />
+        <PestanasLaboratorio activeTab={activeTab} onChange={(tab) => { setShowInstalacionesPantalla(false); setActiveTab(tab); }} />
 
         {message || error ? (
           <div className={`lab-toast ${error ? 'error' : 'success'}`} role="status" aria-live="polite">
@@ -664,9 +666,16 @@ export function PaginaLaboratorio() {
           />
         ) : null}
 
-        {activeTab === 'prestamos' ? (
+        {activeTab === 'prestamos' && showInstalacionesPantalla ? (
+          <InstalacionesPantalla trabajos={state.bitacoras} responsable={responsableSesion} isSaving={isSaving}
+            onSubmit={handleBitacoraSubmit} onBack={() => setShowInstalacionesPantalla(false)}
+            onEdit={(trabajo) => { setEditingBitacora(trabajo); setShowInstalacionesPantalla(false); setActiveTab('bitacoras'); }} />
+        ) : null}
+
+        {activeTab === 'prestamos' && !showInstalacionesPantalla ? (
           <>
-          <SolicitudesPrestamos organizationId={profile?.organizationId ?? null} onChanged={refresh} />
+          <SolicitudesPrestamos organizationId={profile?.organizationId ?? null} onChanged={refresh}
+            onOpenInstalaciones={() => { setEditingBitacora(null); setShowInstalacionesPantalla(true); }} />
           <PrestamosLaboratorio
             prestamos={state.prestamos.filter((prestamo) => !prestamo.observaciones.startsWith('Solicitud pública.'))}
             editingPrestamo={editingPrestamo}

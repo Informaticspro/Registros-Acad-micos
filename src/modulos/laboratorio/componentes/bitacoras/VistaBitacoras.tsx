@@ -5,6 +5,7 @@ import { formatDateTime } from '@/utilidades/formato';
 import {
   estadoTrabajoLabels,
   prioridadLabels,
+  TIPO_INSTALACION_PANTALLA,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
   getEstadoEquipoLabel,
@@ -81,6 +82,7 @@ export function VistaBitacoras({
               <option value="Cambio de pieza">Reemplazo de cable o pieza</option>
               <option value="Diagnostico">Diagnóstico / revisión</option>
               <option value="Instalacion">Instalación de cable, equipo o programa</option>
+              {editingBitacora?.tipoTrabajo === TIPO_INSTALACION_PANTALLA ? <option value={TIPO_INSTALACION_PANTALLA}>{TIPO_INSTALACION_PANTALLA}</option> : null}
               <option>Soporte a usuario</option>
             </select>
           </label>
@@ -117,8 +119,8 @@ export function VistaBitacoras({
         </label>
         <div className="form-grid compact-form-grid">
           <label>
-            Equipo atendido *
-            <select name="equipoId" defaultValue={editingBitacora?.equipoId ?? ''} required>
+            Equipo atendido {editingBitacora?.tipoTrabajo === TIPO_INSTALACION_PANTALLA ? '(opcional)' : '*'}
+            <select name="equipoId" defaultValue={editingBitacora?.equipoId ?? ''} required={editingBitacora?.tipoTrabajo !== TIPO_INSTALACION_PANTALLA}>
               <option value="">Seleccione un equipo</option>
               {equiposPorUbicacion.map((grupo) => (
                 <optgroup key={grupo.ubicacion} label={`${grupo.ubicacion} · ${grupo.equipos.length} equipos`}>
@@ -132,6 +134,7 @@ export function VistaBitacoras({
             </select>
           </label>
         </div>
+        {editingBitacora?.tipoTrabajo === TIPO_INSTALACION_PANTALLA ? <input type="hidden" name="equipoDestino" value={editingBitacora.equipoDestino || 'Pantalla de proyección'} /> : null}
         <div className="form-grid compact-form-grid">
           <label>
             Responsable *

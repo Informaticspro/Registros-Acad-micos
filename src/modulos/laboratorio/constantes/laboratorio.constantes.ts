@@ -2,6 +2,8 @@
 import type { EstadoTrabajoLaboratorio, PrioridadLaboratorio } from '@/tipos/dominio';
 import type { LabTab } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
 
+export const TIPO_INSTALACION_PANTALLA = 'Instalación de pantalla de proyección';
+
 const emptyState: LaboratorioState = {
   fichas: [],
   equipos: [],

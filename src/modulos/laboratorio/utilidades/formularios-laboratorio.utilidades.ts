@@ -35,7 +35,7 @@ function buildBitacoraInput(form: HTMLFormElement): BitacoraLaboratorioInput {
     fecha: new Date(readString(data, 'fecha')).toISOString(),
     tipoTrabajo,
     titulo: readString(data, 'titulo'),
-    descripcion: readString(data, 'descripcion'),
+    descripcion: [readString(data, 'solicitante') ? `Solicitante: ${readString(data, 'solicitante')}` : '', readString(data, 'descripcion')].filter(Boolean).join('\n\n'),
     responsable: readString(data, 'responsable'),
     prioridad: readString(data, 'prioridad') as PrioridadLaboratorio,
     estado: readString(data, 'estado') as EstadoTrabajoLaboratorio,
