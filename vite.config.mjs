@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['pwa-icon-192.png', 'pwa-icon-512.png', 'logo-economia.png', 'logo-unachi.png'],
       manifest: {
-        name: 'Registros FADECO',
-        short_name: 'FADECO',
-        description: 'Sistema de registros academicos, soporte tecnico e inventario de la Facultad de Economia.',
+        name: 'Nexus FADECO',
+        short_name: 'Nexus FADECO',
+        description: 'Nexus FADECO · Gestión académica y servicios tecnológicos de la Facultad de Economía · UNACHI.',
         lang: 'es-PA',
         start_url: '/',
         scope: '/',

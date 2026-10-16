@@ -48,11 +48,11 @@ export function BarraLateral({ isCollapsed, onNavigate, onToggle }: BarraLateral
     <aside className="sidebar" aria-label="Menu principal">
       <div className="brand">
         <div className="brand-mark">
-          <img src="/logo-registros-academicos.png" alt="Registros academicos" />
+          <img src="/logo-registros-academicos.png" alt="Nexus FADECO" />
         </div>
         <div className="brand-copy">
-          <strong>Registros Academicos</strong>
-          <span>Facultad de Economia</span>
+          <strong>Nexus FADECO</strong>
+          <span>Facultad de Economía · UNACHI</span>
         </div>
       </div>
       <button

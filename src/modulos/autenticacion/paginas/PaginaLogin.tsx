@@ -30,17 +30,17 @@ export function PaginaLogin() {
     <section className="login-panel">
       <div className="brand auth-brand">
         <div className="brand-mark">
-          <img src="/logo-registros-academicos.png" alt="Registros academicos" />
+          <img src="/logo-registros-academicos.png" alt="Nexus FADECO" />
         </div>
         <div>
-          <strong>Registros Academicos</strong>
-          <span>Facultad de Economia</span>
+          <strong>Nexus FADECO</strong>
+          <span>Facultad de Economía · UNACHI</span>
         </div>
       </div>
       <div className="login-heading">
         <span className="eyebrow">Acceso administrativo</span>
-        <h1>Control profesional de eventos academicos</h1>
-        <p>Administra inscripciones, asistencia por QR, certificados y reportes desde una sola consola.</p>
+        <h1>Gestión académica y servicios tecnológicos</h1>
+        <p>Gestiona eventos, asistencia, certificados, préstamos y soporte técnico desde un solo lugar.</p>
       </div>
       <form className="stack-form" onSubmit={handleSubmit} autoComplete="off">
         <label>

@@ -60,7 +60,7 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false, puedeDevolver
     finally { setBusy(false); }
   }
   return <main ref={portalRef} className="borrow-portal" style={{ transform: `scale(${escala})` }}>
-    <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>UNACHI · Facultad de Economía</strong><span>Sección de Tecnología · Laboratorio</span></div></div>{puedeVolver ? <Link className="secondary-button" to="/laboratorio#prestamos">← Volver atrás · Préstamos</Link> : <span className="borrow-public-label">Registro público de préstamos</span>}</header>
+    <header className="borrow-header"><div className="borrow-brand"><img src="/logo-unachi.png" alt="Logo de UNACHI" /><div><strong>Nexus FADECO</strong><span>UNACHI · Facultad de Economía · Laboratorio</span></div></div>{puedeVolver ? <Link className="secondary-button" to="/laboratorio#prestamos">← Volver atrás · Préstamos</Link> : <span className="borrow-public-label">Registro público de préstamos</span>}</header>
     {etapa === 'enviado' ? <section className="borrow-result" aria-live="polite"><Check size={46} aria-hidden="true" /><h1>¡Préstamo registrado!</h1><p>Su equipo ya aparece en «En préstamo ahora». Cuando lo entregue, busque su nombre y pulse Devolver.</p><p>Esta pantalla volverá al inicio automáticamente en 3 segundos.</p></section> : <>
       <h1>¿Qué necesita para su clase?</h1><p className="borrow-intro">Elija el equipo y complete sus datos. El préstamo se registra automáticamente al confirmar.</p>
       {etapa === 'formulario' ? <><div className="borrow-options" role="group" aria-label="Equipo solicitado">

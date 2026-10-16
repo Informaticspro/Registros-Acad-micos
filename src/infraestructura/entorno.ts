@@ -1,7 +1,7 @@
 ﻿export const env = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL as string | undefined,
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined,
-  appName: (import.meta.env.VITE_APP_NAME as string | undefined) ?? 'Registro de Eventos Academicos',
+  appName: (import.meta.env.VITE_APP_NAME as string | undefined) ?? 'Nexus FADECO',
   publicAppUrl:
     ((import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) ?? 'https://registrosfadeco.netlify.app').replace(
       /\/$/,
