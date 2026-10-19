@@ -6,6 +6,16 @@
 .lab-gallery-grid img { width: 100%; height: 200px; object-fit: contain; background: var(--fd-bg); border-radius: 12px; }
 .lab-gallery-grid h3 { overflow-wrap: anywhere; margin: 0; }
 .lab-gallery input[type='file'] { max-width: 100%; min-width: 0; }
+.lab-image-thumbnail { padding: 0; border: 0; background: transparent; cursor: zoom-in; border-radius: 12px; }
+.lab-image-thumbnail:focus-visible { outline: 3px solid var(--fd-accent-text); outline-offset: 3px; }
+.lab-image-viewer { padding: 0; width: min(1100px, 94vw); max-height: 94dvh; border: 1px solid var(--fd-border); border-radius: 20px; color: var(--fd-text); background: var(--fd-surface); }
+.lab-image-viewer::backdrop { background: rgb(0 0 0 / .78); }
+.lab-image-viewer-content { display: grid; gap: 16px; padding: 20px; }
+.lab-image-viewer header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.lab-image-viewer h2 { margin: 0; font-size: 1rem; overflow-wrap: anywhere; min-width: 0; }
+.lab-image-viewer header button { flex-shrink: 0; }
+.lab-image-viewer img { display: block; width: 100%; max-height: calc(94dvh - 170px); object-fit: contain; background: var(--fd-bg); border-radius: 8px; }
+.lab-image-viewer-content > a { justify-self: start; }
 @media (max-width: 700px) {
   .lab-header-actions .lab-images-button { grid-column: 1 / -1; order: -1; min-height: 42px; }
 }

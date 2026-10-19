@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ImagePlus, ArrowLeft, ExternalLink } from 'lucide-react';
+import { ImagePlus, ArrowLeft, Eye } from 'lucide-react';
+import { VisorImagen } from './VisorImagen';
 import { formatDateTime } from '@/utilidades/formato';
 import { GALERIA_PAGE_SIZE, listarImagenes, subirImagen, type ImagenGaleria } from '../galeria.servicio';
 
@@ -11,6 +12,7 @@ export function GaleriaImagenes({ organizationId, onBack }: { organizationId: st
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [selectedImage, setSelectedImage] = useState<ImagenGaleria | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const request = useRef(0);
   const refresh = useCallback(async () => {
@@ -52,10 +54,11 @@ export function GaleriaImagenes({ organizationId, onBack }: { organizationId: st
     {notice ? <p role="status">{notice}</p> : null}
     {loading ? <p role="status">Cargando imágenes…</p> : !error && !imagenes.length ? <p>Aún no hay imágenes en esta página.</p> : null}
     {!loading && !error ? <div className="lab-gallery-grid">{imagenes.map(item => <article className="lab-record" key={item.name}>
-      <a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><img src={item.url} alt={item.title} loading="lazy" /></a>
+      <button className="lab-image-thumbnail" type="button" onClick={() => setSelectedImage(item)} aria-label={`Ver ${item.title}`}><img src={item.url} alt={item.title} loading="lazy" /></button>
       <h3>{item.title}</h3><small>{formatDateTime(item.createdAt)}</small>
-      <a className="secondary-button" href={item.url} target="_blank" rel="noreferrer"><ExternalLink size={16} />Ver imagen</a>
+      <button className="secondary-button" type="button" onClick={() => setSelectedImage(item)}><Eye size={16} />Ver imagen</button>
     </article>)}</div> : null}
     <div className="page-actions"><button className="secondary-button" type="button" disabled={page === 0 || loading || saving} onClick={() => setPage(page - 1)}>Anterior</button><span>Página {page + 1}</span><button className="secondary-button" type="button" disabled={imagenes.length < GALERIA_PAGE_SIZE || loading || saving || Boolean(error)} onClick={() => setPage(page + 1)}>Siguiente</button></div>
+    {selectedImage ? <VisorImagen imagen={selectedImage} onClose={() => setSelectedImage(null)} /> : null}
   </section>;
 }
