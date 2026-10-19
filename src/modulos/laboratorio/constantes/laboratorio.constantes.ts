@@ -17,6 +17,7 @@ const emptyState: LaboratorioState = {
 };
 
 const tabLabels: Record<LabTab, string> = {
+  imagenes: 'Imágenes',
   inicio: 'Inicio',
   mapa: 'Mapa',
   fichas: 'Detalles técnicos',

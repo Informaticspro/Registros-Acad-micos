@@ -1,4 +1,4 @@
-import { ArrowLeft, ClipboardList, HardDrive, Moon, PackageCheck, ScanLine, Sun, Wrench } from 'lucide-react';
+import { ArrowLeft, ClipboardList, HardDrive, Images, Moon, PackageCheck, ScanLine, Sun, Wrench } from 'lucide-react';
 import { MenuNotificaciones } from '@/componentes/estructura/MenuNotificaciones';
 
 type IndicadoresLaboratorio = {
@@ -13,6 +13,7 @@ type EncabezadoLaboratorioProps = {
   isLightTheme: boolean;
   onBack: () => void;
   onOpenScanner: () => void;
+  onOpenImages: () => void;
   onToggleTheme: () => void;
 };
 
@@ -21,6 +22,7 @@ export function EncabezadoLaboratorio({
   isLightTheme,
   onBack,
   onOpenScanner,
+  onOpenImages,
   onToggleTheme,
 }: EncabezadoLaboratorioProps) {
   return (
@@ -40,6 +42,7 @@ export function EncabezadoLaboratorio({
             <ScanLine size={18} />
             Escanear equipo
           </button>
+          <button className="secondary-button lab-images-button" type="button" onClick={onOpenImages}><Images size={18} />Imágenes</button>
           <button
             className="icon-button theme-toggle"
             type="button"

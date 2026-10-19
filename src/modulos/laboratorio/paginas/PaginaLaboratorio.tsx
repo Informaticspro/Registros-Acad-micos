@@ -11,6 +11,7 @@ import { EquipoLaboratorio } from '@/tipos/dominio';
 import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion';
 import { useConfirmacion } from '@/hooks/useConfirmacion';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
+import { GaleriaImagenes } from '@/modulos/laboratorio/componentes/GaleriaImagenes';
 import { EscanerInventarioModal } from '@/modulos/laboratorio/componentes/EscanerInventarioModal';
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
@@ -471,11 +472,13 @@ export function PaginaLaboratorio() {
         isLightTheme={isLightTheme}
         onBack={() => navigate('/dashboard')}
         onOpenScanner={() => setShowInventoryScanner(true)}
+        onOpenImages={() => setActiveTab('imagenes')}
         onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
       />
 
       <section className={`panel lab-shell${activeTab === 'mapa' ? ' lab-shell-map' : ''}`}>
         <PestanasLaboratorio activeTab={activeTab} onChange={(tab) => { setShowInstalacionesPantalla(false); setActiveTab(tab); }} />
+        {activeTab === 'imagenes' ? <GaleriaImagenes organizationId={profile?.organizationId ?? null} onBack={() => setActiveTab('inicio')} /> : null}
 
         {message || error ? (
           <div className={`lab-toast ${error ? 'error' : 'success'}`} role="status" aria-live="polite">

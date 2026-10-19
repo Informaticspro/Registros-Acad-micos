@@ -1,4 +1,14 @@
 /* Adapter: original FADECO design with existing routes, forms and status semantics. */
+.lab-gallery { display: grid; gap: 16px; min-width: 0; }
+.lab-gallery h2, .lab-gallery p { margin: 0; }
+.lab-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 16px; }
+.lab-gallery-grid .lab-record { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.lab-gallery-grid img { width: 100%; height: 200px; object-fit: contain; background: var(--fd-bg); border-radius: 12px; }
+.lab-gallery-grid h3 { overflow-wrap: anywhere; margin: 0; }
+.lab-gallery input[type='file'] { max-width: 100%; min-width: 0; }
+@media (max-width: 700px) {
+  .lab-header-actions .lab-images-button { grid-column: 1 / -1; order: -1; min-height: 42px; }
+}
 :root, .app-shell, :root[data-theme='light'] .app-shell, :root:not([data-theme='light']) .app-shell {
   --bg: var(--fd-bg);
   --surface: var(--fd-surface);
