@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { enrutador } from '@/rutas/enrutador';
 import { ProveedorAutenticacion } from '@/modulos/autenticacion/hooks/ProveedorAutenticacion';
+import { AvisoActualizacion } from '@/componentes/estructura/AvisoActualizacion';
 import '@/estilos/global.css';
 import '@fontsource/plus-jakarta-sans/400.css';
 import '@fontsource/plus-jakarta-sans/600.css';
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ProveedorAutenticacion>
       <RouterProvider router={enrutador} />
+      <AvisoActualizacion />
     </ProveedorAutenticacion>
   </React.StrictMode>,
 );

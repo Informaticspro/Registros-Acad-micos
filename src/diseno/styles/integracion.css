@@ -15,7 +15,11 @@
 .lab-image-viewer h2 { margin: 0; font-size: 1rem; overflow-wrap: anywhere; min-width: 0; }
 .lab-image-viewer header button { flex-shrink: 0; }
 .lab-image-viewer img { display: block; width: 100%; max-height: calc(94dvh - 170px); object-fit: contain; background: var(--fd-bg); border-radius: 8px; }
-.lab-image-viewer-content > a { justify-self: start; }
+.lab-image-viewer-content > button { justify-self: start; }
+.lab-image-viewer-canvas { overflow: auto; max-height: calc(94dvh - 170px); border-radius: 8px; }
+.lab-image-viewer-canvas.is-zoomed img { width: 200%; max-width: none; max-height: none; }
+.app-update-notice { position: fixed; z-index: 10000; inset: auto 16px 16px auto; max-width: min(520px, calc(100vw - 32px)); display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px; border: 1px solid var(--fd-border); border-radius: 16px; background: var(--fd-surface); color: var(--fd-text); box-shadow: var(--fd-shadow); }
+.app-update-notice p { margin: 4px 0 0; }
 @media (max-width: 700px) {
   .lab-header-actions .lab-images-button { grid-column: 1 / -1; order: -1; min-height: 42px; }
 }

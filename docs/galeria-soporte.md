@@ -8,4 +8,4 @@ Se admiten JPG, PNG, WebP y GIF hasta 10 MB por archivo. Se guarda una imagen po
 
 Las imágenes quedan compartidas en Supabase Storage, independientes de las bitácoras y de los equipos, para conservar ideas y referencias para futuros trabajos.
 
-Al tocar una miniatura o «Ver imagen», se abre un visor dentro de la aplicación. Permite cerrar con el botón, Escape o el fondo y conserva el acceso al tamaño original en otra pestaña.
+Al tocar una miniatura o «Ver imagen», se abre un visor dentro de la aplicación. Permite cerrar con el botón, Escape o el fondo. «Ampliar imagen» aumenta la vista dentro del mismo visor, sin abrir enlaces externos.

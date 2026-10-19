@@ -14,6 +14,9 @@ test('image viewer shows the selected image, closes on cancel and restores focus
   const view = render(<VisorImagen imagen={{ name: 'photo', title: 'Referencia.png', url: 'https://example.test/reference.png', createdAt: '' }} onClose={close} />);
   const dialog = screen.getByRole('dialog', { name: 'Referencia.png' });
   expect(screen.getByAltText('Referencia.png').getAttribute('src')).toBe('https://example.test/reference.png');
+  expect(screen.queryByRole('link')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Ampliar imagen' }));
+  expect(screen.getByRole('button', { name: 'Ajustar a la pantalla' })).toBeTruthy();
   fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));
   expect(close).toHaveBeenCalledOnce();
   view.unmount();
