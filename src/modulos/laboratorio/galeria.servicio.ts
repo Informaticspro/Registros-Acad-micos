@@ -23,6 +23,17 @@ export async function subirImagen(organizationId: string, file: File) {
   if (error) throw new Error('No se pudo guardar la imagen. Compruebe su conexión y los permisos de la galería.');
 }
 
+export async function eliminarImagenes(organizationId: string, names: string[]) {
+  const unique = [...new Set(names)];
+  if (!organizationId || !unique.length || unique.some(name => !name || name.includes('/') || name.includes('\\') || name === '.' || name === '..')) {
+    throw new Error('Seleccione imágenes válidas de la galería.');
+  }
+  const { data, error } = await storage().remove(unique.map(name => `${organizationId}/${name}`));
+  if (error || unique.some(name => !data?.some(item => item.name === `${organizationId}/${name}`))) {
+    throw new Error('No se pudieron eliminar todas las imágenes. Actualice la galería y compruebe sus permisos antes de intentarlo de nuevo.');
+  }
+}
+
 export async function listarImagenes(organizationId: string, page = 0): Promise<ImagenGaleria[]> {
   const bucket = storage();
   const { data, error } = await bucket.list(organizationId, {

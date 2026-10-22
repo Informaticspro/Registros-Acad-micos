@@ -6,6 +6,8 @@
 .lab-gallery-grid img { width: 100%; height: 200px; object-fit: contain; background: var(--fd-bg); border-radius: 12px; }
 .lab-gallery-grid h3 { overflow-wrap: anywhere; margin: 0; }
 .lab-gallery input[type='file'] { max-width: 100%; min-width: 0; }
+.lab-gallery-select { display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; font-size: .85rem; cursor: pointer; }
+.lab-gallery-select input[type='checkbox'] { width: 18px; height: 18px; min-height: 0; flex-shrink: 0; accent-color: var(--fd-accent-text); }
 .lab-image-thumbnail { padding: 0; border: 0; background: transparent; cursor: zoom-in; border-radius: 12px; }
 .lab-image-thumbnail:focus-visible { outline: 3px solid var(--fd-accent-text); outline-offset: 3px; }
 .lab-image-viewer { padding: 0; width: min(1100px, 94vw); max-height: 94dvh; border: 1px solid var(--fd-border); border-radius: 20px; color: var(--fd-text); background: var(--fd-surface); }
