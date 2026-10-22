@@ -1,4 +1,6 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
+import { TIPOS_TRABAJO_RAPIDO, type TipoTrabajoRapido } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
+import { registrarCambioPrograma, type CambioPrograma } from '@/modulos/laboratorio/programas.servicio';
 import {
   createBitacoraLaboratorio,
   deleteBitacoraLaboratorio,
@@ -47,6 +49,43 @@ function useBitacorasLaboratorio({
 }: UseBitacorasLaboratorioParams) {
   const [editingBitacora, setEditingBitacora] = useState<BitacoraLaboratorio | null>(null);
   const [confirmacionOperativo, setConfirmacionOperativo] = useState<ConfirmacionOperativoPendiente | null>(null);
+  const savingQuickWork = useRef(false);
+
+  async function registrarProgramaEquipo(equipo: EquipoLaboratorio, cambio: CambioPrograma) {
+    if (savingQuickWork.current) return false;
+    savingQuickWork.current = true;
+    setIsSaving(true); setError(null); setMessage(null);
+    try {
+      await registrarCambioPrograma(equipo.id, cambio);
+      window.dispatchEvent(new Event('laboratorio-actualizado'));
+      setMessage('Programa e historial del equipo actualizados correctamente.');
+      await refresh();
+      return true;
+    } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar el programa.'); return false; }
+    finally { savingQuickWork.current = false; setIsSaving(false); }
+  }
+
+  async function registrarTrabajoRapido(equipo: EquipoLaboratorio, tipo: TipoTrabajoRapido, descripcion: string, responsable: string) {
+    if (savingQuickWork.current || !descripcion.trim()) return false;
+    savingQuickWork.current = true;
+    setIsSaving(true); setError(null); setMessage(null);
+    try {
+      const tipoTrabajo = TIPOS_TRABAJO_RAPIDO[tipo];
+      await createBitacoraLaboratorio({
+        fecha: new Date().toISOString(), tipoTrabajo, titulo: `${tipoTrabajo} · ${equipo.nombre}`,
+        descripcion: descripcion.trim(), responsable, prioridad: 'media', estado: 'cerrado', clase: 'mantenimiento',
+        equipoId: equipo.id, equipoDestino: `${equipo.codigo || 'S/N'} - ${equipo.nombre}`,
+        ubicacion: equipo.ubicacion, equipoOrigen: '', evidenciaTitulo: '', evidenciaUrl: '',
+      }, saveContext);
+      window.dispatchEvent(new Event('laboratorio-actualizado'));
+      setMessage('Trabajo registrado en el historial del equipo.');
+      await refresh();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el registro.');
+      return false;
+    } finally { savingQuickWork.current = false; setIsSaving(false); }
+  }
 
   async function guardarBitacoraConInventario(
     input: BitacoraLaboratorioInput,
@@ -124,6 +163,8 @@ function useBitacorasLaboratorio({
   }
 
   return {
+    registrarProgramaEquipo,
+    registrarTrabajoRapido,
     confirmacionOperativo,
     editingBitacora,
     guardarBitacoraConInventario,

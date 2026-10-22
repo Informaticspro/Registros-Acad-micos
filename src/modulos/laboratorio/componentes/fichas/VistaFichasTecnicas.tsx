@@ -141,10 +141,11 @@ export function VistaFichasTecnicas({
           <fieldset className="lab-sheet-box">
             <legend>Aplicaciones instaladas</legend>
             <div className="lab-app-list">
-              {aplicacionesBase.map((app) => {
+              {[...new Set([...aplicacionesBase, ...(editingFicha?.aplicaciones.map(item => item.nombre) ?? [])])].map((app) => {
                 const current = editingFicha?.aplicaciones.find((item) => item.nombre === app);
                 return (
                   <label className="lab-app-row" key={app}>
+                    <input type="hidden" name="appNombre" value={app} />
                     <input name={`app-${app}`} type="checkbox" defaultChecked={current?.instalada ?? false} />
                     <span>{app}</span>
                     <input name={`appObs-${app}`} placeholder="Version / nota" defaultValue={current?.observacion} />

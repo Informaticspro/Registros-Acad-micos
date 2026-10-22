@@ -60,7 +60,7 @@ function buildFichaTecnicaInput(form: HTMLFormElement): FichaTecnicaLaboratorioI
     responsable: readString(data, 'responsable'),
     usuarioAsignado: readString(data, 'usuarioAsignado'),
     referenciaAcceso: readString(data, 'referenciaAcceso'),
-    aplicaciones: aplicacionesBase.map((nombre) => ({
+    aplicaciones: [...new Set([...aplicacionesBase, ...data.getAll('appNombre').map(String)])].map((nombre) => ({
       nombre,
       instalada: data.get(`app-${nombre}`) === 'on',
       observacion: readString(data, `appObs-${nombre}`),

@@ -105,10 +105,11 @@ export function useInventarioLaboratorio(state: LaboratorioState) {
     return state.fichas
       .filter(
         (item) =>
-          normalizeLooseText(item.pc) === normalizeLooseText(equipo.nombre) ||
-          matchesEquipoPorIdentificador(equipo, item.inventario.map((field) => field.numero).join(' ')),
+          item.equipoId ? item.equipoId === equipo.id : (
+            (normalizeLooseText(item.pc) === normalizeLooseText(equipo.nombre) && normalizeLooseText(item.ubicacion) === normalizeLooseText(equipo.ubicacion)) ||
+            matchesEquipoPorIdentificador(equipo, item.inventario.map((field) => field.numero).join(' '))),
       )
-      .sort((first, second) => second.fecha.localeCompare(first.fecha));
+      .sort((first, second) => Number(second.equipoId === equipo.id) - Number(first.equipoId === equipo.id) || second.fecha.localeCompare(first.fecha));
   }
 
   function getBitacorasEquipo(equipo: EquipoLaboratorio) {

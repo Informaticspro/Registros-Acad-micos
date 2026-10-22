@@ -239,6 +239,10 @@ export type BaseDatos = {
         Args: { p_action?: string; p_id?: string | null };
         Returns: Json;
       };
+      record_equipment_software: {
+        Args: { p_equipment: string; p_request: string; p_action: string; p_name: string; p_version?: string; p_description?: string };
+        Returns: string;
+      };
       submit_laboratory_request: {
         Args: { p_org: string; p_receipt: string; p_data: Json };
         Returns: string;

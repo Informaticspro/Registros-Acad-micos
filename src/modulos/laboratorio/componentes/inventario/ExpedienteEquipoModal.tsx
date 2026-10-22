@@ -14,6 +14,10 @@ import {
   splitMarcaModelo,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 import { EtiquetaInventarioModal } from '@/modulos/laboratorio/componentes/inventario/EtiquetaInventarioModal';
+import { RegistroRapidoEquipo } from './RegistroRapidoEquipo';
+import { ProgramasEquipo } from './ProgramasEquipo';
+import type { CambioPrograma } from '@/modulos/laboratorio/programas.servicio';
+import type { TipoTrabajoRapido } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 
 type ExpedienteEquipoModalProps = {
   componentMoveTargets: Record<string, string>;
@@ -43,6 +47,8 @@ type ExpedienteEquipoModalProps = {
   ) => void;
   handleRetirarComponente: (asignacion: AsignacionComponenteLaboratorio, equipoPadre: EquipoLaboratorio) => void;
   onDownloadHistorial: (equipo: EquipoLaboratorio) => void;
+  onRegistrarTrabajoRapido: (equipo: EquipoLaboratorio, tipo: TipoTrabajoRapido, descripcion: string) => Promise<boolean>;
+  onRegistrarPrograma: (equipo: EquipoLaboratorio, cambio: CambioPrograma) => Promise<boolean>;
   onEditEquipo: (equipo: EquipoLaboratorio) => void;
   onOpenEquipoDetalle: (equipo: EquipoLaboratorio, keepCurrentInHistory?: boolean) => void;
   onOpenFichaForEquipo: (equipo: EquipoLaboratorio) => void;
@@ -72,6 +78,8 @@ export function ExpedienteEquipoModal({
   handleMoverComponente,
   handleRetirarComponente,
   onDownloadHistorial,
+  onRegistrarTrabajoRapido,
+  onRegistrarPrograma,
   onEditEquipo,
   onOpenEquipoDetalle,
   onOpenFichaForEquipo,
@@ -142,6 +150,9 @@ export function ExpedienteEquipoModal({
             Descargar historial
           </button>
         </div>
+
+        <RegistroRapidoEquipo key={selectedEquipoDetalle.id} isSaving={isSaving} onSave={(tipo, descripcion) => onRegistrarTrabajoRapido(selectedEquipoDetalle, tipo, descripcion)} />
+        <ProgramasEquipo key={`programas-${selectedEquipoDetalle.id}`} programas={fichasEquipo[0]?.aplicaciones ?? []} isSaving={isSaving} onSave={cambio => onRegistrarPrograma(selectedEquipoDetalle,cambio)} />
 
         <dl className="lab-definition-grid lab-equipment-detail-grid">
           <div><dt>Numero de inventario</dt><dd>{selectedEquipoDetalle.codigo || 'S/N'}</dd></div>
@@ -362,7 +373,6 @@ export function ExpedienteEquipoModal({
               ))}
               <div><dt>Dirección IP</dt><dd>{fichasEquipo[0].direccionIp || 'No indicada'}</dd></div>
               <div><dt>Usuario asignado</dt><dd>{fichasEquipo[0].usuarioAsignado || 'No indicado'}</dd></div>
-              <div><dt>Programas instalados</dt><dd>{fichasEquipo[0].aplicaciones.filter((item) => item.instalada).map((item) => item.nombre).join(', ') || 'Sin registrar'}</dd></div>
             </dl>
           ) : null}
           {fichasEquipo.length === 0 ? <p className="form-hint">Este equipo todavia no tiene registros de detalles técnicos.</p> : null}

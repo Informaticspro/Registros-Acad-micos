@@ -6,6 +6,8 @@ import {
   estadoTrabajoLabels,
   prioridadLabels,
   TIPO_INSTALACION_PANTALLA,
+  TIPOS_TRABAJO_RAPIDO,
+  TIPOS_PROGRAMA,
 } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
 import {
   getEstadoEquipoLabel,
@@ -82,6 +84,8 @@ export function VistaBitacoras({
               <option value="Cambio de pieza">Reemplazo de cable o pieza</option>
               <option value="Diagnostico">Diagnóstico / revisión</option>
               <option value="Instalacion">Instalación de cable, equipo o programa</option>
+              {Object.values(TIPOS_TRABAJO_RAPIDO).map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
+              {editingBitacora && TIPOS_PROGRAMA.some(tipo => tipo === editingBitacora.tipoTrabajo) ? <option value={editingBitacora.tipoTrabajo}>{editingBitacora.tipoTrabajo}</option> : null}
               {editingBitacora?.tipoTrabajo === TIPO_INSTALACION_PANTALLA ? <option value={TIPO_INSTALACION_PANTALLA}>{TIPO_INSTALACION_PANTALLA}</option> : null}
               <option>Soporte a usuario</option>
             </select>

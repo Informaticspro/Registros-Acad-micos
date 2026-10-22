@@ -374,6 +374,7 @@ function jsonArray<T>(value: Json, fallback: T[]): T[] {
 
 function mapFicha(row: {
   id: string;
+  equipment_id?: string | null;
   sheet_date: string;
   pc: string;
   ip_address: string;
@@ -391,6 +392,7 @@ function mapFicha(row: {
 }): FichaTecnicaLaboratorio {
   return {
     id: row.id,
+    equipoId: row.equipment_id ?? '',
     fecha: row.sheet_date,
     pc: row.pc,
     direccionIp: row.ip_address,
@@ -672,6 +674,7 @@ export async function createFichaTecnicaLaboratorio(
   const { data, error } = await requireSupabase()
     .from('laboratory_technical_sheets')
     .insert({
+      equipment_id: input.equipoId || null,
       organization_id: context.organizationId,
       sheet_date: input.fecha,
       pc: input.pc,
@@ -697,19 +700,22 @@ export async function createFichaTecnicaLaboratorio(
 export async function updateFichaTecnicaLaboratorio(
   id: string,
   input: FichaTecnicaLaboratorioInput,
+  expectedUpdatedAt?: string,
 ): Promise<FichaTecnicaLaboratorio> {
   if (shouldUseLocalStorageFallback()) {
     const state = readState();
     const current = state.fichas.find((ficha) => ficha.id === id);
     if (!current) throw new Error('No se encontro la ficha tecnica.');
+    if (expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt) throw new Error('La ficha cambió. Vuelva a abrirla antes de guardar para conservar los cambios recientes.');
     const updated: FichaTecnicaLaboratorio = { ...current, ...input, updatedAt: new Date().toISOString() };
     writeState({ ...state, fichas: state.fichas.map((ficha) => (ficha.id === id ? updated : ficha)) });
     return updated;
   }
 
-  const { data, error } = await requireSupabase()
+  let query = requireSupabase()
     .from('laboratory_technical_sheets')
     .update({
+      equipment_id: input.equipoId || null,
       sheet_date: input.fecha,
       pc: input.pc,
       ip_address: input.direccionIp,
@@ -724,11 +730,12 @@ export async function updateFichaTecnicaLaboratorio(
       general_notes: input.observacionGeneral,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id)
-    .select('*')
-    .single();
+    .eq('id', id);
+  if (expectedUpdatedAt) query = query.eq('updated_at', expectedUpdatedAt);
+  const { data, error } = await query.select('*').maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('La ficha cambió. Vuelva a abrirla antes de guardar para conservar los cambios recientes.');
   return mapFicha(data);
 }
 

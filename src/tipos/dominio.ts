@@ -151,6 +151,7 @@ export type AccionFichaLaboratorio = {
 
 export type FichaTecnicaLaboratorio = {
   id: string;
+  equipoId?: string;
   fecha: string;
   pc: string;
   direccionIp: string;

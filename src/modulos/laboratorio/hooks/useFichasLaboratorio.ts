@@ -48,6 +48,7 @@ function useFichasLaboratorio({
     event.preventDefault();
     const form = event.currentTarget;
     const input = buildFichaTecnicaInput(form);
+    input.equipoId = selectedEquipoFicha?.id || editingFicha?.equipoId;
     // Historical actions and inventory snapshots are no longer edited in this form.
     input.acciones = editingFicha?.acciones ?? [];
     input.inventario = editingFicha?.inventario ?? (selectedEquipoFicha
@@ -63,7 +64,9 @@ function useFichasLaboratorio({
     setMessage(null);
     try {
       if (editingFicha) {
-        const updated = await updateFichaTecnicaLaboratorio(editingFicha.id, input);
+        const updated = editingFicha.updatedAt
+          ? await updateFichaTecnicaLaboratorio(editingFicha.id, input, editingFicha.updatedAt)
+          : await updateFichaTecnicaLaboratorio(editingFicha.id, input);
         setEditingFicha(updated);
         setSelectedFicha(updated);
         setMessage('Detalles técnicos actualizados correctamente.');

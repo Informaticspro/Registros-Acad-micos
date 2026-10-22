@@ -3,6 +3,9 @@ import type { EstadoTrabajoLaboratorio, PrioridadLaboratorio } from '@/tipos/dom
 import type { LabTab } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
 
 export const TIPO_INSTALACION_PANTALLA = 'Instalación de pantalla de proyección';
+export const TIPOS_TRABAJO_RAPIDO = { fisico: 'Trabajo físico' } as const;
+export const TIPOS_PROGRAMA = ['Instalación de software', 'Actualización de software', 'Retiro de software'] as const;
+export type TipoTrabajoRapido = keyof typeof TIPOS_TRABAJO_RAPIDO;
 
 const emptyState: LaboratorioState = {
   fichas: [],

@@ -1,4 +1,9 @@
 /* Adapter: original FADECO design with existing routes, forms and status semantics. */
+.lab-quick-work { display: grid; gap: 12px; margin: 16px 0; }
+.lab-software-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.lab-software-list li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; border: 1px solid var(--fd-border); border-radius: 12px; }
+.lab-software-list li > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.lab-software-list small { display: block; color: var(--fd-muted); }
 .lab-gallery { display: grid; gap: 16px; min-width: 0; }
 .lab-gallery h2, .lab-gallery p { margin: 0; }
 .lab-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 16px; }

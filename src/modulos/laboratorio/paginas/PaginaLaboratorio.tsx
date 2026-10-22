@@ -308,6 +308,8 @@ export function PaginaLaboratorio() {
     guardarBitacoraConInventario,
     handleBitacoraSubmit,
     handleDeleteBitacora,
+    registrarTrabajoRapido,
+    registrarProgramaEquipo,
     setConfirmacionOperativo,
     setEditingBitacora,
   } = useBitacorasLaboratorio({
@@ -618,6 +620,8 @@ export function PaginaLaboratorio() {
                 selectedEquipoDetalle={selectedEquipoDetalle}
                 setComponentMoveTargets={setComponentMoveTargets}
                 onDownloadHistorial={(equipo) => exportEquipmentHistoryById(equipo.id)}
+                onRegistrarTrabajoRapido={(equipo, tipo, descripcion) => registrarTrabajoRapido(equipo, tipo, descripcion, responsableSesion)}
+                onRegistrarPrograma={registrarProgramaEquipo}
                 onEditEquipo={openEditarEquipoModal}
                 onOpenEquipoDetalle={openEquipoDetalle}
                 onOpenFichaForEquipo={openFichaForEquipo}
