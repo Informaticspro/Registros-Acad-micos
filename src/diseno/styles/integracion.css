@@ -134,10 +134,15 @@ body { background: var(--fd-bg); color: var(--fd-text); }
 :root .lab-workspace :is(.lab-form, .lab-list) h2 { font-size: 20px; line-height: 1.4; font-weight: 800; }
 :root :is(.eyebrow, .status-pill) { letter-spacing: .02em; }
 @media (max-width: 767px) {
-  :root .lab-workspace .lab-tabs { flex-wrap: nowrap; overflow-x: auto; padding: 4px 2px 10px; }
-  :root .lab-workspace .lab-tabs button { flex: 0 0 auto; white-space: nowrap; }
+  :root .lab-workspace .lab-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; min-width: 0; max-width: 100%; overflow: visible; padding: 4px 0 10px; }
+  :root .lab-workspace .lab-tabs button { width: 100%; min-width: 0; min-height: 46px; padding: 8px 6px; border-radius: 12px; font-size: .82rem; line-height: 1.35; white-space: normal; overflow: visible; }
+  :root .lab-workspace .lab-tabs .lab-tab-label-full { display: block; overflow-wrap: anywhere; }
+  :root .lab-workspace .lab-tabs .lab-tab-label-short { display: none; }
   :root .lab-workspace .lab-attention-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   :root .lab-workspace .lab-attention-list > :is(button, article), :root .lab-workspace .lab-record { padding: 18px; }
+}
+@media (min-width: 600px) and (max-width: 767px) {
+  :root .lab-workspace .lab-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .borrow-page { min-height: 100vh; background: var(--fd-bg); color: var(--fd-text); }
