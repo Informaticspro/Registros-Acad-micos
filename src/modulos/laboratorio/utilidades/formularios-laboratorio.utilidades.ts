@@ -146,7 +146,7 @@ function buildComponenteInput(
       marcaModelo: [marca, modelo].filter(Boolean).join(' '),
       serie,
       ubicacion: equipoPadre.ubicacion,
-      estado: equipoPadre.estado || 'operativo',
+      estado: readString(data, `${prefix}-estado`) || 'operativo',
       observaciones: `Componente registrado inicialmente para ${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}.`,
     } satisfies EquipoLaboratorioInput,
   };

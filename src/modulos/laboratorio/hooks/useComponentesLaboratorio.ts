@@ -125,7 +125,7 @@ function useComponentesLaboratorio({
       marcaModelo: [marca, modelo].filter(Boolean).join(' '),
       serie,
       ubicacion: equipoPadre.ubicacion,
-      estado: equipoPadre.estado || 'operativo',
+      estado: readString(data, 'nuevoComponenteEstado') || 'operativo',
       observaciones: `Componente creado y asignado desde el expediente de ${equipoPadre.codigo || 'S/N'} - ${equipoPadre.nombre}.`,
     };
 

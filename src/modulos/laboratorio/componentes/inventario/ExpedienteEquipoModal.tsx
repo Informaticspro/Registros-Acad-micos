@@ -312,6 +312,7 @@ export function ExpedienteEquipoModal({
               <span className="eyebrow">Nuevo componente</span>
               <strong>Crear y asignar aqui mismo</strong>
             </div>
+            <label>Estado del nuevo componente<select name="nuevoComponenteEstado" defaultValue="operativo" required>{Object.entries({ operativo: 'Operativo', ...estadoEquipoNombre }).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><small>Seleccione el estado de esta pieza; no depende del estado del equipo principal.</small></label>
             <div className="form-grid compact-form-grid">
               <label>
                 Tipo

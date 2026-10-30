@@ -220,6 +220,7 @@ export function FormularioEquipoModal({
                         <Trash2 size={16} />
                       </button>
                     </header>
+                    <label>Estado del componente<select name={`${prefix}-estado`} defaultValue="operativo" required>{[...new Set(['operativo', ...estadosEquipo])].map(estado => <option key={estado} value={estado}>{estadoEquipoNombre[estado] || getEstadoEquipoLabel(estado)}</option>)}</select><small>Este estado corresponde a la pieza, no al equipo principal.</small></label>
                     <div className="form-grid compact-form-grid">
                       <label>
                         Tipo de componente
