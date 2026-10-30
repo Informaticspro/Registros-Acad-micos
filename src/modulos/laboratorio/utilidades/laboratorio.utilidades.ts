@@ -1,5 +1,4 @@
 ﻿import type {
-  BitacoraLaboratorioInput,
   EquipoLaboratorioInput,
 } from '@/servicios/laboratorio.servicio';
 import type {
@@ -235,28 +234,6 @@ function appendUniqueInventoryValue(baseValue: string, componentValues: string[]
   return values.join(' / ');
 }
 
-function resolveInventoryStatusFromBitacora(input: BitacoraLaboratorioInput): EstadoEquipoLaboratorio | null {
-  const tipo = input.tipoTrabajo
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-
-  if (input.estado === 'resuelto' || input.estado === 'cerrado') return 'operativo';
-  if (tipo.includes('preventivo')) return 'mantenimiento';
-  if (
-    tipo.includes('incidencia') ||
-    tipo.includes('reparacion') ||
-    tipo.includes('correctivo') ||
-    tipo.includes('cambio de pieza') ||
-    tipo.includes('diagnostico')
-  ) {
-    return 'en_reparacion';
-  }
-  if (tipo.includes('instalacion') || tipo.includes('soporte')) return 'mantenimiento';
-
-  return null;
-}
-
 function sortEquiposInventario(items: EquipoLaboratorio[], prioritizeStatus = false) {
   return [...items].sort((first, second) => {
     if (prioritizeStatus) {
@@ -483,7 +460,6 @@ export {
   parseDescartesExcelRows,
   parseEquipoExcelRow,
   readString,
-  resolveInventoryStatusFromBitacora,
   shouldImportEquipoRow,
   shouldRequestIssueDetailForEstado,
   sortEquiposInventario,

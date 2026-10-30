@@ -18,7 +18,7 @@ import type { ConfirmacionOperativoPendiente } from '@/modulos/laboratorio/tipos
 import {
   buildBitacoraInput,
   getEstadoEquipoLabel,
-  resolveInventoryStatusFromBitacora,
+  readString,
 } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
 type SaveContext = {
@@ -115,12 +115,11 @@ function useBitacorasLaboratorio({
         form.reset();
       }
 
-      window.dispatchEvent(new Event('laboratorio-actualizado'));
-
       if (shouldSyncEquipoEstado && equipoAtendido && nextEquipoEstado && equipoAtendido.estado !== nextEquipoEstado) {
         await updateEstadoEquipoLaboratorio(equipoAtendido.id, nextEquipoEstado);
       }
 
+      window.dispatchEvent(new Event('laboratorio-actualizado'));
       await refresh();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el trabajo.');
@@ -134,7 +133,7 @@ function useBitacorasLaboratorio({
     const form = event.currentTarget;
     const input = buildBitacoraInput(form);
     const equipoAtendido = equipos.find((item) => item.id === input.equipoId);
-    const nextEquipoEstado = equipoAtendido ? resolveInventoryStatusFromBitacora(input) : null;
+    const nextEquipoEstado = equipoAtendido ? readString(new FormData(form), 'estadoEquipoResultado') || null : null;
     const shouldSyncEquipoEstado = Boolean(equipoAtendido && nextEquipoEstado);
 
     if (equipoAtendido) {

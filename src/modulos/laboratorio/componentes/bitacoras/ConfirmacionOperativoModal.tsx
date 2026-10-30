@@ -36,7 +36,7 @@ export function ConfirmacionOperativoModal({
           </button>
         </header>
         <p>
-          Este registro esta resuelto o cerrado. Desea devolver el equipo{' '}
+          Seleccionó cambiar el estado del equipo. ¿Desea devolver{' '}
           <strong>
             {confirmacion.equipoAtendido.codigo} - {confirmacion.equipoAtendido.nombre}
           </strong>{' '}

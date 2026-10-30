@@ -152,18 +152,30 @@ export function VistaBitacoras({
         <div className="form-grid compact-form-grid">
           <label>
             Estado del trabajo *
-            <select name="estado" defaultValue={editingBitacora?.estado ?? 'en_proceso'} required>
+            <select name="estado" defaultValue={editingBitacora?.estado ?? ''} required>
+              <option value="" disabled>Seleccione cómo queda el trabajo</option>
               <option value="pendiente">Pendiente</option>
               <option value="en_proceso">En proceso</option>
               <option value="resuelto">Resuelto, pendiente de cierre</option>
               <option value="cerrado">Cerrado / finalizado</option>
             </select>
+            <small>Si ya terminó, seleccione Cerrado / finalizado. Solo Pendiente y En proceso aparecen en Inicio.</small>
           </label>
           <label>
             Evidencia
             <input name="evidenciaTitulo" placeholder="Foto, acta, captura, factura..." defaultValue={editingBitacora?.evidenciaTitulo} />
           </label>
         </div>
+        <label>
+          Estado del equipo después del trabajo
+          <select name="estadoEquipoResultado" defaultValue="">
+            <option value="">Conservar el estado actual del equipo</option>
+            {Object.entries({ operativo: 'Operativo', pendiente_revision: 'Pendiente de revisión', en_reparacion: 'En reparación', mantenimiento: 'En mantenimiento', ...estadoEquipoNombre }).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <small>Un diagnóstico o una anotación no cambia el inventario. Cambie este campo solo si verificó el estado del equipo.</small>
+        </label>
         <label>
           Enlace o referencia de evidencia
           <input name="evidenciaUrl" placeholder="URL, carpeta, nombre del archivo o referencia fisica" defaultValue={editingBitacora?.evidenciaUrl} />

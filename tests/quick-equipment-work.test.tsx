@@ -5,12 +5,45 @@ import { useBitacorasLaboratorio } from '../src/modulos/laboratorio/hooks/useBit
 import { RegistroRapidoEquipo } from '../src/modulos/laboratorio/componentes/inventario/RegistroRapidoEquipo';
 import { createBitacoraLaboratorio, updateBitacoraLaboratorio, updateEstadoEquipoLaboratorio } from '../src/servicios/laboratorio.servicio';
 import type { EquipoLaboratorio, BitacoraLaboratorio } from '../src/tipos/dominio';
+import type { FormEvent } from 'react';
 
 vi.mock('../src/servicios/laboratorio.servicio', () => ({
   createBitacoraLaboratorio: vi.fn(async () => ({})), updateBitacoraLaboratorio: vi.fn(),
   deleteBitacoraLaboratorio: vi.fn(), updateEstadoEquipoLaboratorio: vi.fn(),
 }));
 afterEach(() => { cleanup(); vi.clearAllMocks(); vi.useRealTimers(); });
+
+test.each(['Diagnostico', 'Incidencia', 'Cambio de pieza'])('saving %s without an explicit equipment state preserves inventory', async tipo => {
+  const equipo = { id: 'pc-1', codigo: '51251', nombre: 'Cable', ubicacion: '3A', estado: 'operativo' } as EquipoLaboratorio;
+  const { result } = renderHook(() => useBitacorasLaboratorio({
+    confirmar: vi.fn(), equipos: [equipo], estadoEquipoNombre: {}, refresh: vi.fn(async () => {}),
+    saveContext: { organizationId: 'org', userId: 'tech' }, setError: vi.fn(), setMessage: vi.fn(), setIsSaving: vi.fn(),
+  }));
+  const form = document.createElement('form');
+  for (const [name, value] of Object.entries({ fecha: '2026-10-08T12:31', equipoId: 'pc-1', tipoTrabajo: tipo, titulo: 'Medición', descripcion: 'Longitud: 6 metros', estado: 'cerrado', prioridad: 'media', responsable: 'José' })) {
+    const field = document.createElement('input'); field.name = name; field.value = value; form.append(field);
+  }
+  act(() => result.current.setEditingBitacora({ id: 'old', estado: 'en_proceso' } as BitacoraLaboratorio));
+  await act(async () => result.current.handleBitacoraSubmit({ preventDefault() {}, currentTarget: form } as FormEvent<HTMLFormElement>));
+  expect(updateBitacoraLaboratorio).toHaveBeenCalledWith('old', expect.objectContaining({ estado: 'cerrado' }));
+  expect(updateEstadoEquipoLaboratorio).not.toHaveBeenCalled();
+});
+
+test('an explicit equipment state changes inventory after saving the work', async () => {
+  const equipo = { id: 'pc-1', codigo: '51251', nombre: 'Cable', ubicacion: '3A', estado: 'operativo' } as EquipoLaboratorio;
+  const { result } = renderHook(() => useBitacorasLaboratorio({
+    confirmar: vi.fn(), equipos: [equipo], estadoEquipoNombre: {}, refresh: vi.fn(async () => {}),
+    saveContext: { organizationId: 'org', userId: 'tech' }, setError: vi.fn(), setMessage: vi.fn(), setIsSaving: vi.fn(),
+  }));
+  const form = document.createElement('form');
+  for (const [name, value] of Object.entries({ fecha: '2026-10-08T12:31', equipoId: 'pc-1', tipoTrabajo: 'Incidencia', titulo: 'Sin imagen', descripcion: 'No da video', estado: 'pendiente', prioridad: 'alta', responsable: 'José', estadoEquipoResultado: 'en_reparacion' })) {
+    const field = document.createElement('input'); field.name = name; field.value = value; form.append(field);
+  }
+  await act(async () => result.current.handleBitacoraSubmit({ preventDefault() {}, currentTarget: form } as FormEvent<HTMLFormElement>));
+  expect(createBitacoraLaboratorio).toHaveBeenCalled();
+  expect(updateEstadoEquipoLaboratorio).toHaveBeenCalledWith('pc-1', 'en_reparacion');
+  expect(createBitacoraLaboratorio.mock.invocationCallOrder[0]).toBeLessThan(updateEstadoEquipoLaboratorio.mock.invocationCallOrder[0]);
+});
 
 test.each(['fisico'] as const)('quick %s work creates one completed record with automatic context without changing equipment state', async tipo => {
   vi.useFakeTimers();
