@@ -56,14 +56,14 @@ export function VistaInformes(p: VistaInformesProps) {
   async function descargar() {
     setError(''); setOcupado(true);
     try {
-      const acciones: Partial<Record<TipoInforme, () => void>> = {
+      const acciones: Partial<Record<TipoInforme, () => void | Promise<void>>> = {
         inventario: p.exportInventoryExcel, ubicacion: p.exportLocationReport, historial: p.exportEquipmentHistoryReport,
         mensual: p.exportMonthlyReport, rango: p.exportRangeMaintenanceReport, pendientes: p.exportPendingReport,
         descartes: p.exportDiscardsExcel,
       };
-      if (tipo === 'csv') p.exportCsv();
-      else if (tipo === 'txt') p.exportReport();
-      else if (formato === 'excel' && acciones[tipo]) acciones[tipo]?.();
+      if (tipo === 'csv') await p.exportCsv();
+      else if (tipo === 'txt') await p.exportReport();
+      else if (formato === 'excel' && acciones[tipo]) await acciones[tipo]?.();
       else await descargarVistaInforme(filas, titulo, formato);
       setRecientes(actual => [{ tipo, nombre: titulo }, ...actual.filter(x => x.tipo !== tipo)].slice(0, 4));
     } catch { setError('No se pudo generar el archivo. Intente nuevamente.'); }

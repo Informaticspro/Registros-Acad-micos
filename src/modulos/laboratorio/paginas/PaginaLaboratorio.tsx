@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -12,7 +12,6 @@ import { useAutenticacion } from '@/modulos/autenticacion/hooks/useAutenticacion
 import { useConfirmacion } from '@/hooks/useConfirmacion';
 import { EncabezadoLaboratorio } from '@/modulos/laboratorio/componentes/EncabezadoLaboratorio';
 import { GaleriaImagenes } from '@/modulos/laboratorio/componentes/GaleriaImagenes';
-import { EscanerInventarioModal } from '@/modulos/laboratorio/componentes/EscanerInventarioModal';
 import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLaboratorio';
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
 import { ConfirmacionOperativoModal } from '@/modulos/laboratorio/componentes/bitacoras/ConfirmacionOperativoModal';
@@ -52,6 +51,8 @@ import {
   type LabTab,
   type TemaVisual,
 } from '@/modulos/laboratorio/tipos/laboratorio-ui.tipos';
+
+const EscanerInventarioModal = lazy(() => import('@/modulos/laboratorio/componentes/EscanerInventarioModal').then(module => ({ default: module.EscanerInventarioModal })));
 
 export function PaginaLaboratorio() {
   const navigate = useNavigate();
@@ -759,7 +760,7 @@ export function PaginaLaboratorio() {
             />
       </section>
 
-      {showInventoryScanner ? <EscanerInventarioModal onClose={() => setShowInventoryScanner(false)} /> : null}
+      {showInventoryScanner ? <Suspense fallback={<div className="modal-backdrop"><section className="modal-panel"><p role="status">Cargando escáner…</p><button className="secondary-button" type="button" onClick={() => setShowInventoryScanner(false)}>Cancelar</button></section></div>}><EscanerInventarioModal onClose={() => setShowInventoryScanner(false)} /></Suspense> : null}
       {confirmacionModal}
     </div>
   );

@@ -1,0 +1,42 @@
+.fd-hero {
+  position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  padding: 30px 36px; border-radius: var(--fd-radius-xl); background: var(--fd-grad-hero); color: #fff;
+  box-shadow: var(--fd-shadow-hero);
+}
+.fd-hero__orb { position: absolute; border-radius: 50%; pointer-events: none; }
+.fd-hero__orb--a { right: -60px; top: -90px; width: 300px; height: 300px; background: rgba(255,255,255,.09); }
+.fd-hero__orb--b { right: 120px; bottom: -130px; width: 240px; height: 240px; background: rgba(255,255,255,.06); }
+.fd-hero__body { position: relative; max-width: 620px; }
+.fd-hero__eyebrow { font-size: 12px; letter-spacing: .12em; font-weight: 800; opacity: .85; text-transform: uppercase; }
+.fd-hero__title { margin: 8px 0 6px; font-size: 26px; font-weight: 800; line-height: 1.2; }
+.fd-hero__meta { opacity: .9; font-size: 14px; }
+.fd-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.fd-hero__btn {
+  padding: 12px 22px; border-radius: var(--fd-radius-sm); font-weight: 800; cursor: pointer; border: 0;
+  background: var(--fd-hero-btn-bg); color: var(--fd-hero-btn-text);
+}
+.fd-hero__btn--ghost {
+  font-weight: 600; border: 1px solid rgba(255,255,255,.55); background: rgba(255,255,255,.12); color: #fff;
+}
+.fd-hero__count {
+  position: relative; text-align: center; padding: 20px 30px; border-radius: var(--fd-radius-lg);
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); flex-shrink: 0;
+}
+.fd-hero__count-num { font-size: 54px; font-weight: 800; line-height: 1; }
+.fd-hero__count-label { font-size: 13px; opacity: .9; margin-top: 4px; }
+
+@media (min-width: 768px) and (max-width: 1099px) { .fd-hero { padding: 26px 28px; } }
+@media (max-width: 767px) {
+ .fd-hero { flex-direction: column; align-items: flex-start; padding: 24px 20px; }
+ .fd-hero__title { font-size: 21px; }
+ .fd-hero__count { padding: 14px 22px; display: flex; align-items: baseline; gap: 10px; }
+ .fd-hero__count-num { font-size: 40px; }
+ .fd-hero__count-label { margin-top: 0; }
+ .fd-hero__actions .fd-hero__btn { flex: 1 1 auto; }
+}
+.fd-hero { background: linear-gradient(120deg, #087f5b 0%, #096c4d 45%, #084c3a 100%); }
+.fd-hero__title, .fd-hero__meta, .fd-hero__eyebrow, .fd-hero__count { color: #fff; }
+.fd-hero__meta, .fd-hero__eyebrow, .fd-hero__count-label { opacity: 1; }
+.fd-hero__btn { min-height: 44px; }
+.fd-hero__btn:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+@media (max-width: 767px) { .fd-hero__body { min-width: 0; width: 100%; } .fd-hero__title { overflow-wrap: anywhere; } }

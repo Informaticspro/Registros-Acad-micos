@@ -9,7 +9,6 @@ import '@fontsource/plus-jakarta-sans/400.css';
 import '@fontsource/plus-jakarta-sans/600.css';
 import '@fontsource/plus-jakarta-sans/800.css';
 import '@/diseno/styles/tokens.css';
-import '@/diseno/styles/fadeco.css';
 import '@/diseno/styles/integracion.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

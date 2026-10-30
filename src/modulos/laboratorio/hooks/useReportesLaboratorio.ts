@@ -1,16 +1,4 @@
-import {
-  LaboratorioState,
-  buildLaboratorioReport,
-  exportDescartesLaboratorioExcel,
-  exportHistorialEquipoLaboratorioExcel,
-  exportInformeMantenimientoPorRangoExcel,
-  exportInformeMensualMantenimientoExcel,
-  exportInformePendientesLaboratorioExcel,
-  exportInformeUbicacionLaboratorioExcel,
-  exportEtiquetasInventarioLaboratorioPdf,
-  exportInventarioLaboratorioExcel,
-  exportLaboratorioCsv,
-} from '@/servicios/laboratorio.servicio';
+import type { LaboratorioState } from '@/servicios/laboratorio.servicio';
 import { downloadTextFile } from '@/modulos/laboratorio/utilidades/laboratorio.utilidades';
 
 type UseReportesLaboratorioOptions = {
@@ -24,105 +12,64 @@ type UseReportesLaboratorioOptions = {
   state: LaboratorioState;
 };
 
+type Exportadores = typeof import('@/servicios/laboratorio-exportaciones.servicio');
+
 export function useReportesLaboratorio({
-  reportEndDate,
-  reportStartDate,
-  selectedReportEquipoId,
-  selectedReportLocation,
-  selectedReportMonth,
-  setError,
-  setMessage,
-  state,
+  reportEndDate, reportStartDate, selectedReportEquipoId, selectedReportLocation,
+  selectedReportMonth, setError, setMessage, state,
 }: UseReportesLaboratorioOptions) {
-  function exportCsv() {
-    downloadTextFile(exportLaboratorioCsv(state), 'informe-laboratorio.csv', 'text/csv;charset=utf-8');
-  }
-
-  function exportReport() {
-    downloadTextFile(buildLaboratorioReport(state), 'informe-laboratorio.txt');
-  }
-
-  function exportInventoryExcel() {
-    if (state.equipos.length === 0) {
-      setError('No hay equipos registrados para generar el informe de inventario.');
-      return;
-    }
-    exportInventarioLaboratorioExcel(state);
-    setMessage('Informe de inventario descargado correctamente.');
-  }
-
-  async function exportInventoryLabels() {
-    if (state.equipos.length === 0) {
-      setError('No hay equipos registrados para generar etiquetas de inventario.');
-      return;
-    }
-
+  async function generar(accion: (exportadores: Exportadores) => void | Promise<void>, mensaje?: string) {
+    setError(null);
     try {
-      await exportEtiquetasInventarioLaboratorioPdf(state);
-      setMessage('Etiquetas de inventario descargadas en PDF correctamente.');
+      const exportadores = await import('@/servicios/laboratorio-exportaciones.servicio');
+      await accion(exportadores);
+      if (mensaje) setMessage(mensaje);
     } catch {
-      setError('No se pudieron generar las etiquetas de inventario.');
+      setError('No se pudo generar el archivo. Intente nuevamente.');
     }
   }
 
+  function exportCsv() {
+    return generar(m => downloadTextFile(m.exportLaboratorioCsv(state), 'informe-laboratorio.csv', 'text/csv;charset=utf-8'));
+  }
+  function exportReport() {
+    return generar(m => downloadTextFile(m.buildLaboratorioReport(state), 'informe-laboratorio.txt'));
+  }
+  function exportInventoryExcel() {
+    if (!state.equipos.length) { setError('No hay equipos registrados para generar el informe de inventario.'); return; }
+    return generar(m => m.exportInventarioLaboratorioExcel(state), 'Informe de inventario descargado correctamente.');
+  }
+  function exportInventoryLabels() {
+    if (!state.equipos.length) { setError('No hay equipos registrados para generar etiquetas de inventario.'); return; }
+    return generar(m => m.exportEtiquetasInventarioLaboratorioPdf(state), 'Etiquetas de inventario descargadas en PDF correctamente.');
+  }
   function exportDiscardsExcel() {
-    if (state.descartes.length === 0) {
-      setError('No hay descartes registrados para generar el informe.');
-      return;
-    }
-    exportDescartesLaboratorioExcel(state);
-    setMessage('Informe de descartes descargado correctamente.');
+    if (!state.descartes.length) { setError('No hay descartes registrados para generar el informe.'); return; }
+    return generar(m => m.exportDescartesLaboratorioExcel(state), 'Informe de descartes descargado correctamente.');
   }
-
   function exportMonthlyReport() {
-    exportInformeMensualMantenimientoExcel(state, selectedReportMonth);
-    setMessage('Informe mensual de mantenimiento descargado correctamente.');
+    return generar(m => m.exportInformeMensualMantenimientoExcel(state, selectedReportMonth), 'Informe mensual de mantenimiento descargado correctamente.');
   }
-
   function exportRangeMaintenanceReport() {
-    if (reportStartDate && reportEndDate && reportStartDate > reportEndDate) {
-      setError('La fecha inicial no puede ser posterior a la fecha final.');
-      return;
-    }
-    exportInformeMantenimientoPorRangoExcel(state, reportStartDate, reportEndDate);
-    setMessage('Informe por rango descargado correctamente.');
+    if (reportStartDate && reportEndDate && reportStartDate > reportEndDate) { setError('La fecha inicial no puede ser posterior a la fecha final.'); return; }
+    return generar(m => m.exportInformeMantenimientoPorRangoExcel(state, reportStartDate, reportEndDate), 'Informe por rango descargado correctamente.');
   }
-
   function exportLocationReport() {
-    exportInformeUbicacionLaboratorioExcel(state, selectedReportLocation);
-    setMessage('Informe por ubicacion descargado correctamente.');
+    return generar(m => m.exportInformeUbicacionLaboratorioExcel(state, selectedReportLocation), 'Informe por ubicacion descargado correctamente.');
   }
-
   function exportPendingReport() {
-    exportInformePendientesLaboratorioExcel(state);
-    setMessage('Informe de pendientes descargado correctamente.');
+    return generar(m => m.exportInformePendientesLaboratorioExcel(state), 'Informe de pendientes descargado correctamente.');
   }
-
-  function exportEquipmentHistoryReport() {
-    if (!selectedReportEquipoId) {
-      setError('Seleccione un equipo para generar su historial tecnico.');
-      return;
-    }
-    exportHistorialEquipoLaboratorioExcel(state, selectedReportEquipoId);
-    setMessage('Historial tecnico del equipo descargado correctamente.');
-  }
-
   function exportEquipmentHistoryById(equipoId: string) {
-    exportHistorialEquipoLaboratorioExcel(state, equipoId);
-    setMessage('Historial tecnico del equipo descargado correctamente.');
+    return generar(m => m.exportHistorialEquipoLaboratorioExcel(state, equipoId), 'Historial tecnico del equipo descargado correctamente.');
   }
-
+  function exportEquipmentHistoryReport() {
+    if (!selectedReportEquipoId) { setError('Seleccione un equipo para generar su historial tecnico.'); return; }
+    return exportEquipmentHistoryById(selectedReportEquipoId);
+  }
   return {
-    exportCsv,
-    exportDiscardsExcel,
-    exportEquipmentHistoryById,
-    exportEquipmentHistoryReport,
-    exportInventoryExcel,
-    exportInventoryLabels,
-    exportLocationReport,
-    exportMonthlyReport,
-    exportPendingReport,
-    exportRangeMaintenanceReport,
-    exportReport,
+    exportCsv, exportDiscardsExcel, exportEquipmentHistoryById, exportEquipmentHistoryReport,
+    exportInventoryExcel, exportInventoryLabels, exportLocationReport, exportMonthlyReport,
+    exportPendingReport, exportRangeMaintenanceReport, exportReport,
   };
 }

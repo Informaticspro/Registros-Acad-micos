@@ -4,3 +4,9 @@ dist
 .env.local
 .DS_Store
 *.tsbuildinfo
+
+# Archivos generados por herramientas y vistas previas locales.
+/.codex-remote-attachments/
+/.ppt-build/
+/.work-*/
+/outputs/

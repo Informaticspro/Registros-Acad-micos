@@ -1,4 +1,6 @@
-import type { NextEventData } from '../../types/fadeco';
+import './NextEventHero.css';
+
+interface NextEventData { title: string; meta: string; daysLeft: number; }
 
 interface Props { event: NextEventData; onView?: () => void; onEnroll?: () => void; }
 

@@ -70,13 +70,7 @@ body { background: var(--fd-bg); color: var(--fd-text); }
 .lab-home-attention-banner { border-radius: 22px; background: linear-gradient(120deg, var(--fd-warn-bg-2), var(--fd-warn-bg)); border-color: var(--fd-warn-border); color: var(--fd-warn-text); padding: 24px 28px; }
 .lab-home-metrics > button { border-radius: 20px; box-shadow: var(--fd-shadow); }
 .lab-home-metrics > button strong { font-weight: 800; font-size: 38px; }
-.fd-hero { background: linear-gradient(120deg, #087f5b 0%, #096c4d 45%, #084c3a 100%); }
-.fd-hero__title, .fd-hero__meta, .fd-hero__eyebrow, .fd-hero__count { color: #fff; }
-.fd-hero__meta, .fd-hero__eyebrow, .fd-hero__count-label { opacity: 1; }
-.fd-hero__btn { min-height: 44px; }
-.fd-hero__btn:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 @media (min-width: 1100px) { .app-shell:not(.sidebar-collapsed) { grid-template-columns: 248px minmax(0, 1fr); } }
-@media (max-width: 767px) { .fd-hero__body { min-width: 0; width: 100%; } .fd-hero__title { overflow-wrap: anywhere; } }
 
 /* Complete the shared surfaces: inherited legacy tints must not leak into FADECO. */
 :root, :root[data-theme='light'], :root[data-theme='dark'],
