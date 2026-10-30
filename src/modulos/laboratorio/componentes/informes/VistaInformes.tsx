@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Download, FileText, Tags } from 'lucide-react';
 import type { LaboratorioState } from '@/servicios/laboratorio.servicio';
-import { descargarVistaInforme, gruposInformes, obtenerFilasInforme, type TipoInforme } from './informes.modelo';
+import { descargarVistaInforme, gruposInformes, normalizarPersona, obtenerFilasInforme, type TipoInforme } from './informes.modelo';
 import './informes.css';
 
 type VistaInformesProps = {
@@ -33,8 +33,8 @@ export function VistaInformes(p: VistaInformesProps) {
   const filas = obtenerFilasInforme(p.state, { tipo, desde: p.reportStartDate, hasta: p.reportEndDate,
     mes: p.selectedReportMonth, ubicacion: p.selectedReportLocation, equipoId: p.selectedReportEquipoId,
     rol, persona, trabajos, prestamos, evidencias });
-  const personas = [...new Set(rol === 'beneficiario' ? p.state.prestamos.map(x => x.entregadoA) :
-    [...p.state.bitacoras.map(x => x.responsable), ...p.state.prestamos.map(x => x.responsableEntrega)])].filter(Boolean).sort();
+  const nombres = rol === 'beneficiario' ? p.state.prestamos.map(x => x.entregadoA) : [...p.state.bitacoras.map(x => x.responsable), ...p.state.prestamos.map(x => x.responsableEntrega)];
+  const personas = [...new Map(nombres.filter(Boolean).map(nombre=>[normalizarPersona(nombre),nombre.trim()])).values()].sort();
   const pendientes = p.state.bitacoras.filter(b => ['pendiente', 'en_proceso'].includes(b.estado)).length;
   const invalido = p.reportStartDate > p.reportEndDate && ['rango', 'persona'].includes(tipo);
   const faltaPersona = tipo === 'persona' && rol !== 'todos' && !persona;
@@ -64,7 +64,7 @@ export function VistaInformes(p: VistaInformesProps) {
       if (tipo === 'csv') await p.exportCsv();
       else if (tipo === 'txt') await p.exportReport();
       else if (formato === 'excel' && acciones[tipo]) await acciones[tipo]?.();
-      else await descargarVistaInforme(filas, titulo, formato);
+      else await descargarVistaInforme(filas, titulo, formato,tipo==='persona'?{persona,rol,desde:p.reportStartDate,hasta:p.reportEndDate,trabajos,prestamos,evidencias}:undefined);
       setRecientes(actual => [{ tipo, nombre: titulo }, ...actual.filter(x => x.tipo !== tipo)].slice(0, 4));
     } catch { setError('No se pudo generar el archivo. Intente nuevamente.'); }
     finally { setOcupado(false); }
@@ -126,6 +126,7 @@ export function VistaInformes(p: VistaInformesProps) {
                 </button>
               </div>
             </div>
+            {tipo === 'persona' && !faltaPersona ? <div className="reports-person-heading"><strong>{rol==='todos'?'Todos los técnicos':persona}</strong><p>Informe de actividades y gestiones · {p.reportStartDate} al {p.reportEndDate}</p><small>La descarga incluye encabezado institucional, nombre, período y descripción completa de cada registro.</small></div> : null}
             <div className="reports-metrics">
               {[[filas.length, 'Registros encontrados'], [new Set(filas.map(f => f.equipo)).size, 'Equipos en resultados'],
                 [filas.filter(f => ['resuelto', 'cerrado', 'devuelto'].includes(f.estado)).length, 'Finalizados'],

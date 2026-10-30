@@ -67,3 +67,6 @@
   .reports-metrics { gap: 8px; }
   .reports-heading h2 { font-size: 1.35rem; }
 }
+.reports-person-heading { padding: 16px 20px; border: 1px solid var(--fd-border); border-left: 4px solid var(--fd-accent-text); border-radius: 12px; background: var(--fd-accent-soft); color: var(--fd-text); }
+.reports-person-heading strong { font-size: 20px; }
+.reports-person-heading p { margin: 6px 0; }
