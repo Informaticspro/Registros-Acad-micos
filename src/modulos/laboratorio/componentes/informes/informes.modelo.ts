@@ -1,0 +1,77 @@
+import type { LaboratorioState } from '@/servicios/laboratorio.servicio';
+
+export type TipoInforme = 'inventario' | 'mensual' | 'rango' | 'ubicacion' | 'historial' | 'pendientes' | 'prestamos' | 'descartes' | 'persona' | 'csv' | 'txt';
+export const gruposInformes: { titulo: string; opciones: [TipoInforme, string][] }[] = [
+  { titulo: 'Inventario', opciones: [['inventario', 'Inventario general'], ['ubicacion', 'Por ubicacion'], ['historial', 'Historial por equipo']] },
+  { titulo: 'Resumenes', opciones: [['mensual', 'Mensual'], ['rango', 'Mantenimiento por fechas']] },
+  { titulo: 'Seguimiento', opciones: [['pendientes', 'Pendientes tecnicos'], ['prestamos', 'Prestamos activos y vencidos'], ['descartes', 'Descartes']] },
+  { titulo: 'Personas', opciones: [['persona', 'Por persona']] },
+  { titulo: 'Otros formatos', opciones: [['csv', 'Base completa (CSV)'], ['txt', 'Resumen rapido (TXT)']] },
+];
+export type FilaInforme = { fecha: string; equipo: string; detalle: string; estado: string };
+export type FiltrosInforme = {
+  tipo: TipoInforme; desde: string; hasta: string; mes: string; ubicacion: string; equipoId: string;
+  persona: string; rol: 'tecnico' | 'beneficiario' | 'todos';
+  trabajos: boolean; prestamos: boolean; evidencias: boolean;
+};
+
+export function obtenerFilasInforme(state: LaboratorioState, f: FiltrosInforme): FilaInforme[] {
+  const dentro = (fecha: string) => {
+    const dia = fecha.slice(0, 10);
+    return f.tipo === 'mensual' ? dia.startsWith(f.mes) : (!f.desde || dia >= f.desde) && (!f.hasta || dia <= f.hasta);
+  };
+  const equipos = new Map(state.equipos.map(e => [e.id, e]));
+  if (f.tipo === 'inventario' || f.tipo === 'ubicacion') {
+    return state.equipos.filter(e => f.tipo !== 'ubicacion' || f.ubicacion === 'Todas' || e.ubicacion === f.ubicacion)
+      .map(e => ({ fecha: e.updatedAt, equipo: e.nombre, detalle: [e.codigo, e.marcaModelo, e.serie, e.ubicacion].filter(Boolean).join(' | '), estado: e.estado }));
+  }
+  if (f.tipo === 'descartes') return state.descartes.map(d => ({ fecha: d.fecha, equipo: d.equipo, detalle: d.detalle, estado: 'Descartado' }));
+  const bitacoras = state.bitacoras.filter(b => {
+    if (f.tipo === 'historial') return Boolean(f.equipoId) && b.equipoId === f.equipoId;
+    if (f.tipo === 'pendientes') return b.estado === 'pendiente' || b.estado === 'en_proceso';
+    if (['mensual', 'rango', 'persona'].includes(f.tipo) && !dentro(b.fecha)) return false;
+    if (f.tipo === 'persona') return f.trabajos && f.rol !== 'beneficiario' && (f.rol === 'todos' || Boolean(f.persona) && b.responsable === f.persona) && (!f.evidencias || Boolean(b.evidenciaUrl));
+    return true;
+  }).map(b => ({ fecha: b.fecha, equipo: equipos.get(b.equipoId)?.nombre || b.equipoDestino || 'S/N', detalle: b.titulo, estado: b.estado }));
+  const prestamos = state.prestamos.filter(p => {
+    if (f.tipo === 'prestamos' || f.tipo === 'pendientes') return p.estado !== 'devuelto';
+    if (f.tipo === 'persona') return f.prestamos && dentro(p.fechaPrestamo) && (f.rol === 'todos' || Boolean(f.persona) && (f.rol === 'beneficiario' ? p.entregadoA : p.responsableEntrega) === f.persona);
+    if (f.tipo === 'mensual') return dentro(p.fechaPrestamo);
+    return false;
+  }).map(p => ({ fecha: p.fechaPrestamo, equipo: p.equipo, detalle: 'Prestamo a ' + p.entregadoA, estado: p.estado }));
+  return (f.tipo === 'prestamos' ? prestamos : [...bitacoras, ...prestamos]).sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
+
+export async function descargarVistaInforme(filas: FilaInforme[], titulo: string, formato: string) {
+  const datos = filas.map(f => ({ Fecha: f.fecha.slice(0, 10), Equipo: f.equipo, Detalle: f.detalle, Estado: f.estado }));
+  if (formato === 'excel') {
+    const { utils, writeFile } = await import('xlsx');
+    const libro = utils.book_new();
+    const hoja = utils.json_to_sheet(datos);
+    hoja['!cols'] = [{ wch: 14 }, { wch: 28 }, { wch: 85 }, { wch: 20 }];
+    utils.book_append_sheet(libro, hoja, 'Informe');
+    writeFile(libro, 'informe-laboratorio.xlsx');
+    return;
+  }
+  if (formato === 'pdf') {
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF();
+    let y = 20;
+    pdf.setFontSize(16); pdf.text(titulo, 14, y); y += 12; pdf.setFontSize(10);
+    for (const f of datos) {
+      const lineas = pdf.splitTextToSize(Object.values(f).join(' | '), 180) as string[];
+      for (const linea of lineas) {
+        if (y > 278) { pdf.addPage(); y = 20; }
+        pdf.text(linea, 14, y); y += 5;
+      }
+      y += 4;
+    }
+    pdf.save('informe-laboratorio.pdf');
+    return;
+  }
+  const { utils } = await import('xlsx');
+  const texto = formato === 'csv' ? utils.sheet_to_csv(utils.json_to_sheet(datos)) : titulo + '\n\n' + datos.map(d => Object.values(d).join(' | ')).join('\n');
+  const url = URL.createObjectURL(new Blob(['\uFEFF', texto], { type: formato === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' }));
+  const enlace = document.createElement('a'); enlace.href = url; enlace.download = 'informe-laboratorio.' + formato;
+  enlace.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
