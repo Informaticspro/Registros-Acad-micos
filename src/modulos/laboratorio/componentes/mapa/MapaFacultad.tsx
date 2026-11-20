@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Building2, Copy, DoorOpen, Maximize2, Minimize2, MapPinned, Route, Users } from 'lucide-react';
+import { Building2, ClipboardList, Copy, DoorOpen, Maximize2, Minimize2, MapPinned, Monitor, Route, Users, X } from 'lucide-react';
+import './mapa-panel.css';
 import type { BitacoraLaboratorio } from '@/tipos/dominio';
 import { formatDateTime } from '@/utilidades/formato';
 import { estadoTrabajoLabels } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
@@ -213,10 +214,12 @@ export function MapaFacultad({
       {showWorks ? <aside id="map-recent-works" className="faculty-map-activity" aria-label="Trabajos recientes">
         <div className="faculty-map-activity-heading">
           <div><span className="eyebrow">Actividad de soporte</span><h3>{nombreArea || 'Trabajos recientes'}</h3></div>
-          <button type="button" className="secondary-button" onClick={() => setShowWorks(false)}>Cerrar panel</button>
-          <button type="button" className="secondary-button" onClick={onOpenWorks}>Ver todos los trabajos</button>
+          <div className="map-panel-actions">
+            {area ? <button type="button" className="map-panel-button map-panel-equipment" onClick={() => onSelectLocation(area)}><Monitor size={18} />Ver equipos de {nombreArea}</button> : null}
+            <button type="button" className="map-panel-button map-panel-works" onClick={onOpenWorks}><ClipboardList size={18} />Ver todos los trabajos</button>
+            <button type="button" className="map-panel-button map-panel-close" onClick={() => setShowWorks(false)}><X size={17} />Cerrar panel</button>
+          </div>
         </div>
-        {area ? <button type="button" className="secondary-button" onClick={() => onSelectLocation(area)}>Ver equipos de {nombreArea}</button> : null}
         <label htmlFor="map-work-area">Filtrar trabajos por área</label>
         <select id="map-work-area" value={area} onChange={(event) => setArea(event.target.value)}>
           <option value="">Todas las áreas</option>
