@@ -50,9 +50,11 @@ export function obtenerFilasInforme(state: LaboratorioState, f: FiltrosInforme):
 }
 
 export async function descargarVistaInforme(filas: FilaInforme[], titulo: string, formato: string, contexto?: ContextoPersona) {
+  const { marcarLibroInformes, marcarPdfInforme, MARCA_INFORMES, ORIGEN_INFORMES } = await import('@/servicios/marca-informes');
   const filename = contexto ? nombreArchivoPersona(contexto) : 'informe-laboratorio';
   if (contexto && formato === 'excel') {
     const libro = await crearLibroPersona(filas,contexto);
+    marcarLibroInformes(libro);
     const { writeFile } = await import('xlsx-js-style');
     writeFile(libro,`${filename}.xlsx`);
     return;
@@ -64,33 +66,36 @@ export async function descargarVistaInforme(filas: FilaInforme[], titulo: string
     const hoja = utils.json_to_sheet(datos);
     hoja['!cols'] = [{ wch: 14 }, { wch: 28 }, { wch: 85 }, { wch: 20 }];
     utils.book_append_sheet(libro, hoja, 'Informe');
+    marcarLibroInformes(libro);
     writeFile(libro, 'informe-laboratorio.xlsx');
     return;
   }
   if (formato === 'pdf') {
     const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF();
-    let y = 20;
+    let y = 26;
     pdf.setFontSize(16); pdf.text(titulo, 14, y); y += 12; pdf.setFontSize(10);
     if (contexto) {
       const escribir = (text: string) => {
         for(const line of pdf.splitTextToSize(text,180) as string[]) {
-          if(y>278) { pdf.addPage(); y=20; pdf.setFontSize(10); }
+          if(y>270) { pdf.addPage(); y=26; pdf.setFontSize(10); }
           pdf.text(line,14,y); y+=5;
         }
       };
       encabezadoPersona(contexto,filas).forEach(escribir); y+=6;
       for(const row of celdasPersona(filas)) { row.forEach((value,index)=>escribir(`${columnasPersona[index]}: ${value}`)); y+=6; }
+      await marcarPdfInforme(pdf);
       pdf.save(`${filename}.pdf`); return;
     }
     for (const f of datos) {
       const lineas = pdf.splitTextToSize(Object.values(f).join(' | '), 180) as string[];
       for (const linea of lineas) {
-        if (y > 278) { pdf.addPage(); y = 20; }
+        if (y > 270) { pdf.addPage(); y = 26; }
         pdf.text(linea, 14, y); y += 5;
       }
       y += 4;
     }
+    await marcarPdfInforme(pdf);
     pdf.save('informe-laboratorio.pdf');
     return;
   }
@@ -99,7 +104,8 @@ export async function descargarVistaInforme(filas: FilaInforme[], titulo: string
     ? utils.sheet_to_csv(utils.aoa_to_sheet([...encabezadoPersona(contexto,filas).map(text=>[text]),[],columnasPersona,...celdasPersona(filas)]))
     : encabezadoPersona(contexto,filas).join('\n')+'\n\n'+celdasPersona(filas).map(row=>row.map((value,index)=>`${columnasPersona[index]}: ${value}`).join('\n')).join('\n\n'))
     : formato === 'csv' ? utils.sheet_to_csv(utils.json_to_sheet(datos)) : titulo + '\n\n' + datos.map(d => Object.values(d).join(' | ')).join('\n');
-  const url = URL.createObjectURL(new Blob(['\uFEFF', texto], { type: formato === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' }));
+  const marca = formato === 'csv' ? utils.sheet_to_csv(utils.aoa_to_sheet([[ORIGEN_INFORMES], [MARCA_INFORMES]])) : ORIGEN_INFORMES + '\n' + MARCA_INFORMES;
+  const url = URL.createObjectURL(new Blob(['\uFEFF', texto, '\n\n', marca], { type: formato === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' }));
   const enlace = document.createElement('a'); enlace.href = url; enlace.download = filename + '.' + formato;
   enlace.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

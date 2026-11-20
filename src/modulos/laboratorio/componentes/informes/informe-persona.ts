@@ -28,7 +28,7 @@ export function encabezadoPersona(contexto: ContextoPersona, filas: FilaInforme[
     `Período: ${fechaPeriodo(contexto.desde)} al ${fechaPeriodo(contexto.hasta)}`,
     `Incluye: ${[contexto.trabajos && contexto.rol !== 'beneficiario' ? 'Trabajos técnicos' : '', contexto.prestamos ? (contexto.rol === 'beneficiario' ? 'Préstamos recibidos' : 'Préstamos gestionados') : '', contexto.evidencias ? 'Solo trabajos con evidencia' : ''].filter(Boolean).join(' · ')}`,
     `Total de registros: ${filas.length} · Trabajos técnicos: ${filas.filter(f => f.tipo === 'Trabajo técnico').length} · Préstamos: ${filas.filter(f => f.tipo === 'Préstamo').length}`,
-    `Nexus FADECO · Emitido: ${fechaHora(emitido.toISOString())} (hora de Panamá)`,
+    `Registros FADECO · Emitido: ${fechaHora(emitido.toISOString())} (hora de Panamá)`,
   ];
 }
 export function celdasPersona(filas: FilaInforme[]) {
@@ -73,7 +73,7 @@ export async function crearLibroPersona(filas: FilaInforme[], contexto: Contexto
   hoja['!margins']={ left:0.25,right:0.25,top:0.4,bottom:0.4,header:0.2,footer:0.2 };
   const libro = utils.book_new();
   utils.book_append_sheet(libro,hoja,'Informe');
-  libro.Props={Title:`Informe de actividades · ${contexto.rol==='todos'?'Todos los técnicos':contexto.persona}`,Author:'Nexus FADECO',Company:'UNACHI · Facultad de Economía'};
+  libro.Props={Title:`Informe de actividades · ${contexto.rol==='todos'?'Todos los técnicos':contexto.persona}`,Author:'Registros FADECO',Company:'UNACHI · Facultad de Economía'};
   libro.Workbook={Names:[{Name:'_xlnm.Print_Titles',Sheet:0,Ref:"'Informe'!$10:$10"},{Name:'_xlnm.Print_Area',Sheet:0,Ref:`'Informe'!$A$1:$I$${rows.length}`}]};
   return libro;
 }

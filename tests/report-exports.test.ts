@@ -20,6 +20,11 @@ test('the extracted inventory exporter retains the institutional inventory and s
   expect(workbook.SheetNames).toEqual(['Inventario', 'Resumen']);
   const cells = utils.sheet_to_json(workbook.Sheets.Inventario, { header: 1 }).flat();
   expect(cells).toContain('PC 1'); expect(cells).toContain('12345');
+  expect(cells).toContain('© Registros FADECO');
+  expect(cells).toContain('Generado por Registros FADECO · Facultad de Economía · UNACHI');
+  const resumen = utils.sheet_to_json(workbook.Sheets.Resumen, { header: 1 }).flat();
+  expect(resumen).toContain('© Registros FADECO');
+  expect(workbook.Props?.Author).toBe('Registros FADECO');
 });
 
 test('CSV escaping and the shared label identifiers retain their original behavior', () => {

@@ -1,4 +1,10 @@
-import { utils, writeFile } from 'xlsx-js-style';
+import { utils, writeFile as writeWorkbook, type WorkBook } from 'xlsx-js-style';
+import { marcarLibroInformes, MARCA_INFORMES, ORIGEN_INFORMES } from './marca-informes';
+
+function writeFile(libro: WorkBook, nombre: string) {
+  marcarLibroInformes(libro);
+  writeWorkbook(libro, nombre);
+}
 import type { LaboratorioState } from './laboratorio.servicio';
 import type { BitacoraLaboratorio, EquipoLaboratorio } from '@/tipos/dominio';
 import { estadoEquipoLabels, estadoTrabajoLabels, prioridadLabels } from '@/modulos/laboratorio/constantes/laboratorio.constantes';
@@ -1063,7 +1069,7 @@ export function exportLaboratorioCsv(state: LaboratorioState) {
     ),
   ];
 
-  return lines.join('\n');
+  return lines.map((line, index) => line + ',' + csvEscape(index === 0 ? 'GENERADO_POR' : ORIGEN_INFORMES + ' · ' + MARCA_INFORMES)).join('\n');
 }
 
 export function buildLaboratorioReport(state: LaboratorioState) {
@@ -1075,6 +1081,8 @@ export function buildLaboratorioReport(state: LaboratorioState) {
     'UNIVERSIDAD AUTONOMA DE CHIRIQUI',
     'FACULTAD DE ECONOMIA',
     'INFORME DEL LABORATORIO DE INFORMATICA',
+    ORIGEN_INFORMES,
+    MARCA_INFORMES,
     '',
     `Generado: ${new Date().toLocaleString('es-PA')}`,
     '',
