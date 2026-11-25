@@ -2,8 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 're
 import { Check, Mouse, Projector, Radio } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DevolucionesRecepcion } from './DevolucionesRecepcion';
+import './datos-adicionales.css';
 
-export type SolicitudEquipo = { nombre: string; procedencia: string; equipo: string; aula: string; inicio: string; fin: null };
+export type SolicitudEquipo = { nombre: string; procedencia: string; equipo: string; aula: string; inicio: string; fin: null; datosAdicionales?: string };
 type Props = { onSubmit: (solicitud: SolicitudEquipo) => Promise<void>; puedeVolver?: boolean; puedeDevolver?: boolean };
 const lugaresFacultad = [
   ...['3A', '3B', '3C', '3D', '3E', '3F', '3G', '3H'].map(aula => `Salón ${aula}`),
@@ -49,7 +50,7 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false, puedeDevolver
     const inicio = new Date();
     const aula = lugar === 'otro' ? value('otroLugar') : lugar;
     if (!aula) { setError('Seleccione el aula o especifique el lugar de uso.'); return; }
-    setSolicitud({ nombre: value('nombre'), procedencia: lugar === 'otro' ? aula : 'Facultad de Economía', equipo: tipo === 'Otro equipo' ? value('otroEquipo') : tipo, aula, inicio: inicio.toISOString(), fin: null });
+    setSolicitud({ nombre: value('nombre'), procedencia: lugar === 'otro' ? aula : 'Facultad de Economía', equipo: tipo === 'Otro equipo' ? value('otroEquipo') : tipo, aula, inicio: inicio.toISOString(), fin: null, datosAdicionales: value('datosAdicionales') });
     setError(''); setEtapa('confirmar');
   }
   async function enviar() {
@@ -68,11 +69,16 @@ export function PortalSolicitudes({ onSubmit, puedeVolver = false, puedeDevolver
         <button className={tipo === 'Data Show' ? 'selected' : ''} type="button" onClick={() => setTipo('Data Show')}><Projector size={30} /><strong>Data Show</strong><span>Proyector para su actividad</span></button>
         <button className={tipo === 'Otro equipo' ? 'selected' : ''} type="button" onClick={() => setTipo('Otro equipo')}><Mouse size={30} /><strong>Otros equipos</strong><span>Mouse, cables y accesorios</span></button>
       </div><form className="borrow-form" onSubmit={revisar}><h2>Datos del préstamo</h2><div className="borrow-fields">
-        <label>Nombre completo<input name="nombre" autoComplete="off" required maxLength={120} placeholder="Escriba su nombre" /></label>
+        <div className="borrow-applicant"><label>Nombre completo<input name="nombre" autoComplete="off" required maxLength={120} placeholder="Escriba su nombre" defaultValue={solicitud?.nombre} /></label>
+          <details className="borrow-additional" open={solicitud?.datosAdicionales ? true : undefined}>
+            <summary>Datos adicionales (opcional)</summary>
+            <label>Contacto y pertenencia<textarea name="datosAdicionales" maxLength={500} rows={3} defaultValue={solicitud?.datosAdicionales} placeholder="Teléfono, aula, facultad o departamento al que pertenece" /></label>
+          </details>
+        </div>
         <label>Aula o lugar de uso<select name="aula" required value={lugar} onChange={event => setLugar(event.target.value)}><option value="" disabled>Seleccione un aula o lugar</option>{lugaresFacultad.map(item => <option key={item} value={item}>{item}</option>)}<option value="otro">Otro lugar</option></select></label>
         {lugar === 'otro' ? <label>Facultad, departamento o lugar de uso<input name="otroLugar" autoComplete="off" required maxLength={100} placeholder="Ej. Facultad de Educación / Auditorio o Dirección de Extensión" /></label> : null}
         {tipo === 'Otro equipo' ? <label>Equipo que necesita<input name="otroEquipo" required maxLength={120} placeholder="Ej. mouse o cable HDMI" /></label> : null}
-      </div>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="borrow-form-footer"><small>La fecha y la hora de solicitud se registran automáticamente.</small><button className="primary-button" type="submit">Revisar préstamo</button></div></form>{puedeDevolver ? <DevolucionesRecepcion /> : null}</> : <section className="borrow-form"><h2>Confirme su préstamo</h2><p><strong>{solicitud?.equipo}</strong> · {solicitud?.aula}</p><p>{solicitud?.nombre} · {solicitud?.procedencia}</p><p>La fecha y hora de devolución se registrarán al devolver el equipo.</p>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="page-actions"><button className="secondary-button" type="button" disabled={busy} onClick={() => setEtapa('formulario')}>Corregir</button><button className="primary-button" type="button" disabled={busy} onClick={() => void enviar()}>{busy ? 'Registrando…' : 'Confirmar préstamo'}</button></div></section>}
+      </div>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="borrow-form-footer"><small>La fecha y la hora de solicitud se registran automáticamente.</small><button className="primary-button" type="submit">Revisar préstamo</button></div></form>{puedeDevolver ? <DevolucionesRecepcion /> : null}</> : <section className="borrow-form"><h2>Confirme su préstamo</h2><p><strong>{solicitud?.equipo}</strong> · {solicitud?.aula}</p><p>{solicitud?.nombre} · {solicitud?.procedencia}</p>{solicitud?.datosAdicionales ? <p style={{ whiteSpace: 'pre-wrap' }}>Datos adicionales: {solicitud.datosAdicionales}</p> : null}<p>La fecha y hora de devolución se registrarán al devolver el equipo.</p>{error ? <p role="alert" className="form-error">{error}</p> : null}<div className="page-actions"><button className="secondary-button" type="button" disabled={busy} onClick={() => setEtapa('formulario')}>Corregir</button><button className="primary-button" type="button" disabled={busy} onClick={() => void enviar()}>{busy ? 'Registrando…' : 'Confirmar préstamo'}</button></div></section>}
     </>}
   </main>;
 }
