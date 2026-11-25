@@ -27,6 +27,8 @@ test('request automatically creates one active loan and allows return from recep
     await db.exec(fs.readFileSync('supabase/migration-v26-solicitudes-prestamos.sql', 'utf8'));
     await db.exec(fs.readFileSync('supabase/migration-v28-devoluciones-recepcion.sql', 'utf8'));
     await db.exec(fs.readFileSync('supabase/migration-v29-prestamo-automatico.sql', 'utf8'));
+    await db.exec(fs.readFileSync('supabase/migration-v35-datos-opcionales-prestamos.sql', 'utf8'));
+    request.applicantDetails = 'Teléfono: 6000-1234. Departamento de Informática, aula 3A.';
     await db.exec('set role anon');
     await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, receipt, JSON.stringify(request)]);
     await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, receipt, JSON.stringify(request)]);
@@ -36,6 +38,12 @@ test('request automatically creates one active loan and allows return from recep
     await db.exec('reset role');
     assert.equal((await db.query('select count(*)::int as n from laboratory_requests')).rows[0].n, 1);
     assert.equal((await db.query('select count(*)::int as n from laboratory_loans')).rows[0].n, 1);
+    assert.equal((await db.query('select applicant_details from laboratory_requests')).rows[0].applicant_details, request.applicantDetails);
+    assert.ok((await db.query('select notes from laboratory_loans')).rows[0].notes.includes(request.applicantDetails));
+    await db.exec('begin');
+    await db.query('select submit_laboratory_request($1,$2,$3::jsonb)', [orgA, '30000000-0000-4000-8000-000000000099', JSON.stringify({ ...request, applicantDetails: undefined })]);
+    assert.equal((await db.query("select applicant_details from laboratory_requests where receipt='30000000-0000-4000-8000-000000000099'")).rows[0].applicant_details, '');
+    await db.exec('rollback');
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [outsider]);
     await db.exec('set role authenticated');
     assert.equal((await db.query("select manage_laboratory_requests('list') as items")).rows[0].items.length, 0);

@@ -5,6 +5,7 @@ export type SolicitudPrestamo = {
   id: string;
   applicant: string;
   affiliation: string;
+  applicant_details?: string;
   equipment: string;
   room: string;
   starts_at: string;
@@ -19,7 +20,7 @@ export async function registrarSolicitud(organizationId: string, solicitud: Soli
   if (!supabase) throw new Error('El servicio no está disponible.');
   const { error } = await supabase.rpc('submit_laboratory_request', {
     p_org: organizationId, p_receipt: receipt,
-    p_data: { name: solicitud.nombre, affiliation: solicitud.procedencia, equipment: solicitud.equipo, room: solicitud.aula, startsAt: solicitud.inicio, endsAt: solicitud.fin, accepted: true },
+    p_data: { name: solicitud.nombre, affiliation: solicitud.procedencia, equipment: solicitud.equipo, room: solicitud.aula, startsAt: solicitud.inicio, endsAt: solicitud.fin, accepted: true, applicantDetails: solicitud.datosAdicionales || '' },
   });
   if (error) throw error;
 }
