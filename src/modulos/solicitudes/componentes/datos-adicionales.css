@@ -1,5 +1,5 @@
-.borrow-applicant { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.borrow-field-group { display: grid; align-content: start; gap: 10px; min-width: 0; }
 .borrow-additional summary { padding: 8px 10px; color: #087e5b; border: 1px solid #80bda8; border-radius: 8px; background: #e8f5ee; cursor: pointer; font-size: .8rem; font-weight: 600; }
 .borrow-additional summary:focus-visible { outline: 2px solid #2563b5; outline-offset: 2px; }
 .borrow-additional label { margin-top: 10px; }
-.borrow-additional textarea { width: 100%; min-width: 0; min-height: 78px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; resize: vertical; }
+.borrow-additional textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 78px; padding: 10px 12px; border: 1px solid var(--fd-border-input); border-radius: 8px; background: var(--fd-surface); color: var(--fd-text); font: inherit; resize: vertical; }
