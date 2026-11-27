@@ -1055,7 +1055,6 @@ p {
 .table-list,
 .timeline,
 .users-list,
-.data-table,
 .participants-mini-table,
 .live-attendance-list {
   scrollbar-color: rgba(121, 183, 53, 0.5) var(--scrollbar-track);
@@ -1065,7 +1064,6 @@ p {
 .table-list::-webkit-scrollbar,
 .timeline::-webkit-scrollbar,
 .users-list::-webkit-scrollbar,
-.data-table::-webkit-scrollbar,
 .participants-mini-table::-webkit-scrollbar,
 .live-attendance-list::-webkit-scrollbar,
 .participant-edit-form::-webkit-scrollbar,
@@ -1077,7 +1075,6 @@ p {
 .table-list::-webkit-scrollbar-thumb,
 .timeline::-webkit-scrollbar-thumb,
 .users-list::-webkit-scrollbar-thumb,
-.data-table::-webkit-scrollbar-thumb,
 .participants-mini-table::-webkit-scrollbar-thumb,
 .live-attendance-list::-webkit-scrollbar-thumb,
 .participant-edit-form::-webkit-scrollbar-thumb,
@@ -1090,7 +1087,6 @@ p {
 .table-list::-webkit-scrollbar-track,
 .timeline::-webkit-scrollbar-track,
 .users-list::-webkit-scrollbar-track,
-.data-table::-webkit-scrollbar-track,
 .participants-mini-table::-webkit-scrollbar-track,
 .live-attendance-list::-webkit-scrollbar-track,
 .participant-edit-form::-webkit-scrollbar-track,
@@ -1450,36 +1446,6 @@ textarea {
 
 .seminar-warning ul {
   padding-left: 18px;
-}
-
-.data-table {
-  display: grid;
-  gap: 2px;
-  max-height: 560px;
-  overflow: auto;
-}
-
-.data-table-head,
-.data-table-row {
-  display: grid;
-  grid-template-columns: 1.2fr 0.7fr 1fr 1.2fr;
-  min-width: 820px;
-  gap: 14px;
-  padding: 14px;
-}
-
-.data-table-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-}
-
-.data-table-row {
-  border-top: 1px solid var(--line);
 }
 
 .auth-layout {
@@ -3202,24 +3168,6 @@ textarea {
 
 .lab-inline-component-panel p {
   color: var(--muted);
-}
-
-.inline-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  width: fit-content;
-  padding: 9px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-deep);
-  color: var(--text);
-  font-weight: 900;
-}
-
-.inline-check input {
-  width: 18px;
-  height: 18px;
 }
 
 .lab-new-component-card {
@@ -5581,31 +5529,6 @@ textarea {
     gap: 4px;
   }
 
-  .data-table {
-    max-height: 68vh;
-    overflow-x: hidden;
-    overflow-y: auto;
-    gap: 12px;
-  }
-
-  .data-table-head {
-    display: none;
-  }
-
-  .data-table-row {
-    min-width: 0;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 14px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface-deep);
-  }
-
-  .data-table-row > span {
-    overflow-wrap: anywhere;
-  }
-
   .participant-summary strong {
     font-size: 1.5rem;
   }
@@ -6649,6 +6572,6 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible,
 :root[data-theme='light'] :is(.notifications-popover, .user-menu-popover, .global-search-results) { background: #ffffff; border-color: var(--line); border-radius: 16px; box-shadow: 0 12px 36px #10233820; }
 :root[data-theme='light'] .notification-item { border-radius: 12px; }
 :root[data-theme='light'] .notification-item.is-unread { border-left: 4px solid var(--accent); }
-:root[data-theme='light'] :is(.lab-shell, .public-register, .login-page) { background-color: var(--bg); }
+:root[data-theme='light'] :is(.lab-shell, .public-register) { background-color: var(--bg); }
 :root[data-theme='light'] .lab-workspace-header { background-image: none; }
 :root[data-theme='light'] .dashboard-page .stat-card { box-shadow: 0 2px 3px #10233805, 0 10px 28px #10233808; }

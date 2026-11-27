@@ -119,11 +119,11 @@ body { background: var(--fd-bg); color: var(--fd-text); }
 :root .lab-workspace :is(.lab-home-metrics, .lab-grid) { gap: 20px; }
 :root .lab-workspace .lab-home-metrics button { padding: 22px; }
 :root .lab-workspace .lab-home-metrics button.attention { border-color: var(--fd-warn-border); }
-:root :is(.data-table-head, .event-participants-modal-head, .lab-inventory-head) { background: var(--fd-bg); color: var(--fd-muted); font-weight: 600; }
+:root :is(.event-participants-modal-head, .lab-inventory-head) { background: var(--fd-bg); color: var(--fd-muted); font-weight: 600; }
 :root .lab-workspace .lab-inventory-head { background: var(--fd-bg); color: var(--fd-muted); }
 :root .lab-workspace .lab-inventory-row:nth-child(odd) { background: var(--fd-surface); }
 :root .lab-workspace .lab-inventory-row:nth-child(even) { background: var(--fd-bg); }
-:root :is(.data-table-row, .event-participants-modal-row, .lab-inventory-row) { border-color: var(--fd-border); }
+:root :is(.event-participants-modal-row, .lab-inventory-row) { border-color: var(--fd-border); }
 :root :is(.notification-item, .global-search-list button) { background: var(--fd-bg); border-radius: 14px; }
 :root :is(.notifications-popover, .user-menu-popover, .global-search-results) { background: var(--fd-surface); border: 1px solid var(--fd-border); border-radius: 20px; box-shadow: var(--fd-shadow); }
 :root .lab-workspace :is(input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea),
