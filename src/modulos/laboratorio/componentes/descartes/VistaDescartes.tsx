@@ -1,4 +1,5 @@
 import { ChangeEvent, FormEvent } from 'react';
+import { destinoRegistroLaboratorio } from '../busqueda/busqueda-laboratorio';
 import { Download, Save, Trash2, Upload } from 'lucide-react';
 
 import { DescarteLaboratorio, EquipoLaboratorio } from '@/tipos/dominio';
@@ -124,7 +125,7 @@ export function VistaDescartes({
         <h2>Descartes registrados</h2>
         {descartes.length === 0 ? <p className="form-hint">Todavia no hay descartes registrados.</p> : null}
         {descartes.map((item) => (
-          <article className="lab-record compact" key={item.id}>
+          <article className="lab-record compact" key={item.id} id={destinoRegistroLaboratorio('descarte', item.id)} tabIndex={-1}>
             <div className="lab-record-header">
               <div>
                 <span className="status-pill equipment-baja">Descarte</span>

@@ -16,6 +16,8 @@ import { InicioLaboratorio } from '@/modulos/laboratorio/componentes/InicioLabor
 import { PestanasLaboratorio } from '@/modulos/laboratorio/componentes/PestanasLaboratorio';
 import { ConfirmacionOperativoModal } from '@/modulos/laboratorio/componentes/bitacoras/ConfirmacionOperativoModal';
 import { VistaBitacoras } from '@/modulos/laboratorio/componentes/bitacoras/VistaBitacoras';
+import { BuscadorLaboratorio } from '@/modulos/laboratorio/componentes/busqueda/BuscadorLaboratorio';
+import { destinoRegistroLaboratorio, type ResultadoLaboratorio } from '@/modulos/laboratorio/componentes/busqueda/busqueda-laboratorio';
 import { InstalacionesPantalla } from '@/modulos/laboratorio/componentes/bitacoras/InstalacionesPantalla';
 import { GestorCatalogosModal } from '@/modulos/laboratorio/componentes/catalogos/GestorCatalogosModal';
 import { VistaDescartes } from '@/modulos/laboratorio/componentes/descartes/VistaDescartes';
@@ -451,6 +453,37 @@ export function PaginaLaboratorio() {
     setActiveTab('fichas');
   }
 
+  function abrirResultadoLaboratorio(resultado: ResultadoLaboratorio) {
+    setShowInstalacionesPantalla(false);
+    const { tipo, id } = resultado;
+    if (tipo === 'equipo') {
+      const equipo = getEquipoById(id);
+      if (equipo) {
+        setActiveTab('inventario');
+        openEquipoDetalle(equipo);
+      }
+    } else if (tipo === 'ficha') {
+      const ficha = state.fichas.find(item => item.id === id);
+      if (ficha) {
+        setSelectedEquipoFichaId('');
+        setEditingFicha(null);
+        setSelectedFicha(ficha);
+        setActiveTab('fichas');
+      }
+    } else if (tipo === 'ubicacion') {
+      setInventorySearch('');
+      setActiveTab('inventario');
+      handleInventoryLocationFilter(id);
+    } else {
+      setActiveTab(tipo === 'trabajo' ? 'bitacoras' : tipo === 'descarte' ? 'descartes' : 'prestamos');
+      window.requestAnimationFrame(() => {
+        const destino = document.getElementById(tipo === 'publico' ? 'lab-resultado-solicitudes' : destinoRegistroLaboratorio(tipo, id));
+        destino?.focus({ preventScroll: true });
+        destino?.scrollIntoView({ block: 'start' });
+      });
+    }
+  }
+
   if (isLoading || loadFailure) {
     return (
       <div className="lab-workspace">
@@ -481,6 +514,7 @@ export function PaginaLaboratorio() {
 
       <section className={`panel lab-shell${activeTab === 'mapa' ? ' lab-shell-map' : ''}`}>
         <PestanasLaboratorio activeTab={activeTab} onChange={(tab) => { setShowInstalacionesPantalla(false); setActiveTab(tab); }} />
+        <BuscadorLaboratorio datos={state} ubicaciones={ubicacionesInventario} onSeleccionar={abrirResultadoLaboratorio} />
         {activeTab === 'imagenes' ? <GaleriaImagenes organizationId={profile?.organizationId ?? null} onBack={() => setActiveTab('inicio')} /> : null}
 
         {message || error ? (
@@ -682,7 +716,7 @@ export function PaginaLaboratorio() {
 
         {activeTab === 'prestamos' && !showInstalacionesPantalla ? (
           <>
-          <SolicitudesPrestamos organizationId={profile?.organizationId ?? null} onChanged={refresh}
+          <SolicitudesPrestamos id="lab-resultado-solicitudes" organizationId={profile?.organizationId ?? null} onChanged={refresh}
             onOpenInstalaciones={() => { setEditingBitacora(null); setShowInstalacionesPantalla(true); }} />
           <PrestamosLaboratorio
             prestamos={state.prestamos.filter((prestamo) => !prestamo.observaciones.startsWith('Solicitud pública.'))}

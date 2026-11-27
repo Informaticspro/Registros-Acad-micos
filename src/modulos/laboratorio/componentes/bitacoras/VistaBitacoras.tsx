@@ -1,4 +1,5 @@
 import { FormEvent, useMemo } from 'react';
+import { destinoRegistroLaboratorio } from '../busqueda/busqueda-laboratorio';
 import { Pencil, Save, Trash2 } from 'lucide-react';
 import { BitacoraLaboratorio, EquipoLaboratorio } from '@/tipos/dominio';
 import { formatDateTime } from '@/utilidades/formato';
@@ -223,7 +224,7 @@ export function VistaBitacoras({
         <h2>Trabajos registrados</h2>
         {mantenimientos.length === 0 ? <p className="form-hint">Todavía no hay trabajos registrados. Agregue el primero usando el formulario.</p> : null}
         {mantenimientos.map((item) => (
-          <article className="lab-record" key={item.id}>
+          <article className="lab-record" key={item.id} id={destinoRegistroLaboratorio('trabajo', item.id)} tabIndex={-1}>
             <div className="lab-record-header">
               <div>
                 <span className={`status-pill priority-${item.prioridad}`}>{prioridadLabels[item.prioridad]}</span>
@@ -254,7 +255,7 @@ export function VistaBitacoras({
         <h2>Fallas reportadas</h2>
         {incidencias.length === 0 ? <p className="form-hint">No hay incidencias registradas.</p> : null}
         {incidencias.map((item) => (
-          <article className="lab-record" key={item.id}>
+          <article className="lab-record" key={item.id} id={destinoRegistroLaboratorio('trabajo', item.id)} tabIndex={-1}>
             <div className="lab-record-header">
               <div>
                 <span className={`status-pill priority-${item.prioridad}`}>{estadoTrabajoLabels[item.estado]}</span>
