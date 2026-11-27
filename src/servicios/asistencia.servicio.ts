@@ -5,16 +5,6 @@ import { mockAttendance, mockParticipantes, mockInscripcions } from '@/datos/dat
 import { JornadaAsistencia, RegistroAsistencia } from '@/tipos/dominio';
 import { extractQrLookupValue } from '@/utilidades/qr';
 
-type InscripcionRow = {
-  id: string;
-  event_id: string;
-  participant_id: string;
-  qr_token: string;
-  certificate_code: string;
-  checked_in_at: string | null;
-  created_at: string;
-};
-
 type AttendanceRow = {
   id: string;
   event_id: string;
@@ -121,36 +111,6 @@ export function getPanamaTimeLabel(date = new Date()) {
 
 function getMetadataValue(metadata: Record<string, string> | null | undefined, key: string) {
   return metadata?.[key]?.trim() ?? '';
-}
-
-export async function verifyQrToken(qrToken: string) {
-  const lookup = extractQrLookupValue(qrToken);
-  if (!supabase && isDemoMode()) {
-    const registration = mockInscripcions.find((item) => item.qrToken === lookup);
-    return registration ? { valid: true, registration } : { valid: false, registration: null };
-  }
-  if (!supabase) return { valid: false, registration: null };
-
-  const { data, error } = await supabase
-    .from('registrations')
-    .select('id,event_id,participant_id,qr_token,certificate_code,checked_in_at,created_at')
-    .eq('qr_token', lookup)
-    .single<InscripcionRow>();
-
-  if (error) return { valid: false, registration: null };
-
-  return {
-    valid: true,
-    registration: {
-      id: data.id,
-      eventId: data.event_id,
-      participantId: data.participant_id,
-      qrToken: data.qr_token,
-      certificateCode: data.certificate_code,
-      checkedInAt: data.checked_in_at,
-      createdAt: data.created_at,
-    },
-  };
 }
 
 export async function recordDailyAttendance(

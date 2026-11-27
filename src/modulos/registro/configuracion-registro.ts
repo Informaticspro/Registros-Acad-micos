@@ -2,8 +2,6 @@
 
 export type InscripcionFormKind = 'simple' | 'congreso' | 'seminario' | 'seminario_general' | 'personalizado';
 
-export type TipoFormularioSeminario = NonNullable<EventoAcademico['registrationFormType']>;
-
 export const SEMINARIO_INFORMATICA_INTERMEDIA_TITULO =
   'Seminario de Informatica Intermedia como requisito de Posgrado y Maestria';
 
@@ -80,8 +78,6 @@ export const CONGRESO_METADATA_FIELDS = [
   'participationType',
 ] as const;
 
-export type CongresoMetadataField = (typeof CONGRESO_METADATA_FIELDS)[number];
-
 export const CONGRESO_MODALITY_OPTIONS = [
   {
     value: 'estudiante_plan_1',
@@ -139,8 +135,6 @@ export const SEMINARIO_METADATA_FIELDS = [
   'seminarDate',
   'seminarPurpose',
 ] as const;
-
-export type SeminarioMetadataField = (typeof SEMINARIO_METADATA_FIELDS)[number];
 
 export const SEMINARIO_SEX_OPTIONS = ['Mujer', 'Hombre'] as const;
 
