@@ -1,4 +1,5 @@
 import { FormEvent } from 'react';
+import { destinoRegistroLaboratorio } from '../busqueda/busqueda-laboratorio';
 import { Pencil, Save, Trash2 } from 'lucide-react';
 
 import { PrestamoLaboratorio } from '@/tipos/dominio';
@@ -107,7 +108,7 @@ export function PrestamosLaboratorio({
         <h2>Prestamos registrados</h2>
         {prestamos.length === 0 ? <p className="form-hint">Todavia no hay prestamos registrados.</p> : null}
         {prestamos.map((item) => (
-          <article className="lab-record compact" key={item.id}>
+          <article className="lab-record compact" key={item.id} id={destinoRegistroLaboratorio('prestamo', item.id)} tabIndex={-1}>
             <div className="lab-record-header">
               <div>
                 <span className={`status-pill loan-${item.estado}`}>{item.estado}</span>
